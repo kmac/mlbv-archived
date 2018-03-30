@@ -1,0 +1,134 @@
+#!/usr/bin/python
+"""
+This project provides a CLI interface into streaming MLB games from MLB.com
+
+Links: http://statsapi.mlb.com/docs/
+
+"""
+
+import argparse
+import logging
+import os
+import sys
+
+from datetime import datetime
+from datetime import timedelta
+
+import mlbam.mlbauth as mlbauth
+import mlbam.config as config
+import mlbam.mlbgamedata as mlbgamedata
+import mlbam.stream as stream
+import mlbam.util as util
+
+
+LOG = None  # initialized in init_logging
+
+
+help_header = """MLB game tracker and stream viewer.
+"""
+help_footer = """See README.md for full usage instructions and pre-requisites.
+
+Feed Identifiers
+You can use either the short form feed identifier or the long form:
+
+    {}""".format(mlbgamedata.get_feedtype_keystring())
+
+
+def main(argv=None):
+    mlb_gamedata = mlbgamedata.MLBGameData()
+
+    # using argparse (2.7+) https://docs.python.org/2/library/argparse.html
+    parser = argparse.ArgumentParser(description=help_header, epilog=help_footer,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("-d", "--date", help="Display games for date. Format: yyyy-mm-dd")
+    parser.add_argument("--days", type=int, default=1, help="Number of days to display")
+    parser.add_argument("--tomorrow", "--tom", action="store_true", help="Use tomorrow's date")
+    parser.add_argument("--yesterday", "--yes", action="store_true", help="Use yesterday's date")
+    parser.add_argument("-t", "--team", help="Play game for team, one of: {}".format(mlb_gamedata.TEAM_CODES))
+    parser.add_argument("-f", "--feed",
+                        help=("Feed type, either a live/archive game feed or highlight feed "
+                              "(if available). Available feeds are shown in game list,"
+                              "and have a short form and long form (see 'Feed identifiers' section below)"))
+    parser.add_argument("--favs", help=("Favourite teams, a comma-separated list of favourite teams "
+                                        "(normally specified in config file)"))
+    parser.add_argument("--filter", action="store_true", help="Filter output for favourite teams only")
+    parser.add_argument("-r", "--resolution",
+                        help="Stream resolution for streamlink, one of: {}".format(config.BANDWIDTH_CHOICES))
+    parser.add_argument("-s", "--scores", action="store_true",
+                        help="Show scores (default off; overrides config file)")
+    parser.add_argument("-n", "--no-scores", action="store_true",
+                        help="Do not show scores (default on; overrides config file)")
+    parser.add_argument("--username", help="MLB.tv username. Required for live/archived games.")
+    parser.add_argument("--password", help="MLB.tv password. Required for live/archived games.")
+    parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity")
+    parser.add_argument("-D", "--debug", action="store_true", help="Turn on debug output")
+    args = parser.parse_args()
+
+    team_to_play = None
+    feedtype = None
+
+    # get our config
+    config.CONFIG = config.MLBConfig()
+
+    # append log files if DEBUG is set (from top of file)
+    util.init_logging(os.path.join(config.CONFIG.dir,
+                                   os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.log'), True)
+
+    global LOG
+    LOG = logging.getLogger(__name__)
+
+    if args.debug:
+        config.CONFIG.parser['debug'] = 'true'
+    if args.verbose:
+        config.CONFIG.parser['verbose'] = 'true'
+    if args.username:
+        config.CONFIG.parser['username'] = args.username
+    if args.password:
+        config.CONFIG.parser['password'] = args.password
+    if args.team:
+        team_to_play = args.team.lower()
+        if team_to_play not in mlb_gamedata.TEAM_CODES:
+            # Issue #4 all-star game has funky team codes
+            LOG.warn('Unexpected team code: {}'.format(team_to_play))
+    if args.feed:
+        feedtype = mlb_gamedata.convert_to_long_feedtype(args.feed.lower())
+    if args.resolution:
+        config.CONFIG.parser['resolution'] = args.resolution
+    if args.scores:
+        config.CONFIG.parser['scores'] = 'true'
+    elif args.no_scores:
+        config.CONFIG.parser['scores'] = 'false'
+    if args.favs:
+        config.CONFIG.parser['favs'] = args.favs
+    if args.filter:
+        config.CONFIG.parser['filter'] = 'true'
+
+    if args.yesterday:
+        args.date = datetime.strftime(datetime.today() - timedelta(days=1), "%Y-%m-%d")
+    elif args.tomorrow:
+        args.date = datetime.strftime(datetime.today() + timedelta(days=1), "%Y-%m-%d")
+    elif args.date is None:
+        args.date = datetime.strftime(datetime.today(), "%Y-%m-%d")
+
+    # fetch and display games (don't display if we're going to start a stream)
+    game_data_list = mlb_gamedata.fetch_game_data(args.date, args.days, team_to_play is None)
+
+    if team_to_play is None:
+        # nothing to play; we're done
+        return 0
+
+    # from this point we only care about first day in list
+    if len(game_data_list) > 0:
+        game_data = game_data_list[0]
+    else:
+        # nothing to stream
+        return 0
+
+    return stream.play_stream(game_data, team_to_play, feedtype, args.date, args.fetch, mlbauth.mlb_login, mlbauth.get_session_key)
+
+
+if __name__ == "__main__" or __name__ == "main":
+    sys.exit(main())
+
+# vim: set filetype=python

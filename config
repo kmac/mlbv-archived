@@ -1,0 +1,68 @@
+# Config file for nhlv
+#
+# Usage:
+# The configuration values are given in this file, and can be changed from defaults here.
+# Commented lines begin with '#'.
+# If a value is not provided or is commented out, then the default value is
+# used. The default value is shown commented out.
+# To change a value, copy the line, uncomment it, and provide your own value.
+
+
+# Credentials. Fill out your username and password here. Or provide them via command-line options.
+# username=<Put your username here>
+# password=<Put your password here>
+
+# This flag specifies whether to sign in via Rogers account or via NHL.tv account
+#use_rogers=false
+
+# Favourite teams, This is a comma-separated list of favourite team codes.
+# Favourite teams are identified by colour in the game listings, and can be
+# filtered on using the --filter option to show only favourites.
+# Example: favs=wpg
+# Example: favs=wpg,ott
+#favs=
+
+# Favourite team colour, shown in game listings to highlight the favourite teams.
+# Leave this blank to disable
+# Available colours:
+#   black, red, green, orange, blue, purple, cyan, lightgrey, darkgrey,
+#   lightred, lightgreen, yellow, lightblue, pink, lightcyan
+#fav_colour=cyan
+
+# Colour used to highlight games in 'critical' state
+#game_critical_colour=yellow
+
+# Show scores. Scores are hidden by default. If this is set to true then scores are shown.
+#scores=false
+
+# Use shorter feed names in game listings
+#use_short_feeds=true
+
+# Bandwidth/stream resolution. This is passed into streamlink. 
+# One of: 'worst', '360p', '540p', '720p_alt', '720p' 'best'
+#   Note: 720p (best) is the 60fps stream. The 720p_alt is a lower framerate. 
+#   Fallback streams can be specified by using a comma-separated list, e.g.: 720p,540p,best
+#resolution=best
+
+# cdn: one of 'akamai' or 'level3'
+#cdn=akamai
+
+# Video player. One of vlc or mpv is recommended here. You can also set options for the player here as well.
+# Example: video_player=mpv --cache 153600
+#video_player=mpv
+
+# Audio player for audio-only feeds (not implemented yet):
+#audio_player=mpv
+
+# Use streamlink for highlights. If false will send url direct to video_player (no resolution selection)
+#streamlink_highlights=true
+# Passthrough the HLS stream to the player for highlights: allows seeking
+#streamlink_passthrough_highlights=true
+
+# Passthrough the HLS stream to the player for live/archived games. 
+# This shouldn't be required, and it bypasses any streamlink magic done to handle the HLS stream.
+#streamlink_passthrough=false
+
+# Turn on extra debugging information
+#debug=false
+

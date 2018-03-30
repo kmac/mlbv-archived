@@ -1,0 +1,7 @@
+/.idea
+/venv
+__pycache__
+*.json
+*.log
+*.m3u8
+*.pyc
