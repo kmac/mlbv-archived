@@ -146,8 +146,10 @@ class GameData:
             date_str = time.strftime("%Y-%m-%d")
 
         # https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2018-03-26&endDate=2018-03-26&hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg
-        url = ('{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&hydrate='
-               'schedule.teams,schedule.linescore,schedule.game.content.media.epg').format(config.CONFIG.api_url, date_str)
+        # hydrate = 'hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg'
+        hydrate = 'hydrate=broadcasts(all),game(content(all)),linescore,team'
+        # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
+        url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.api_url, date_str, hydrate)
 
         json_data = self._fetch_json_from_url(url, 'top', overwrite_json)
 

@@ -19,9 +19,9 @@ import mlbam.config as config
 
 LOG = logging.getLogger(__name__)
 
-BAM_SDK_VERSION="3.0"
+BAM_SDK_VERSION = "3.0"
 ACCESS_TOKEN_URL = "https://edge.bamgrid.com/token"
-API_KEY_URL= "https://www.mlb.com/tv/g490865/"
+API_KEY_URL = "https://www.mlb.com/tv/g490865/"
 API_KEY_RE = re.compile(r'"apiKey":"([^"]+)"')
 CLIENT_API_KEY_RE = re.compile(r'"clientApiKey":"([^"]+)"')
 
