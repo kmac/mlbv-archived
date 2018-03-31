@@ -24,11 +24,11 @@ LOG = logging.getLogger(__name__)
 
 def select_feed_for_team(game_rec, team_code, feedtype=None):
     found = False
-    if game_rec['away_abbrev'] == team_code:
+    if game_rec['away']['abbrev'] == team_code:
         found = True
         if feedtype is None and 'away' in game_rec['feed']:
             feedtype = 'away'  # assume user wants their team's feed
-    elif game_rec['home_abbrev'] == team_code:
+    elif game_rec['home']['abbrev'] == team_code:
         found = True
         if feedtype is None and 'home' in game_rec['feed']:
             feedtype = 'home'  # assume user wants their team's feed
@@ -50,7 +50,7 @@ def find_highlight_url_for_team(game_rec, feedtype):
         raise Exception('highlight: feedtype must be condensed or recap')
     if feedtype in game_rec['feed'] and 'playback_url' in game_rec['feed'][feedtype]:
         return game_rec['feed'][feedtype]['playback_url']
-    LOG.error('No playback_url found for {} vs {}'.format(game_rec['away_abbrev'], game_rec['home_abbrev']))
+    LOG.error('No playback_url found for {} vs {}'.format(game_rec['away']['abbrev'], game_rec['home']['abbrev']))
     return None
 
 
@@ -100,8 +100,8 @@ def fetch_stream(game_pk, content_id, event_id, get_session_key_func):
     }
 
     util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
-    r = requests.get(url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
-    json_source = r.json()
+    req = requests.get(url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
+    json_source = req.json()
 
     if json_source['status_code'] == 1:
         media_item = json_source['user_verified_event'][0]['user_verified_content'][0]['user_verified_media_item'][0]
@@ -138,8 +138,8 @@ def save_playlist_to_file(stream_url, media_auth):
         "Cookie": media_auth
     }
     util.log_http(stream_url, 'get', headers, sys._getframe().f_code.co_name)
-    r = requests.get(stream_url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
-    playlist = r.text
+    req = requests.get(stream_url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
+    playlist = req.text
     playlist_file = os.path.join(config.CONFIG.dir, 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
     LOG.debug('writing playlist to: {}'.format(playlist_file))
     with open(playlist_file, 'w') as f:
@@ -150,7 +150,7 @@ def save_playlist_to_file(stream_url, media_auth):
 def play_stream(game_data, team_to_play, feedtype, date_str, fetch, login_func, get_session_key_func):
     game_rec = None
     for game_pk in game_data:
-        if team_to_play in (game_data[game_pk]['away_abbrev'], game_data[game_pk]['home_abbrev']):
+        if team_to_play in (game_data[game_pk]['away']['abbrev'], game_data[game_pk]['home']['abbrev']):
             game_rec = game_data[game_pk]
             break
     if game_rec is None:
@@ -191,9 +191,9 @@ def play_stream(game_data, team_to_play, feedtype, date_str, fetch, login_func, 
 def get_fetch_filename(date_str, game_rec, feedtype, fetch):
     if fetch:
         if feedtype is None:
-            return '{}-{}-{}.mp4'.format(date_str, game_rec['away_abbrev'], game_rec['home_abbrev'])
+            return '{}-{}-{}.mp4'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'])
         else:
-            return '{}-{}-{}-{}.mp4'.format(date_str, game_rec['away_abbrev'], game_rec['home_abbrev'], feedtype)
+            return '{}-{}-{}-{}.mp4'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype)
     return None
 
 

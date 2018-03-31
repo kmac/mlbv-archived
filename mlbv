@@ -14,9 +14,9 @@ import sys
 from datetime import datetime
 from datetime import timedelta
 
-import mlbam.mlbauth as mlbauth
+import mlbam.auth as auth
 import mlbam.config as config
-import mlbam.mlbgamedata as mlbgamedata
+import mlbam.gamedata as gamedata
 import mlbam.stream as stream
 import mlbam.util as util
 
@@ -31,11 +31,10 @@ help_footer = """See README.md for full usage instructions and pre-requisites.
 Feed Identifiers
 You can use either the short form feed identifier or the long form:
 
-    {}""".format(mlbgamedata.get_feedtype_keystring())
+    {}""".format(gamedata.get_feedtype_keystring())
 
 
 def main(argv=None):
-    mlb_gamedata = mlbgamedata.MLBGameData()
 
     # using argparse (2.7+) https://docs.python.org/2/library/argparse.html
     parser = argparse.ArgumentParser(description=help_header, epilog=help_footer,
@@ -44,7 +43,7 @@ def main(argv=None):
     parser.add_argument("--days", type=int, default=1, help="Number of days to display")
     parser.add_argument("--tomorrow", "--tom", action="store_true", help="Use tomorrow's date")
     parser.add_argument("--yesterday", "--yes", action="store_true", help="Use yesterday's date")
-    parser.add_argument("-t", "--team", help="Play game for team, one of: {}".format(mlb_gamedata.TEAM_CODES))
+    parser.add_argument("-t", "--team", help="Play game for team, one of: {}".format(gamedata.TEAM_CODES))
     parser.add_argument("-f", "--feed",
                         help=("Feed type, either a live/archive game feed or highlight feed "
                               "(if available). Available feeds are shown in game list,"
@@ -75,6 +74,8 @@ def main(argv=None):
     util.init_logging(os.path.join(config.CONFIG.dir,
                                    os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.log'), True)
 
+    mlb_gamedata = gamedata.GameData()
+
     global LOG
     LOG = logging.getLogger(__name__)
 
@@ -88,7 +89,7 @@ def main(argv=None):
         config.CONFIG.parser['password'] = args.password
     if args.team:
         team_to_play = args.team.lower()
-        if team_to_play not in mlb_gamedata.TEAM_CODES:
+        if team_to_play not in gamedata.TEAM_CODES:
             # Issue #4 all-star game has funky team codes
             LOG.warn('Unexpected team code: {}'.format(team_to_play))
     if args.feed:
@@ -125,7 +126,7 @@ def main(argv=None):
         # nothing to stream
         return 0
 
-    return stream.play_stream(game_data, team_to_play, feedtype, args.date, args.fetch, mlbauth.mlb_login, mlbauth.get_session_key)
+    return stream.play_stream(game_data, team_to_play, feedtype, args.date, args.fetch, auth.login, auth.get_session_key)
 
 
 if __name__ == "__main__" or __name__ == "main":
