@@ -14,9 +14,8 @@ import urllib.parse
 
 from datetime import datetime
 
-import mlbam.auth as auth
-import mlbam.util as util
 import mlbam.config as config
+import mlbam.util as util
 
 
 LOG = logging.getLogger(__name__)
@@ -54,100 +53,130 @@ def find_highlight_url_for_team(game_rec, feedtype):
     return None
 
 
-def fetch_stream(game_pk, content_id, event_id, get_session_key_func):
-    """ game_pk: game_pk
-        event_id: eventId
-        content_id: mediaPlaybackId
-    """
-    stream_url = None
-    media_auth = None
+#     def get_stream(self, media_id):
+# 
+#         # try:
+#         #     media = next(self.get_media(game_id))
+#         # except StopIteration:
+#         #     logger.debug("no media for stream")
+#         #     return
+#         # media_id = media["mediaId"]
+# 
+#         headers = {
+#             "Authorization": self.access_token,
+#             "User-agent": USER_AGENT,
+#             "Accept": "application/vnd.media-service+json; version=1",
+#             "x-bamsdk-version": "3.0",
+#             "x-bamsdk-platform": PLATFORM,
+#             "origin": "https://www.mlb.com"
+#         }
+#         stream = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers).json()
+#         LOG.debug("stream response: %s", stream)
+#         if "errors" in stream and len(stream["errors"]):
+#             return None
+#         return stream
+# def lookup_stream_url(game_pk, content_id, event_id, mlb_session):
+#     """ game_pk: game_pk
+#         event_id: eventId
+#         content_id: mediaPlaybackId
+#     """
+#     stream_url = None
+#     media_auth = None
+# 
+#         headers = {
+#             "Authorization": self.access_token,
+#             "User-agent": USER_AGENT,
+#             "Accept": "application/vnd.media-service+json; version=1",
+#             "x-bamsdk-version": "3.0",
+#             "x-bamsdk-platform": PLATFORM,
+#             "origin": "https://www.mlb.com"
+#         }
+#         stream = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers).json()
+#         LOG.debug("stream response: %s", stream)
+#         if "errors" in stream and len(stream["errors"]):
+#             return None
+#         return stream
+#     session_key = get_session_key_func(game_pk, event_id, content_id, auth_cookie)
+#     if session_key is None:
+#         return stream_url, media_auth
+#     elif session_key == 'blackout':
+#         msg = ('The game you are trying to access is not currently available due to local '
+#                'or national blackout restrictions.\n'
+#                ' Full game archives will be available 48 hours after completion of this game.')
+#         LOG.info('Game Blacked Out: {}'.format(msg))
+#         return stream_url, media_auth
+# 
+#     url = config.CONFIG.mf_svc_url
+#     url += '?contentId=' + content_id
+#     url += '&playbackScenario=' + config.CONFIG.playback_scenario
+#     url += '&platform=' + config.CONFIG.platform
+#     url += '&sessionKey=' + urllib.parse.quote_plus(session_key)
+# 
+#     # Get user set CDN
+#     if config.CONFIG.parser['cdn'] == 'akamai':
+#         url += '&cdnName=MED2_AKAMAI_SECURE'
+#     elif config.CONFIG.parser['cdn'] == 'level3':
+#         url += '&cdnName=MED2_LEVEL3_SECURE'
+# 
+#     headers = {
+#         "Accept": "*/*",
+#         "Accept-Encoding": "identity",
+#         "Accept-Language": "en-US,en;q=0.8",
+#         "Connection": "keep-alive",
+#         "Authorization": auth_cookie,
+#         "User-Agent": config.CONFIG.svc_user_agent,
+#         "Proxy-Connection": "keep-alive"
+#     }
+# 
+#     util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
+#     req = requests.get(url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
+#     json_source = req.json()
+# 
+#     if json_source['status_code'] == 1:
+#         media_item = json_source['user_verified_event'][0]['user_verified_content'][0]['user_verified_media_item'][0]
+#         if media_item['blackout_status']['status'] == 'BlackedOutStatus':
+#             msg = ('The game you are trying to access is not currently available due to local '
+#                    'or national blackout restrictions.\n'
+#                    'Full game archives will be available 48 hours after completion of this game.')
+#             util.die('Game Blacked Out: {}'.format(msg))
+#         elif media_item['auth_status'] == 'NotAuthorizedStatus':
+#             msg = 'You do not have an active subscription. To access this content please purchase a subscription.'
+#             util.die('Account Not Authorized: {}'.format(msg))
+#         else:
+#             stream_url = media_item['url']
+#             media_auth = '{}={}'.format(str(json_source['session_info']['sessionAttributes'][0]['attributeName']),
+#                                         str(json_source['session_info']['sessionAttributes'][0]['attributeValue']))
+#             session_key = json_source['session_key']
+#             auth.update_session_key(session_key)
+#     else:
+#         msg = json_source['status_message']
+#         util.die('Error Fetching Stream: {}', msg)
+# 
+#     LOG.debug('lookup_stream_url stream_url: ' + stream_url)
+#     LOG.debug('lookup_stream_url media_auth: ' + media_auth)
+#     return stream_url, media_auth
 
-    auth_cookie = auth.get_auth_cookie()
-    if auth_cookie is None:
-        LOG.error("fetch_stream: not logged in")
-        return stream_url, media_auth
 
-    session_key = get_session_key_func(game_pk, event_id, content_id, auth_cookie)
-    if session_key is None:
-        return stream_url, media_auth
-    elif session_key == 'blackout':
-        msg = ('The game you are trying to access is not currently available due to local '
-               'or national blackout restrictions.\n'
-               ' Full game archives will be available 48 hours after completion of this game.')
-        LOG.info('Game Blacked Out: {}'.format(msg))
-        return stream_url, media_auth
-
-    url = config.CONFIG.mf_svc_url
-    url += '?contentId=' + content_id
-    url += '&playbackScenario=' + config.CONFIG.playback_scenario
-    url += '&platform=' + config.CONFIG.platform
-    url += '&sessionKey=' + urllib.parse.quote_plus(session_key)
-
-    # Get user set CDN
-    if config.CONFIG.parser['cdn'] == 'akamai':
-        url += '&cdnName=MED2_AKAMAI_SECURE'
-    elif config.CONFIG.parser['cdn'] == 'level3':
-        url += '&cdnName=MED2_LEVEL3_SECURE'
-
-    headers = {
-        "Accept": "*/*",
-        "Accept-Encoding": "identity",
-        "Accept-Language": "en-US,en;q=0.8",
-        "Connection": "keep-alive",
-        "Authorization": auth_cookie,
-        "User-Agent": config.CONFIG.svc_user_agent,
-        "Proxy-Connection": "keep-alive"
-    }
-
-    util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
-    req = requests.get(url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
-    json_source = req.json()
-
-    if json_source['status_code'] == 1:
-        media_item = json_source['user_verified_event'][0]['user_verified_content'][0]['user_verified_media_item'][0]
-        if media_item['blackout_status']['status'] == 'BlackedOutStatus':
-            msg = ('The game you are trying to access is not currently available due to local '
-                   'or national blackout restrictions.\n'
-                   'Full game archives will be available 48 hours after completion of this game.')
-            util.die('Game Blacked Out: {}'.format(msg))
-        elif media_item['auth_status'] == 'NotAuthorizedStatus':
-            msg = 'You do not have an active subscription. To access this content please purchase a subscription.'
-            util.die('Account Not Authorized: {}'.format(msg))
-        else:
-            stream_url = media_item['url']
-            media_auth = '{}={}'.format(str(json_source['session_info']['sessionAttributes'][0]['attributeName']),
-                                        str(json_source['session_info']['sessionAttributes'][0]['attributeValue']))
-            session_key = json_source['session_key']
-            auth.update_session_key(session_key)
-    else:
-        msg = json_source['status_message']
-        util.die('Error Fetching Stream: {}', msg)
-
-    LOG.debug('fetch_stream stream_url: ' + stream_url)
-    LOG.debug('fetch_stream media_auth: ' + media_auth)
-    return stream_url, media_auth
+#def save_playlist_to_file(stream_url, media_auth):
+#    headers = {
+#        "Accept": "*/*",
+#        "Accept-Encoding": "identity",
+#        "Accept-Language": "en-US,en;q=0.8",
+#        "Connection": "keep-alive",
+#        "User-Agent": config.CONFIG.svc_user_agent,
+#        "Cookie": media_auth
+#    }
+#    util.log_http(stream_url, 'get', headers, sys._getframe().f_code.co_name)
+#    req = requests.get(stream_url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
+#    playlist = req.text
+#    playlist_file = os.path.join(config.CONFIG.dir, 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
+#    LOG.debug('writing playlist to: {}'.format(playlist_file))
+#    with open(playlist_file, 'w') as f:
+#        f.write(playlist)
+#    LOG.debug('save_playlist_to_file: {}'.format(playlist))
 
 
-def save_playlist_to_file(stream_url, media_auth):
-    headers = {
-        "Accept": "*/*",
-        "Accept-Encoding": "identity",
-        "Accept-Language": "en-US,en;q=0.8",
-        "Connection": "keep-alive",
-        "User-Agent": config.CONFIG.svc_user_agent,
-        "Cookie": media_auth
-    }
-    util.log_http(stream_url, 'get', headers, sys._getframe().f_code.co_name)
-    req = requests.get(stream_url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
-    playlist = req.text
-    playlist_file = os.path.join(config.CONFIG.dir, 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
-    LOG.debug('writing playlist to: {}'.format(playlist_file))
-    with open(playlist_file, 'w') as f:
-        f.write(playlist)
-    LOG.debug('save_playlist_to_file: {}'.format(playlist))
-
-
-def play_stream(game_data, team_to_play, feedtype, date_str, fetch, login_func, get_session_key_func):
+def play_stream(game_data, team_to_play, feedtype, date_str, fetch):
     game_rec = None
     for game_pk in game_data:
         if team_to_play in (game_data[game_pk]['away']['abbrev'], game_data[game_pk]['home']['abbrev']):
@@ -165,22 +194,16 @@ def play_stream(game_data, team_to_play, feedtype, date_str, fetch, login_func, 
     else:
         # handle full game (live or archive)
         # this is the only feature requiring an authenticated session
-        auth_cookie = auth.get_auth_cookie()
-        if auth_cookie is None:
-            login_func()
-            # auth.login(config.CONFIG.parser['username'],
-            #            config.CONFIG.parser['password'],
-            #            config.CONFIG.parser.getboolean('use_rogers', False))
-        LOG.debug('Authorization cookie: {}'.format(auth.get_auth_cookie()))
+        import mlbam.session as session
+        mlb_session = session.MLBSession()
 
         media_playback_id, event_id = select_feed_for_team(game_rec, team_to_play, feedtype)
         if media_playback_id is not None:
-            stream_url, media_auth = fetch_stream(game_rec['game_pk'], media_playback_id, event_id, get_session_key_func)
+            stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
             if stream_url is not None:
                 if config.DEBUG:
-                    save_playlist_to_file(stream_url, media_auth)
-                streamlink(stream_url, media_auth,
-                           get_fetch_filename(date_str, game_rec, feedtype, fetch))
+                    mlb_session.save_playlist_to_file(stream_url)
+                streamlink(stream_url, mlb_session, get_fetch_filename(date_str, game_rec, feedtype, fetch))
             else:
                 LOG.error("No stream URL")
         else:
@@ -230,19 +253,27 @@ def streamlink_highlight(playback_url, fetch_filename):
     subprocess.run(streamlink_cmd)
 
 
-def streamlink(stream_url, media_auth, fetch_filename=None):
+def streamlink(stream_url, mlb_session, fetch_filename=None):
     LOG.debug("Stream url: " + stream_url)
-    auth_cookie_str = "Authorization=" + auth.get_auth_cookie()
-    media_auth_cookie_str = media_auth
-    user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_iphone
+    auth_cookie_str = "Authorization=" + mlb_session.access_token
+    # media_auth_cookie_str = access_token
+    #user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_iphone
+    user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_pc
 
     video_player = config.CONFIG.parser['video_player']
     streamlink_cmd = ["streamlink",
                       "--http-no-ssl-verify",
                       "--player-no-close",
-                      "--http-cookie", auth_cookie_str,
-                      "--http-cookie", media_auth_cookie_str,
-                      "--http-header", user_agent_hdr]
+                      "--http-header", user_agent_hdr,
+                      "--http-cookie", auth_cookie_str]
+                      # "--http-cookie", media_auth_cookie_str,
+
+    # include our cookies
+    cookie_dict = mlb_session.get_cookie_dict()
+    for cookie_name in cookie_dict:
+        streamlink_cmd.append("--http-cookie")
+        streamlink_cmd.append('{}={}'.format(cookie_name, cookie_dict[cookie_name]))
+
     if fetch_filename is not None:
         if os.path.exists(fetch_filename):
             # don't overwrite existing file - use a new name based on hour,minute

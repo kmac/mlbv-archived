@@ -30,17 +30,8 @@ FEEDTYPE_MAP = {
     'home': 'h',
     'french': 'fr',
     'national': 'nat',
-    'condensed': 'cnd',
-    'recap': 'rcp',
-    'audio-away': 'aud-a',
-    'audio-home': 'aud-h',
-}
-
-FEEDTYPE_MAP = {
-    'away': 'a',
-    'home': 'h',
-    'french': 'fr',
-    'national': 'nat',
+    'in_market_away': 'mkt_a',
+    'in_market_home': 'mkt_h',
     'condensed': 'cnd',
     'recap': 'rcp',
     'audio-away': 'aud-a',
@@ -168,68 +159,67 @@ class GameData:
 
             game_rec['abstractGameState'] = str(game['status']['abstractGameState'])  # Preview, Live, Final
             game_rec['codedGameState'] = str(game['status']['codedGameState'])  # is something like: F, O, C, I
-            game_rec['detailedState'] = str(game['status']['detailedState'])  # is something like: Scheduled, Live, Final, In Progress, Critical
+            # is something like: Scheduled, Live, Final, In Progress, Critical, Postponed:
+            game_rec['detailedState'] = str(game['status']['detailedState'])
             game_rec['doubleHeader'] = str(game['doubleHeader'])
             game_rec['mlbdate'] = datetime.strptime(str(game['gameDate']), "%Y-%m-%dT%H:%M:%SZ")
             game_rec['gamesInSeries'] = str(game['gamesInSeries'])
             game_rec['seriesGameNumber'] = str(game['seriesGameNumber'])
 
-            # Live game data for a given game
-            game_rec['link'] = str(game['link'])  # this is the link to the live game data
-            live_url = '{}{}'.format(config.CONFIG.api_url, game_rec['link'])
-            live_data = self._fetch_json_from_url(live_url, 'live', overwrite_json)
-
             game_rec['linescore'] = dict()
-            if 'currentInning' in live_data['liveData']['linescore']:
-                game_rec['linescore']['currentInning'] = str(live_data['liveData']['linescore']['currentInning'])
+            if 'linescore' in game:
+                if 'currentInning' in game['linescore']:
+                    game_rec['linescore']['currentInning'] = str(game['linescore']['currentInning'])
+                else:
+                    game_rec['linescore']['currentInningOrdinal'] = '0'
+                if 'currentInningOrdinal' in game['linescore']:
+                    game_rec['linescore']['currentInningOrdinal'] = str(game['linescore']['currentInningOrdinal'])
+                    if 'inningState' in game['linescore']:
+                        game_rec['linescore']['inningState'] = str(game['linescore']['inningState'])[:3]
+                    else:
+                        game_rec['linescore']['inningState'] = str(game['linescore']['inningHalf'])[:3]
+                else:
+                    game_rec['linescore']['currentInningOrdinal'] = 'Not Started'
+                    game_rec['linescore']['inningState'] = ''
             else:
-                game_rec['linescore']['currentInningOrdinal'] = '0'
-            if 'currentInningOrdinal' in live_data['liveData']['linescore']:
-                game_rec['linescore']['currentInningOrdinal'] = str(live_data['liveData']['linescore']['currentInningOrdinal'])
-                game_rec['linescore']['inningState'] = str(live_data['liveData']['linescore']['inningState'])[:3]
-            else:
-                game_rec['linescore']['currentInningOrdinal'] = 'Not Started'
+                game_rec['linescore']['currentInning'] = 'n/a'
                 game_rec['linescore']['inningState'] = ''
-
-            game_rec['flags'] = dict()
-            for attr in ('perfectGame', 'noHitter'):
-                if attr in live_data['gameData']['flags']:
-                    game_rec['flags'][attr] = str(live_data['gameData']['flags'][attr])
+                game_rec['linescore']['currentInningOrdinal'] = game_rec['detailedState']
 
             for teamtype in ('home', 'away'):
-                # pprint.pprint(live_data['gameData']['teams'])
+                # pprint.pprint(game['teams'])
                 game_rec[teamtype] = dict()
                 # seems to be two different formats for away/home team info(!)
-                if 'name' in live_data['gameData']['teams'][teamtype] and 'abbrev' in live_data['gameData']['teams'][teamtype]['name']:
+                if 'name' in game['teams'][teamtype]['team'] and 'abbrev' in game['teams'][teamtype]['team']['name']:
                     game_rec[teamtype] = {
-                        'abbrev':   str(live_data['gameData']['teams'][teamtype]['name']['abbrev']).lower(),
-                        'display':  str(live_data['gameData']['teams'][teamtype]['name']['display']),
-                        'brief':    str(live_data['gameData']['teams'][teamtype]['name']['brief']),
-                        'full':     str(live_data['gameData']['teams'][teamtype]['name']['full']),
-                        'league':   str(live_data['gameData']['teams'][teamtype]['league']),
-                        'division': str(live_data['gameData']['teams'][teamtype]['division']),
+                        'abbrev':   str(game['teams'][teamtype]['team']['name']['abbrev']).lower(),
+                        'display':  str(game['teams'][teamtype]['team']['name']['display']),
+                        'brief':    str(game['teams'][teamtype]['team']['name']['brief']),
+                        'full':     str(game['teams'][teamtype]['team']['name']['full']),
+                        'league':   str(game['teams'][teamtype]['league']),
+                        'division': str(game['teams'][teamtype]['division']),
                     }
-                elif 'abbreviation' in live_data['gameData']['teams'][teamtype]:
+                elif 'abbreviation' in game['teams'][teamtype]['team']:
                     game_rec[teamtype] = {
-                        'abbrev':   str(live_data['gameData']['teams'][teamtype]['abbreviation']).lower(),
-                        'display':  str(live_data['gameData']['teams'][teamtype]['shortName']),
-                        'brief':    str(live_data['gameData']['teams'][teamtype]['teamName']),
-                        'full':     str(live_data['gameData']['teams'][teamtype]['name']),
+                        'abbrev':   str(game['teams'][teamtype]['team']['abbreviation']).lower(),
+                        'display':  str(game['teams'][teamtype]['team']['shortName']),
+                        'brief':    str(game['teams'][teamtype]['team']['teamName']),
+                        'full':     str(game['teams'][teamtype]['team']['name']),
                         'league':   'n/a',
                         'division': 'n/a',
                     }
                 else:
-                    LOG.error("Unexpected live data['gameData']['teams'] for teamtype=%s", teamtype)
-                    pprint.pprint(live_data['gameData']['teams'][teamtype])
+                    LOG.error("Unexpected game['teams'] for teamtype=%s", teamtype)
+                    pprint.pprint(game['teams'][teamtype])
                     game_rec[teamtype] = {
                         'abbrev': 'n/a', 'display': 'n/a', 'brief': 'n/a', 'full': 'n/a', 'league': 'n/a', 'division': 'n/a',
                     }
 
-                if teamtype in live_data['liveData']['linescore']:
+                if 'linescore' in game and teamtype in game['linescore']['teams'] and 'runs' in game['linescore']['teams'][teamtype]:
                     game_rec['linescore'][teamtype] = {
-                        'runs':  str(live_data['liveData']['linescore'][teamtype]['runs']),
-                        'hits':  str(live_data['liveData']['linescore'][teamtype]['hits']),
-                        'errors': str(live_data['liveData']['linescore'][teamtype]['errors']),
+                        'runs':  str(game['linescore']['teams'][teamtype]['runs']),
+                        'hits':  str(game['linescore']['teams'][teamtype]['hits']),
+                        'errors': str(game['linescore']['teams'][teamtype]['errors']),
                     }
                 else:
                     game_rec['linescore'][teamtype] = {'runs':  '0', 'hits':  '0', 'errors': '0'}
@@ -240,15 +230,9 @@ class GameData:
             if game_rec['abstractGameState'] == 'Preview':
                 continue
 
-            # This gives the media content for a given game
-            # ignore the link for now, focus on getting the content_link going
-            game_rec['content_link'] = str(game['content']['link'])  # this is the link to the content
-            content_url = '{}{}'.format(config.CONFIG.api_url, game_rec['content_link'])
-            content_json = self._fetch_json_from_url(content_url, 'content', overwrite_json)
-
             # epg
-            if 'media' in content_json and 'epg' in content_json['media']:
-                for media in content_json['media']['epg']:
+            if 'media' in game['content'] and 'epg' in game['content']['media']:
+                for media in game['content']['media']['epg']:
                     if media['title'] == 'MLBTV':
                         for stream in media['items']:
                             if stream['mediaFeedType'] != 'COMPOSITE' and stream['mediaFeedType'] != 'ISO':
@@ -257,21 +241,22 @@ class GameData:
                                 game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
                                 game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
                                 game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
-                    elif media['title'] == 'Extended Highlights':
+                for media in game['content']['media']['epgAlternate']:
+                    if media['title'] == 'Extended Highlights':
                         feedtype = 'condensed'
                         if len(media['items']) > 0:
                             game_rec['feed'][feedtype] = dict()
                             stream = media['items'][0]
-                            game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
+                            game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
                             for playback_item in stream['playbacks']:
                                 if playback_item['name'] == config.CONFIG.playback_scenario:
                                     game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
-                    elif media['title'] == 'Recap':
+                    elif media['title'] == 'Daily Recap':
                         feedtype = 'recap'
                         if len(media['items']) > 0:
                             game_rec['feed'][feedtype] = dict()
                             stream = media['items'][0]
-                            game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
+                            game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
                             for playback_item in stream['playbacks']:
                                 if playback_item['name'] == config.CONFIG.playback_scenario:
                                     game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
@@ -282,11 +267,11 @@ class GameData:
                     #         game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
                     #         game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
                     #         game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
+
         return game_data
 
     def fetch_game_data(self, game_date, num_days=1, show_games=True):
-        """ https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2018-03-26&endDate=2018-03-26&
-                 hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg
+        """
         """
         game_data_list = list()
         show_scores = config.CONFIG.parser.getboolean('scores')
@@ -370,8 +355,11 @@ class GameData:
                     if int(game_rec['linescore']['currentInning']) != 9:
                         game_state += '({})'.format(game_rec['linescore']['currentInning'])
                 else:
-                    game_state = '{} {}'.format(game_rec['linescore']['inningState'].title(),
-                                                game_rec['linescore']['currentInningOrdinal'])
+                    if game_rec['linescore']['inningState'] != '':
+                        game_state = '{} {}'.format(game_rec['linescore']['inningState'].title(),
+                                                    game_rec['linescore']['currentInningOrdinal'])
+                    else:
+                        game_state = game_rec['linescore']['currentInningOrdinal']
             else:
                 game_state = game_rec['abstractGameState']
                 if 'In Progress - ' in game_rec['detailedState']:

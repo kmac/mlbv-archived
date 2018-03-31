@@ -126,7 +126,7 @@ def main(argv=None):
         # nothing to stream
         return 0
 
-    return stream.play_stream(game_data, team_to_play, feedtype, args.date, args.fetch, auth.login, auth.get_session_key)
+    return stream.play_stream(game_data, team_to_play, feedtype, args.date, args.fetch)
 
 
 if __name__ == "__main__" or __name__ == "main":

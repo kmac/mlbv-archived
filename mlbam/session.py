@@ -13,6 +13,7 @@ import os
 import pytz
 import re
 import requests
+import time
 
 import http.cookiejar
 
@@ -96,7 +97,10 @@ class MLBSession(object):
         self.session.cookies.save(COOKIE_FILE)
 
     def login(self):
-        LOG.debug("logging in")
+        if self.is_logged_in():
+            LOG.debug("already logged in")
+            return
+
         initial_url = "https://secure.mlb.com/enterworkflow.do?flowId=registration.wizard&c_id=mlb"
         # res = self.session.get(initial_url)
         # if not res.status_code == 200:
@@ -108,10 +112,7 @@ class MLBSession(object):
             "password": config.CONFIG.parser['password'],
             "submitButton": ""
         }
-        if self.is_logged_in():
-            LOG.debug("already logged in")
-            return
-        LOG.debug("logging in")
+        LOG.info("Logging in")
 
         resp = self.session.post("https://securea.mlb.com/authenticate.do",
                                  data=data,
@@ -131,17 +132,21 @@ class MLBSession(object):
         data = lxml.etree.parse(io.StringIO(content), parser)
         if "Login/Register" in data.xpath(".//title")[0].text:
             return False
+        return True
+
+    def get_cookie_dict(self):
+        return requests.utils.dict_from_cookiejar(self.session.cookies)
 
     def get_cookie(self, name):
-        return requests.utils.dict_from_cookiejar(self.session.cookies).get(name)
+        return self.get_cookie_dict().get(name)
 
     @property
     def ipid(self):
-        return self.get_cookie("ipid")
+        return self.get_cookie('ipid')
 
     @property
     def fingerprint(self):
-        return self.get_cookie("fprt")
+        return self.get_cookie('fprt')
 
     @property
     def api_key(self):
@@ -210,10 +215,9 @@ class MLBSession(object):
                 # Clear token and then try to get a new access_token
                 self.token = None
                 self._state['access_token'], self.access_token_expiry = self._get_access_token()
-
-        self.save()
-        LOG.debug("access_token: %s", self._state.access_token)
-        return self._state.access_token
+            self.save()
+            LOG.debug("access_token: %s", self._state['access_token'])
+        return self._state['access_token']
 
     def _get_access_token(self):
         headers = {
@@ -239,9 +243,44 @@ class MLBSession(object):
 
         return token_response["access_token"], token_expiry
 
+    def lookup_stream_url(self, game_pk, media_id):
+        """ game_pk: game_pk
+            media_id: mediaPlaybackId
+        """
+        stream_url = None
+        headers = {
+            "Authorization": self.access_token,
+            "User-agent": USER_AGENT,
+            "Accept": "application/vnd.media-service+json; version=1",
+            "x-bamsdk-version": "3.0",
+            "x-bamsdk-platform": PLATFORM,
+            "origin": "https://www.mlb.com"
+        }
+        response = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers)
+        stream = response.json()
+        LOG.debug("lookup_stream_url, stream response: %s", stream)
+        stream_url = stream['stream']['complete']
+        if "errors" in stream and len(stream["errors"]):
+            return None
+        return stream_url
 
-
-
+    def save_playlist_to_file(self, stream_url):
+        headers = {
+            "Accept": "*/*",
+            "Accept-Encoding": "identity",
+            "Accept-Language": "en-US,en;q=0.8",
+            "Connection": "keep-alive",
+            "User-Agent": USER_AGENT,
+            "Cookie": self.access_token
+        }
+        # util.log_http(stream_url, 'get', headers, sys._getframe().f_code.co_name)
+        resp = self.session.get(stream_url, headers=headers)
+        playlist = resp.text
+        playlist_file = os.path.join(config.CONFIG.dir, 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
+        LOG.debug('writing playlist to: {}'.format(playlist_file))
+        with open(playlist_file, 'w') as f:
+            f.write(playlist)
+        LOG.debug('save_playlist_to_file: {}'.format(playlist))
 
 # 
 # 
