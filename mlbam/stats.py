@@ -6,10 +6,13 @@ Help: see https://github.com/dword4/nhlapi#standing
 
 import logging
 import os
-import requests
 import sys
+import time
 
-import mlbam.auth as auth
+from datetime import datetime
+
+import requests
+
 import mlbam.util as util
 import mlbam.config as config
 
@@ -23,10 +26,10 @@ LEAGUE_ID_MAP = {
     'nl': 104,
 }
 
-#https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2017&standingsTypes=regularSeason&hydrate=division,conference,sport,league,team
-#https://statsapi.mlb.com/api/v1/standings/regularSeason?leagueId=103,104&season=2018
+# https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2017&standingsTypes=regularSeason&hydrate=division,conference,sport,league,team
+# https://statsapi.mlb.com/api/v1/standings/regularSeason?leagueId=103,104&season=2018
 STANDINGS_URL = ('https://statsapi.mlb.com/api/v1/standings/{standings_type}?'
-                 'leagueId={league_ids}&season={season}&hydrate=division,conference,sport,league,team')
+                 'leagueId={league_ids}&season={season}&date={date}&hydrate=division,conference,sport,league,team')
 
 # from https://statsapi.mlb.com/api/v1/standingsTypes
 STANDINGS_TYPES = ('regularSeason', 'wildCard', 'divisionLeaders', 'wildCardWithLeaders',
@@ -56,30 +59,33 @@ def _match(input_option, full_option, min_chars=2):
     return input_option[:num_chars] == full_option[:num_chars]
 
 
-def get_standings(standings_option='all'):
+def get_standings(standings_option='all', date_str=None):
+    if date_str is None:
+        date_str = time.strftime("%Y-%m-%d")
     if _match(standings_option, 'all') or _match(standings_option, 'division'):
-        display_standings('byDivision', 'Division', header_tags=('division' ,))
+        display_standings('byDivision', 'Division', date_str, header_tags=('division',))
         _match(standings_option, 'all') and print('')
     if _match(standings_option, 'all') or _match(standings_option, 'wildcard'):
-        display_standings('wildCard', 'Wildcard', rank_tag='wildCardRank', header_tags=('league', ))
+        display_standings('wildCard', 'Wildcard', date_str, rank_tag='wildCardRank', header_tags=('league', ))
         _match(standings_option, 'all') and print('')
     if _match(standings_option, 'all') or _match(standings_option, 'overall') \
             or _match(standings_option, 'league') or _match(standings_option, 'conference'):
-        display_standings('byLeague', 'League', rank_tag='leagueRank', header_tags=('league', ))
+        display_standings('byLeague', 'League', date_str, rank_tag='leagueRank', header_tags=('league', ))
         _match(standings_option, 'all') and print('')
 
     if _match(standings_option, 'playoff') or _match(standings_option, 'postseason'):
-        display_standings('postseason', 'Playoffs')
+        display_standings('postseason', 'Playoffs', date_str)
     if _match(standings_option, 'preseason'):
-        display_standings('preseason', 'Preseason')
+        display_standings('preseason', 'Preseason', date_str)
 
 
-def display_standings(standings_type='byDivision', display_title='', rank_tag='divisionRank', header_tags=('league', 'division')):
+def display_standings(standings_type, display_title, date_str, rank_tag='divisionRank', header_tags=('league', 'division')):
     headers = {
         'User-Agent': config.CONFIG.ua_iphone,
         'Connection': 'close'
     }
-    url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season='2018')
+    season_str = datetime.strftime(datetime.strptime(date_str, "%Y-%m-%d"), "%Y")
+    url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season=season_str, date=date_str)
     util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
     resp = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
 
