@@ -90,10 +90,11 @@ def display_standings(standings_type='byDivision', display_title='', rank_tag='d
 
     outl = list()
     if display_title != '':
-        # outl.append('   ========  {}  ========'.format(display_title))
         outl.append('{color_on}{name:22}\t{win:>3} {loss:>3} {pct:<5} {gb:<4} {wgb:<4} {streak}{color_off}'
-                    .format(color_on='', name='   ========  {}  ========'.format(display_title),
-                            win='W', loss='L', pct='PCT', gb='GB', wgb='WGB', streak='Streak', color_off=''))
+                    .format(color_on=util.ANSI_CONTROL_CODES['bold'],
+                            name='   ======  {}  ======'.format(display_title),
+                            win='W', loss='L', pct='PCT', gb='GB', wgb='WGB', streak='Streak',
+                            color_off=util.ANSI_CONTROL_CODES['reset']))
     needs_line_hr = False
     for record in json_data['records']:
         if standings_type == record['standingsType']:
