@@ -1,10 +1,20 @@
-mlbv - MLB viewer
-=================
+mlbv - MLB stream viewer
+========================
 
 `mlbv` is a command-line interface to the MLB.tv service. It's primary purpose is to allow you to view game
 streams on linux, including live streams, with a valid MLB tv subscription.  It also allows you to view game
 status, results and schedules, stream highlights (recap and condensed games), and filter results based on
 favourite teams.
+
+Features:
+
+* stream or record live or archived MLB games (requires MLB.tv subscription)
+* show completed game highlights (condensed or recap) (no subscription required)
+* display game schedules for given day or number of days
+    - option to show or hide scores
+* filter display based on favourite teams
+* show standings
+
 
 This project is inspired from the [MLBviewer](https://github.com/sdelafond/mlbviewer) project, although it
 differs in that it does not provide an interactive interface. It strictly command-line based, although it does
@@ -38,6 +48,48 @@ Live Games:                                                      |       |      
 20:10: Colorado (COL) at Arizona (ARI)                           |       |           |
 20:40: Milwaukee (MIL) at San Diego (SD)                         |       |           |
 21:10: San Francisco (SF) at LA Dodgers (LAD)                    |       |           |
+````
+
+Sample standings output:
+
+````
+   ========  Division  ========   W   L PCT   GB   WGB  Streak
+   --- American League West ---
+1  Houston Astros                 2   1 .667  -    -    [W1]
+2  Los Angeles Angels             2   1 .667  -    -    [W2]
+3  Seattle Mariners               1   1 .500  0.5  0.5  [L1]
+4  Oakland Athletics              1   2 .333  1.0  1.0  [L2]
+5  Texas Rangers                  1   2 .333  1.0  1.0  [L1]
+   --- American League East ---
+1  Boston Red Sox                 2   1 .667  -    -    [W2]
+2  New York Yankees               2   1 .667  -    -    [L1]
+3  Baltimore Orioles              1   1 .500  0.5  0.5  [L1]
+4  Tampa Bay Rays                 1   2 .333  1.0  1.0  [L2]
+5  Toronto Blue Jays              1   2 .333  1.0  1.0  [W1]
+   --- American League Central ---
+1  Chicago White Sox              2   0 1.000 -    -    [W2]
+2  Cleveland Indians              1   1 .500  1.0  0.5  [W1]
+3  Minnesota Twins                1   1 .500  1.0  0.5  [W1]
+4  Detroit Tigers                 0   1 .000  1.5  1.0  [L1]
+5  Kansas City Royals             0   2 .000  2.0  1.5  [L2]
+   --- National League Central ---
+1  Milwaukee Brewers              3   0 1.000 -    -    [W3]
+2  Pittsburgh Pirates             1   0 1.000 1.0  -    [W1]
+3  Chicago Cubs                   2   1 .667  1.0  -    [W1]
+4  Cincinnati Reds                0   2 .000  2.5  1.5  [L2]
+5  St. Louis Cardinals            0   2 .000  2.5  1.5  [L2]
+   --- National League West ---
+1  Arizona Diamondbacks           2   1 .667  -    -    [L1]
+2  San Francisco Giants           2   1 .667  -    -    [L1]
+3  Colorado Rockies               1   2 .333  1.0  1.0  [W1]
+4  Los Angeles Dodgers            1   2 .333  1.0  1.0  [W1]
+5  San Diego Padres               0   3 .000  2.0  2.0  [L3]
+   --- National League East ---
+1  New York Mets                  2   0 1.000 -    +0.5 [W2]
+2  Washington Nationals           2   0 1.000 -    +0.5 [W2]
+3  Atlanta Braves                 2   1 .667  0.5  -    [W1]
+4  Miami Marlins                  1   2 .333  1.5  1.0  [L1]
+5  Philadelphia Phillies          1   2 .333  1.5  1.0  [L1]
 ````
 
 This project incorporates some code modified from the following projects: 
@@ -106,6 +158,14 @@ Help is available by running:
 Running `mlbv` without options shows you the status of today's games, including scores unless you've
 configured to hide scores by default.
 
+#### Usage note: shortening option arguments:
+
+In general, you can shorten the long option names down to something unique. 
+
+For example, rather than having to type `--yesterday` you can shorten it right down to `--y`.
+However, you can one shorten `--tomorrow` down to `--to` since there is also the `--team` option which matches
+up to `--t`.
+
 
 ### Playing a Live or Archived Game
 
@@ -162,7 +222,28 @@ For listing game data only (doesn't make sense for viewing), you can specify a n
 favourite team(s).
 
 
-### Examples
+### Standings
+
+You can display standings via the `--standings` option. This option displays the given standings category then
+exits.
+
+Standings categories:
+
+* all
+* division
+* conference
+* wildcard
+* league
+* postseason
+* preseason
+
+By default, the division standings are displayed.
+
+You don't have to specify the full standings category, it will match any substring given. e.g. `--standings d`
+will match division or `--standings wild` will match wildcard.
+
+
+## Examples
 
 Note: the common options have both short and long options. Both are shown in these examples.
 
@@ -170,14 +251,14 @@ Note: the common options have both short and long options. Both are shown in the
 #### Live Games
 
     mlbv --team tor               # play the live Jays game. The feed is chosen based on Jays being home vs. away
-    nhltv -t tor --feed national  # play live game, choose the national feed
-    nhltv -t tor --feed away      # play live game, choose the away feed. If the Jays are the home team this would choose
+    mlbv -t tor --feed national  # play live game, choose the national feed
+    mlbv -t tor --feed away      # play live game, choose the away feed. If the Jays are the home team this would choose
                                   # the opponent's feed
 
 #### Archived Games
 
     mlbv --yesterday -t tor         # play yesterday's Jays game
-    nhltv --date 2018-03-31 -t tor  # watch the Jays beat the Yankees #spoiler
+    mlbv --date 2018-03-31 -t tor  # watch the Jays beat the Yankees #spoiler
 
 #### Highlights
 
@@ -198,4 +279,12 @@ In these examples the game is save to a .mp4 file in the current directory.
     mlbv --days 7           # show schedule for upcoming week
     mlbv --days 7 --filter  # show schedule for upcoming week, filtered on favourite teams (from config file)
     mlbv --days 7 --filter --favs 'tor,wsh' # show schedule filtered on favourite teams (from option)
+
+#### Standings
+
+    mlbv --standings              # display division standings
+    mlbv --standings conference   # display conference standings
+    mlbv --standings conf         # display conference standings
+    mlbv --standings league       # display overall league standings
+    mlbv --standings all          # display all regular season standings categories
 

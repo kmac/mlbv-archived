@@ -59,6 +59,11 @@ def convert_time_to_local(d):
     return utc.astimezone(to_zone).strftime('%H:%M')
 
 
+def get_csv_list(csv_string):
+    """Returns a normalized list from a csv string."""
+    return [l.strip() for l in csv_string.split(',')]
+
+
 def log_http(url, request_type=None, headers=None, method_name=None):
     """Helper function to log http requests."""
     msg = ''

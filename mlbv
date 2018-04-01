@@ -18,6 +18,7 @@ from datetime import timedelta
 
 import mlbam.config as config
 import mlbam.gamedata as gamedata
+import mlbam.stats as stats
 import mlbam.stream as stream
 import mlbam.util as util
 
@@ -42,8 +43,8 @@ def main(argv=None):
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-d", "--date", help="Display games for date. Format: yyyy-mm-dd")
     parser.add_argument("--days", type=int, default=1, help="Number of days to display")
-    parser.add_argument("--tomorrow", "--tom", action="store_true", help="Use tomorrow's date")
-    parser.add_argument("--yesterday", "--yes", action="store_true", help="Use yesterday's date")
+    parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
+    parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
     parser.add_argument("-t", "--team", help="Play game for team, one of: {}".format(gamedata.TEAM_CODES))
     parser.add_argument("-f", "--feed",
                         help=("Feed type, either a live/archive game feed or highlight feed "
@@ -52,7 +53,7 @@ def main(argv=None):
     parser.add_argument("--favs", help=("Favourite teams, a comma-separated list of favourite teams "
                                         "(normally specified in config file)"))
     parser.add_argument("--filter", action="store_true", help="Filter output for favourite teams only")
-    parser.add_argument("-r", "--resolution",
+    parser.add_argument("-r", "--resolution", metavar='RES',
                         help="Stream resolution for streamlink, one of: {}".format(config.BANDWIDTH_CHOICES))
     parser.add_argument("-s", "--scores", action="store_true",
                         help="Show scores (default off; overrides config file)")
@@ -61,6 +62,12 @@ def main(argv=None):
     parser.add_argument("--username", help="MLB.tv username. Required for live/archived games.")
     parser.add_argument("--password", help="MLB.tv password. Required for live/archived games.")
     parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
+    parser.add_argument("--standings", nargs='?', const='division', metavar='CATEGORY',
+                        help=("[CATEGORY] is one of: '" + ', '.join(stats.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
+                              "Display standings. This option will display selected standings category, then exit. "
+                              "The standings category can be shortened down to one character (all matching "
+                              "categories will be included), e.g. 'div'")
+                        )
     parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity")
     parser.add_argument("-D", "--debug", action="store_true", help="Turn on debug output")
     args = parser.parse_args()
@@ -88,6 +95,9 @@ def main(argv=None):
         config.CONFIG.parser['username'] = args.username
     if args.password:
         config.CONFIG.parser['password'] = args.password
+    if args.standings:
+        stats.get_standings(args.standings)
+        return 0
     if args.team:
         team_to_play = args.team.lower()
         if team_to_play not in gamedata.TEAM_CODES:

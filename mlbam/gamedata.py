@@ -342,7 +342,7 @@ class GameData:
         game_state = ''
         game_state_color_on = color_on
         game_state_color_off = color_off
-        LOG.debug("Checking game state: %s, %s", game_rec['abstractGameState'], game_rec['detailedState'])
+        # LOG.debug("Checking game state: %s, %s", game_rec['abstractGameState'], game_rec['detailedState'])
         if game_rec['abstractGameState'] not in ('Preview', ):
             if show_scores:
                 if 'Critical' in game_rec['detailedState']:
