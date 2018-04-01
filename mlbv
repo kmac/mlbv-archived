@@ -4,6 +4,8 @@ This project provides a CLI interface into streaming MLB games from MLB.com
 
 Links: http://statsapi.mlb.com/docs/
 
+https://github.com/tonycpsu/mlbstreamer - a similar project
+
 """
 
 import argparse
@@ -14,7 +16,6 @@ import sys
 from datetime import datetime
 from datetime import timedelta
 
-import mlbam.auth as auth
 import mlbam.config as config
 import mlbam.gamedata as gamedata
 import mlbam.stream as stream
@@ -24,9 +25,9 @@ import mlbam.util as util
 LOG = None  # initialized in init_logging
 
 
-help_header = """MLB game tracker and stream viewer.
+HELP_HEADER = """MLB game tracker and stream viewer.
 """
-help_footer = """See README.md for full usage instructions and pre-requisites.
+HELP_FOOTER = """See README.md for full usage instructions and pre-requisites.
 
 Feed Identifiers
 You can use either the short form feed identifier or the long form:
@@ -37,7 +38,7 @@ You can use either the short form feed identifier or the long form:
 def main(argv=None):
 
     # using argparse (2.7+) https://docs.python.org/2/library/argparse.html
-    parser = argparse.ArgumentParser(description=help_header, epilog=help_footer,
+    parser = argparse.ArgumentParser(description=HELP_HEADER, epilog=HELP_FOOTER,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-d", "--date", help="Display games for date. Format: yyyy-mm-dd")
     parser.add_argument("--days", type=int, default=1, help="Number of days to display")

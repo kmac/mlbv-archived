@@ -19,7 +19,7 @@ condensed games.
 Sample console output:
 
 ````
-2018-03-31                                                | Score |   State   | Feeds
+       2018-03-31                                                | Score |   State   | Feeds
 -----------------------------------------------------------------|-------|-----------|--------------
 Live Games:                                                      |       |           |
 16:05: Houston (HOU) at Texas (TEX)                              |  9-3  |   End 9th | a/h/mkt_a
@@ -42,7 +42,8 @@ Live Games:                                                      |       |      
 
 This project incorporates some code modified from the following projects: 
 
-* [mlbstreamer](https://github.com/tonycpsu/mlbstreamer)
+* [mlbstreamer](https://github.com/tonycpsu/mlbstreamer): a similar project. 
+    - Session authentication code is taken shamelessly from this project.
 * [Kodi plugin.video.mlbtv](https://github.com/eracknaphobia/plugin.video.mlbtv)
 
 
@@ -55,6 +56,7 @@ This project incorporates some code modified from the following projects:
 * python modules:
     - [requests](http://python-requests.org/) module 
     - [python-dateutil](https://dateutil.readthedocs.io/en/stable/) module
+    - [python-lxml](http://lxml.de/) module
 * [streamlink](https://streamlink.github.io/)
 * a video player. Either `vlc` or `mpv` is recommended.
 
@@ -65,6 +67,7 @@ Install via `pip` (preferably using virtualenv):
 
     pip install requests
     pip install python-dateutil
+    pip install python-lxml
 
 This software is tested under linux. It should work under Windows or Mac with the pre-requisites installed, but may require minor tweaks.
 

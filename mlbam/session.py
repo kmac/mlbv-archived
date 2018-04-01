@@ -1,7 +1,8 @@
 """
 This is shamelessly taken from mlbstreamer https://github.com/tonycpsu/mlbstreamer
-
-Code is modified somewhat arbitrarily. Changed to reduce some imports, and some just to simplify for my own understanding.
+because I didn't want to reinvent the login/auth/cookie management
+(code is modified somewhat arbitrarily. Changed to reduce some imports, and some just to simplify for my own understanding.)
+Thanks tonycpsu!
 
 """
 import datetime
