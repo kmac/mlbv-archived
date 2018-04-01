@@ -80,11 +80,14 @@ def play_stream(game_data, team_to_play, feedtype, date_str, fetch, wait_for_sta
         mlb_session = session.MLBSession()
 
         if wait_for_start and not _has_game_started(game_rec['mlbdate']):
-            LOG.debug('Waiting for game to start ...')
-            print('Waiting for game to start ', end='', flush=True)
+            LOG.info('Waiting for game to start. Local start time is ' + util.convert_time_to_local(game_rec['mlbdate']))
+            print('Use Ctrl-c to quit .', end='', flush=True)
+            count = 0
             while not _has_game_started(game_rec['mlbdate']):
-                time.sleep(60)
-                print('.', end='', flush=True)
+                time.sleep(10)
+                count += 1
+                if count % 6 == 0:
+                    print('.', end='', flush=True)
 
         media_playback_id, event_id = select_feed_for_team(game_rec, team_to_play, feedtype)
         if media_playback_id is not None:
