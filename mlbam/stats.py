@@ -51,7 +51,9 @@ TEAMS_TO_FAVS = {
 
 
 def _is_fav(long_team_name):
-    return TEAMS_TO_FAVS[long_team_name] in util.get_csv_list(config.CONFIG.parser['favs'])
+    if long_team_name in TEAMS_TO_FAVS.keys():
+        return TEAMS_TO_FAVS[long_team_name] in util.get_csv_list(config.CONFIG.parser['favs'])
+    return False
 
 
 def _match(input_option, full_option, min_chars=2):
