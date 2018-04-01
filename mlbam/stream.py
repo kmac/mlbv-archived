@@ -13,12 +13,17 @@ import urllib.error
 import urllib.parse
 
 from datetime import datetime
+from dateutil import tz
 
 import mlbam.config as config
 import mlbam.util as util
 
 
 LOG = logging.getLogger(__name__)
+
+
+def _has_game_started(start_time_utc):
+    return start_time_utc.replace(tzinfo=tz.tzutc()) < datetime.now(tz.tzutc())
 
 
 def select_feed_for_team(game_rec, team_code, feedtype=None):
@@ -53,7 +58,7 @@ def find_highlight_url_for_team(game_rec, feedtype):
     return None
 
 
-def play_stream(game_data, team_to_play, feedtype, date_str, fetch):
+def play_stream(game_data, team_to_play, feedtype, date_str, fetch, wait_for_start):
     game_rec = None
     for game_pk in game_data:
         if team_to_play in (game_data[game_pk]['away']['abbrev'], game_data[game_pk]['home']['abbrev']):
@@ -73,6 +78,13 @@ def play_stream(game_data, team_to_play, feedtype, date_str, fetch):
         # this is the only feature requiring an authenticated session
         import mlbam.session as session
         mlb_session = session.MLBSession()
+
+        if wait_for_start and not _has_game_started(game_rec['mlbdate']):
+            LOG.debug('Waiting for game to start ...')
+            print('Waiting for game to start ', end='', flush=True)
+            while not _has_game_started(game_rec['mlbdate']):
+                time.sleep(60)
+                print('.', end='', flush=True)
 
         media_playback_id, event_id = select_feed_for_team(game_rec, team_to_play, feedtype)
         if media_playback_id is not None:
