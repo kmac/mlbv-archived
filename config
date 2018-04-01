@@ -7,19 +7,15 @@
 # used. The default value is shown commented out.
 # To change a value, copy the line, uncomment it, and provide your own value.
 
-
 # Credentials. Fill out your username and password here. Or provide them via command-line options.
-# username=<Put your username here>
-# password=<Put your password here>
-
-# This flag specifies whether to sign in via Rogers account or via NHL.tv account
-#use_rogers=false
+# username=<Put your MLB username here>
+# password=<Put your MLB password here>
 
 # Favourite teams, This is a comma-separated list of favourite team codes.
 # Favourite teams are identified by colour in the game listings, and can be
 # filtered on using the --filter option to show only favourites.
-# Example: favs=wpg
-# Example: favs=wpg,ott
+# Example: favs=tor
+# Example: favs=tor,wsh
 #favs=
 
 # Favourite team colour, shown in game listings to highlight the favourite teams.
@@ -43,9 +39,6 @@
 #   Note: 720p (best) is the 60fps stream. The 720p_alt is a lower framerate. 
 #   Fallback streams can be specified by using a comma-separated list, e.g.: 720p,540p,best
 #resolution=best
-
-# cdn: one of 'akamai' or 'level3'
-#cdn=akamai
 
 # Video player. One of vlc or mpv is recommended here. You can also set options for the player here as well.
 # Example: video_player=mpv --cache 153600

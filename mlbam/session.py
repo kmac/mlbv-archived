@@ -1,21 +1,24 @@
 """
 This is shamelessly taken from mlbstreamer https://github.com/tonycpsu/mlbstreamer
 
+Code is modified somewhat arbitrarily. Changed to reduce some imports, and some just to simplify for my own understanding.
+
 """
 import datetime
-import dateutil.parser
 import json
 import io
 import logging
+import os
+import re
+import time
+import http.cookiejar
+
 import lxml
 import lxml.etree
-import os
 import pytz
-import re
 import requests
-import time
 
-import http.cookiejar
+import dateutil.parser
 
 import mlbam.config as config
 
@@ -281,71 +284,3 @@ class MLBSession(object):
         with open(playlist_file, 'w') as f:
             f.write(playlist)
         LOG.debug('save_playlist_to_file: {}'.format(playlist))
-
-# 
-# 
-#     def content(self, game_id):
-#         return self.session.get(GAME_CONTENT_URL_TEMPLATE.format(game_id=game_id)).json()
-# 
-#     # def feed(self, game_id):
-#     #     return self.session.get(GAME_FEED_URL.format(game_id=game_id)).json()
-# 
-#     @memo(region="short")
-#     def schedule(self, sport_id=None, start=None, end=None, game_type=None, team_id=None, game_id=None):
-#         LOG.debug("getting schedule: %s, %s, %s, %s, %s, %s", sport_id, start, end, game_type, team_id, game_id)
-#         url = SCHEDULE_TEMPLATE.format(
-#             sport_id=sport_id if sport_id else "",
-#             start=start.strftime("%Y-%m-%d") if start else "",
-#             end=end.strftime("%Y-%m-%d") if end else "",
-#             game_type=game_type if game_type else "",
-#             team_id=team_id if team_id else "",
-#             game_id=game_id if game_id else ""
-#         )
-#         return self.session.get(url).json()
-# 
-#     @memo(region="short")
-#     def get_media(self, game_id, title="MLBTV", preferred_stream=None):
-#         LOG.debug("geting media for game %d", game_id)
-#         schedule = self.schedule(game_id=game_id)
-#         # raise Exception(schedule)
-#         try:
-#             # Get last date for games that have been rescheduled to a later date
-#             game = schedule["dates"][-1]["games"][0]
-#         except KeyError:
-#             LOG.debug("no game data")
-#             return
-#         for epg in game["content"]["media"]["epg"]:
-#             if title in [None, epg["title"]]:
-#                 for item in epg["items"]:
-#                     if preferred_stream in [None, item["mediaFeedType"]]:
-#                         LOG.debug("found preferred stream")
-#                         yield item
-#                 else:
-#                     if len(epg["items"]):
-#                         LOG.debug("using non-preferred stream")
-#                         yield epg["items"][0]
-#         # raise StopIteration
-# 
-#     def get_stream(self, media_id):
-# 
-#         # try:
-#         #     media = next(self.get_media(game_id))
-#         # except StopIteration:
-#         #     logger.debug("no media for stream")
-#         #     return
-#         # media_id = media["mediaId"]
-# 
-#         headers = {
-#             "Authorization": self.access_token,
-#             "User-agent": USER_AGENT,
-#             "Accept": "application/vnd.media-service+json; version=1",
-#             "x-bamsdk-version": "3.0",
-#             "x-bamsdk-platform": PLATFORM,
-#             "origin": "https://www.mlb.com"
-#         }
-#         stream = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers).json()
-#         LOG.debug("stream response: %s", stream)
-#         if "errors" in stream and len(stream["errors"]):
-#             return None
-#         return stream
-# 

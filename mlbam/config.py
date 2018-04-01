@@ -25,27 +25,6 @@ class Config:
     """Contains the configuration data for use within the application, including a configparser instance
     for pulling in configuration from the 'config' file."""
     defaults = {  # is applied to initial config before reading from file - these are the defaults:
-        'nhlv': {
-            'username': '',
-            'password': '',
-            'use_rogers': 'false',
-            'favs': '',
-            'fav_colour': 'cyan',
-            'use_short_feeds': 'true',
-            'filter': 'false',
-            'cdn': 'akamai',
-            'resolution': 'best',
-            'video_player': 'mpv',
-            'streamlink_highlights': 'true',  # if false will send url direct to video_player (no resolution selection)
-            'streamlink_passthrough_highlights': 'true',  # allows seeking
-            'streamlink_passthrough': 'false',
-            'audio_player': 'mpv',
-            'debug': 'false',
-            'verbose': 'false',
-            'game_critical_colour': 'yellow',
-            'verify_ssl': 'true',
-            'save_json_file_by_timestamp': 'false',
-        },
         'mlbv': {
             'username': '',
             'password': '',
@@ -115,17 +94,6 @@ class Config:
         return parser[script_name]
 
 
-class NHLConfig(Config):
-    """Configuration specific to NHL."""
-    api_url = 'http://statsapi.web.nhl.com/api/v1/'
-    mf_svc_url = 'https://mf.svc.nhl.com/ws/media/mf/v2.4/stream'
-    ua_nhl = 'NHL/11479 CFNetwork/887 Darwin/17.0.0'
-    svc_user_agent = 'NHL/11479 CFNetwork/887 Darwin/17.0.0'
-
-    def __init__(self):
-        Config.__init__(self)
-
-
 class MLBConfig(Config):
     """This is a TODO."""
     # example: https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2017-08-10&endDate=2017-08-10&expand=schedule.teams,schedule.linescore,schedule.game.content.media.epg
@@ -135,4 +103,3 @@ class MLBConfig(Config):
 
     def __init__(self):
         Config.__init__(self)
-

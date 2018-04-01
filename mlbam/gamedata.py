@@ -21,7 +21,7 @@ LOG = logging.getLogger(__name__)
 
 
 TEAM_CODES = ('ari', 'atl', 'bal', 'bos', 'chc', 'cws', 'cin', 'cle', 'col', 'det', 'fla', 'hou', 'kan', 'laa', 'lad',
-              'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'was')
+              'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'wsh')
 
 
 # this map is used to transform the statsweb feed name to something shorter
@@ -271,8 +271,6 @@ class GameData:
         return game_data
 
     def fetch_game_data(self, game_date, num_days=1, show_games=True):
-        """
-        """
         game_data_list = list()
         show_scores = config.CONFIG.parser.getboolean('scores')
         for i in range(0, num_days):
