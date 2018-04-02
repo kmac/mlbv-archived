@@ -301,17 +301,17 @@ class GameData:
 
                 if len(live_game_pks) > 0:
                     if show_scores:
-                        outl.append("{:56} {}|{}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
+                        outl.append("{:55} {}|{}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
                     else:
-                        outl.append("{:56} {}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 11, ' ' * 12))
+                        outl.append("{:55} {}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 11, ' ' * 12))
                     for game_pk in live_game_pks:
                         if filter_favs(game_data[game_pk]) is not None:
                             outl.extend(self.show_game_details(game_pk, game_data[game_pk]))
                             print_outl = True
                     if show_scores:
-                        outl.append("{:56} {}|{}|{}|{}".format('-----', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
+                        outl.append("{:55} {}|{}|{}|{}".format('-----', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
                     else:
-                        outl.append("{:56} {}|{}|{}".format('-----', ' ' * 9, ' ' * 11, ' ' * 12))
+                        outl.append("{:55} {}|{}|{}".format('-----', ' ' * 9, ' ' * 11, ' ' * 12))
                 for game_pk in game_data:
                     if game_data[game_pk]['abstractGameState'] != 'Live':
                         if filter_favs(game_data[game_pk]) is not None:
