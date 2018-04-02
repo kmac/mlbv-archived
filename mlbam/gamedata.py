@@ -109,11 +109,13 @@ class GameData:
         return '{:7} {}'.format('/'.join(non_highlight_feeds), '/'.join(highlight_feeds))
 
     @staticmethod
-    def _fetch_json_from_url(url, suffix, overwrite_json=True):
+    def _fetch_json_from_url(url, overwrite_json=True, suffix=''):
+        if suffix:
+            suffix = '-' + suffix
         if config.SAVE_JSON_FILE_BY_TIMESTAMP:
-            json_file = os.path.join(config.CONFIG.dir, 'mlbgamedata-{}-{}.json'.format(suffix, time.strftime("%Y-%m-%d-%H%M")))
+            json_file = os.path.join(config.CONFIG.dir, 'mlbgamedata{}-{}.json'.format(suffix, time.strftime("%Y-%m-%d-%H%M")))
         else:
-            json_file = os.path.join(config.CONFIG.dir, 'mlbgamedata-{}.json'.format(suffix))
+            json_file = os.path.join(config.CONFIG.dir, 'mlbgamedata{}.json'.format(suffix))
         if overwrite_json or not os.path.exists(json_file):
             LOG.debug('Getting url={} ...'.format(url))
             # query nhl.com for today's schedule
@@ -142,7 +144,7 @@ class GameData:
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
         url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.api_url, date_str, hydrate)
 
-        json_data = self._fetch_json_from_url(url, 'top', overwrite_json)
+        json_data = self._fetch_json_from_url(url, overwrite_json)
 
         game_data = dict()  # we return this dictionary
 

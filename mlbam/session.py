@@ -121,12 +121,14 @@ class MLBSession(object):
         resp = self.session.post("https://securea.mlb.com/authenticate.do",
                                  data=data,
                                  headers={"Referer": initial_url})
-        LOG.debug('Login response: %s', resp.text)
+
+        if config.CONFIG.parser.getboolean('debug'):
+            LOG.debug('Login response: %s', resp.text)
 
         if not (self.ipid and self.fingerprint):
             raise MLBSessionException("Couldn't get ipid / fingerprint")
 
-        LOG.debug("logged in: %s", self.ipid)
+        LOG.debug("Successful login: %s", self.ipid)
         self.save()
 
     def is_logged_in(self):

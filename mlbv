@@ -18,7 +18,7 @@ from datetime import timedelta
 
 import mlbam.config as config
 import mlbam.gamedata as gamedata
-import mlbam.stats as stats
+import mlbam.standings as standings
 import mlbam.stream as stream
 import mlbam.util as util
 
@@ -66,7 +66,7 @@ def main(argv=None):
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
                               "Useful when combined with the --fetch option."))
     parser.add_argument("--standings", nargs='?', const='division', metavar='CATEGORY',
-                        help=("[CATEGORY] is one of: '" + ', '.join(stats.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
+                        help=("[CATEGORY] is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
                               "Display standings. This option will display selected standings category, then exit. "
                               "The standings category can be shortened down to one character (all matching "
                               "categories will be included), e.g. 'div'. "
@@ -125,7 +125,7 @@ def main(argv=None):
         args.date = datetime.strftime(datetime.today(), "%Y-%m-%d")
 
     if args.standings:
-        stats.get_standings(args.standings, args.date)
+        standings.get_standings(args.standings, args.date)
         return 0
 
     # fetch and display games (don't display if we're going to start a stream)

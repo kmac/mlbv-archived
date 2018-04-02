@@ -64,6 +64,7 @@ def _match(input_option, full_option, min_chars=2):
 def get_standings(standings_option='all', date_str=None):
     if date_str is None:
         date_str = time.strftime("%Y-%m-%d")
+    LOG.debug('Getting standings for %s, option=%s', date_hdr, standings_option)
     if _match(standings_option, 'all') or _match(standings_option, 'division'):
         display_standings('byDivision', 'Division', date_str, header_tags=('division',))
         _match(standings_option, 'all') and print('')
