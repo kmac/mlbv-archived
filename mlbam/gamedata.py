@@ -164,6 +164,7 @@ class GameData:
             # is something like: Scheduled, Live, Final, In Progress, Critical, Postponed:
             game_rec['detailedState'] = str(game['status']['detailedState'])
             game_rec['doubleHeader'] = str(game['doubleHeader'])
+            game_rec['gameNumber'] = str(game['gameNumber'])
             game_rec['mlbdate'] = datetime.strptime(str(game['gameDate']), "%Y-%m-%dT%H:%M:%SZ")
             game_rec['gamesInSeries'] = str(game['gamesInSeries'])
             game_rec['seriesGameNumber'] = str(game['seriesGameNumber'])
@@ -292,25 +293,25 @@ class GameData:
                 # print header
                 date_hdr = '{:7}{}'.format('', '{}'.format(game_date))
                 if show_scores:
-                    outl.append("{:64} | {:^5} | {:^9} | {}".format(date_hdr, 'Score', 'State', 'Feeds'))
+                    outl.append("{:56} {:^7} | {:^5} | {:^9} | {}".format(date_hdr, 'Series', 'Score', 'State', 'Feeds'))
                     outl.append("{}|{}|{}|{}".format('-' * 65, '-' * 7, '-' * 11, '-' * 14))
                 else:
-                    outl.append("{:64} | {:^9} | {}".format(date_hdr, 'State', 'Feeds'))
+                    outl.append("{:56} {:^7} | {:^9} | {}".format(date_hdr, 'Series', 'State', 'Feeds'))
                     outl.append("{}|{}|{}".format('-' * 65, '-' * 11, '-' * 12))
 
                 if len(live_game_pks) > 0:
                     if show_scores:
-                        outl.append("{:64} |{}|{}|{}".format('Live Games:', ' ' * 7, ' ' * 11, ' ' * 12))
+                        outl.append("{:56} {}|{}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
                     else:
-                        outl.append("{:64} |{}|{}".format('Live Games:', ' ' * 11, ' ' * 12))
+                        outl.append("{:56} {}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 11, ' ' * 12))
                     for game_pk in live_game_pks:
                         if filter_favs(game_data[game_pk]) is not None:
                             outl.extend(self.show_game_details(game_pk, game_data[game_pk]))
                             print_outl = True
                     if show_scores:
-                        outl.append("{:64} |{}|{}|{}".format('-----', ' ' * 7, ' ' * 11, ' ' * 12))
+                        outl.append("{:56} {}|{}|{}|{}".format('-----', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
                     else:
-                        outl.append("{:64} |{}|{}".format('-----', ' ' * 11, ' ' * 12))
+                        outl.append("{:56} {}|{}|{}".format('-----', ' ' * 9, ' ' * 11, ' ' * 12))
                 for game_pk in game_data:
                     if game_data[game_pk]['abstractGameState'] != 'Live':
                         if filter_favs(game_data[game_pk]) is not None:
@@ -338,9 +339,18 @@ class GameData:
                 color_on = util.fg_ansi_colour(config.CONFIG.parser['fav_colour'])
                 color_off = util.ANSI_CONTROL_CODES['reset']
         show_scores = config.CONFIG.parser.getboolean('scores')
-        game_info_str = "{}: {} ({}) at {} ({})".format(util.convert_time_to_local(game_rec['mlbdate']),
-                                                        game_rec['away']['display'], game_rec['away']['abbrev'].upper(),
-                                                        game_rec['home']['display'], game_rec['home']['abbrev'].upper())
+        if game_rec['doubleHeader'] == 'N':
+            series_info = "{sgn}/{gis}".format( sgn=game_rec['seriesGameNumber'], gis=game_rec['gamesInSeries'])
+        else:
+            series_info = "DH{gn} {sgn}/{gis}".format(sgn=game_rec['seriesGameNumber'],
+                                                      gis=game_rec['gamesInSeries'],
+                                                      gn=game_rec['gameNumber'])
+        game_info_str = "{time}: {a1} ({a2}) at {h1} ({h2})"\
+            .format(time=util.convert_time_to_local(game_rec['mlbdate']),
+                    a1=game_rec['away']['display'], a2=game_rec['away']['abbrev'].upper(),
+                    h1=game_rec['home']['display'], h2=game_rec['home']['abbrev'].upper())
+        # if game_rec['doubleHeader'] != 'N':
+        #     game_info_str = "{ginfo:<57}{dh}".format(ginfo=game_info_str, dh=doubleheader_info)
         game_state = ''
         game_state_color_on = color_on
         game_state_color_off = color_off
@@ -372,16 +382,22 @@ class GameData:
             score = ''
             if game_rec['abstractGameState'] not in ('Preview', ):
                 score = '{}-{}'.format(game_rec['linescore']['away']['runs'], game_rec['linescore']['home']['runs'])
-            outl.append("{0}{2:<64}{1} | {0}{3:^5}{1} | {4}{5:>9}{6} | {0}{7}{1}".format(color_on, color_off,
-                                                                                         game_info_str, score,
-                                                                                         game_state_color_on,
-                                                                                         game_state,
-                                                                                         game_state_color_off,
-                                                                                         self.__get_feeds_for_display(game_rec)))
+            outl.append("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | {gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}"\
+                            .format(coloron=color_on, coloroff=color_off,
+                                    ginfo=game_info_str,
+                                    series=series_info,
+                                    score=score,
+                                    gscoloron=game_state_color_on,
+                                    gstate=game_state,
+                                    gscoloroff=game_state_color_off,
+                                    feeds=self.__get_feeds_for_display(game_rec)))
         else:
-            outl.append("{0}{2:<64}{1} | {0}{3:^9}{1} | {0}{4}{1}".format(color_on, color_off,
-                                                                          game_info_str, game_state,
-                                                                          self.__get_feeds_for_display(game_rec)))
+            outl.append("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{gstate:^9}{coloroff} | {coloron}{feeds}{coloroff}"\
+                            .format(coloron=color_on, coloroff=color_off,
+                                    ginfo=game_info_str,
+                                    series=series_info,
+                                    gstate=game_state,
+                                    feeds=self.__get_feeds_for_display(game_rec)))
         if config.CONFIG.parser.getboolean('debug') and config.CONFIG.parser.getboolean('verbose'):
             for feedtype in game_rec['feed']:
                 outl.append('    {}: {}  [game_pk:{}, mediaPlaybackId:{}]'.format(feedtype,

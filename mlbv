@@ -53,6 +53,8 @@ def main(argv=None):
     parser.add_argument("--favs", help=("Favourite teams, a comma-separated list of favourite teams "
                                         "(normally specified in config file)"))
     parser.add_argument("--filter", action="store_true", help="Filter output for favourite teams only")
+    parser.add_argument("-g", "--game", default='1', choices=('1', '2'),
+                        help="Select game number of double-header")
     parser.add_argument("-r", "--resolution", metavar='RES',
                         help="Stream resolution for streamlink, one of: {}".format(config.BANDWIDTH_CHOICES))
     parser.add_argument("-s", "--scores", action="store_true",
@@ -142,7 +144,7 @@ def main(argv=None):
         # nothing to stream
         return 0
 
-    return stream.play_stream(game_data, team_to_play, feedtype, args.date, args.fetch, args.wait)
+    return stream.play_stream(game_data, team_to_play, args.game, feedtype, args.date, args.fetch, args.wait)
 
 
 if __name__ == "__main__" or __name__ == "main":

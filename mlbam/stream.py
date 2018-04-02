@@ -58,15 +58,24 @@ def find_highlight_url_for_team(game_rec, feedtype):
     return None
 
 
-def play_stream(game_data, team_to_play, feedtype, date_str, fetch, wait_for_start):
+def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fetch, wait_for_start):
+    """ game_number_str: is an string 1 or 2 indicating game number for doubleheader
+    """
     game_rec = None
     for game_pk in game_data:
         if team_to_play in (game_data[game_pk]['away']['abbrev'], game_data[game_pk]['home']['abbrev']):
+            if game_data[game_pk]['doubleHeader'] != 'N' and game_number_str != game_data[game_pk]['gameNumber']:
+                # game is doubleheader but not our game_number
+                continue
             game_rec = game_data[game_pk]
             break
     if game_rec is None:
+        if int(game_number_str) > 1:
+            util.die("No second game available for team {}".format(team_to_play))
         util.die("No game found for team {}".format(team_to_play))
 
+    if game_rec['doubleHeader'] != 'N':
+        LOG.info('Selected game number %s of doubleheader', game_rec['gameNumber'])
     if feedtype is not None and feedtype in config.HIGHLIGHT_FEEDTYPES:
         # handle condensed/recap
         playback_url = find_highlight_url_for_team(game_rec, feedtype)
