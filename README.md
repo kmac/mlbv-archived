@@ -180,6 +180,12 @@ Example:
     mlbv --yesterday -t tor  # play yesterday's Blue Jays game (see below for options on specifying dates)
 
 
+#### Doubleheader
+
+If a game is a doubleheader then you can select the second game using the `-g/--game` argument. By default it
+will select the first game.
+
+
 ### Fetching
 
 If you pass the `-f/--fetch` option, instead of launching the video player, the selected stream is saved to
