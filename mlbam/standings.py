@@ -28,8 +28,10 @@ LEAGUE_ID_MAP = {
 
 # https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2017&standingsTypes=regularSeason&hydrate=division,conference,sport,league,team
 # https://statsapi.mlb.com/api/v1/standings/regularSeason?leagueId=103,104&season=2018
+#STANDINGS_URL = ('https://statsapi.mlb.com/api/v1/standings/{standings_type}?'
+#                 'leagueId={league_ids}&season={season}&date={date}&hydrate=division,conference,sport,league,team')
 STANDINGS_URL = ('https://statsapi.mlb.com/api/v1/standings/{standings_type}?'
-                 'leagueId={league_ids}&season={season}&date={date}&hydrate=division,conference,sport,league,team')
+                 'leagueId={league_ids}&season={season}{date}&hydrate=division,conference,sport,league,team')
 
 # from https://statsapi.mlb.com/api/v1/standingsTypes
 STANDINGS_TYPES = ('regularSeason', 'wildCard', 'divisionLeaders', 'wildCardWithLeaders',
@@ -62,8 +64,8 @@ def _match(input_option, full_option, min_chars=2):
 
 
 def get_standings(standings_option='all', date_str=None):
-    if date_str is None:
-        date_str = time.strftime("%Y-%m-%d")
+    # if date_str is None:
+    #     date_str = time.strftime("%Y-%m-%d")
     LOG.debug('Getting standings for %s, option=%s', date_str, standings_option)
     if _match(standings_option, 'all') or _match(standings_option, 'division'):
         display_standings('byDivision', 'Division', date_str, header_tags=('division',))
@@ -84,8 +86,13 @@ def get_standings(standings_option='all', date_str=None):
 
 def display_standings(standings_type, display_title, date_str, rank_tag='divisionRank', header_tags=('league', 'division')):
 
-    season_str = datetime.strftime(datetime.strptime(date_str, "%Y-%m-%d"), "%Y")
-    url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season=season_str, date=date_str)
+    if date_str is None:
+        season_str = time.strftime("%Y")
+        url_date_str = ''
+    else:
+        season_str = datetime.strftime(datetime.strptime(date_str, "%Y-%m-%d"), "%Y")
+        url_date_str = '&date=' + date_str
+    url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season=season_str, date=url_date_str)
     json_data = util.fetch_json_from_url(url, output_filename='standings', overwrite_json=True)
 
     outl = list()
