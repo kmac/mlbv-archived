@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
 This project provides a CLI interface into streaming MLB games from MLB.com
 
