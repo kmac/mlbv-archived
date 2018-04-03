@@ -2,12 +2,12 @@
 Utility functions
 """
 
+import json
 import logging
 import os.path
 import sys
 import time
 
-import json
 import requests
 
 from dateutil import tz

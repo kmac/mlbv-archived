@@ -16,7 +16,6 @@ import http.cookiejar
 
 import lxml
 import lxml.etree
-import pytz
 import requests
 
 import dateutil.parser
@@ -214,7 +213,7 @@ class MLBSession(object):
     def access_token(self):
         LOG.debug("getting access token")
         if not self._state['access_token'] or not self.access_token_expiry or \
-                self.access_token_expiry < datetime.datetime.now(tz=pytz.UTC):
+                self.access_token_expiry < datetime.datetime.now(tz=datetime.timezone.utc):
             try:
                 self._state['access_token'], self.access_token_expiry = self._get_access_token()
             except requests.exceptions.HTTPError:
@@ -245,7 +244,7 @@ class MLBSession(object):
         response.raise_for_status()
         token_response = response.json()
 
-        token_expiry = datetime.datetime.now(tz=pytz.UTC) + datetime.timedelta(seconds=token_response["expires_in"])
+        token_expiry = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=token_response["expires_in"])
 
         return token_response["access_token"], token_expiry
 
