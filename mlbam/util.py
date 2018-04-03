@@ -3,9 +3,18 @@ Utility functions
 """
 
 import logging
+import os.path
 import sys
+import time
+
+import json
+import requests
 
 from dateutil import tz
+from datetime import datetime
+
+import mlbam.config as config
+
 
 LOG = None
 
@@ -50,6 +59,33 @@ def die(msg, exit_code=1):
     else:
         print("FATAL: " + msg)
     sys.exit(exit_code)
+
+
+def fetch_json_from_url(url, output_filename=None, overwrite_json=True, suffix=''):
+    if suffix:
+        suffix = '-' + suffix
+    if config.SAVE_JSON_FILE_BY_TIMESTAMP:
+        json_file = os.path.join(config.CONFIG.dir,
+                                 '{}{}-{}.json'.format(output_filename, suffix, time.strftime("%Y-%m-%d-%H%M")))
+    else:
+        json_file = os.path.join(config.CONFIG.dir, '{}{}.json'.format(output_filename, suffix))
+    if overwrite_json or not os.path.exists(json_file):
+        LOG.debug('Getting url={} ...'.format(url))
+        # query nhl.com for today's schedule
+        headers = {
+            'User-Agent': config.CONFIG.ua_iphone,
+            'Connection': 'close'
+        }
+        log_http(url, 'get', headers, sys._getframe().f_code.co_name)
+        r = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
+
+        with open(json_file, 'w') as f:  # write date to json_file
+            f.write(r.text)
+
+    with open(json_file) as games_file:
+        json_data = json.load(games_file)
+
+    return json_data
 
 
 def convert_time_to_local(d):

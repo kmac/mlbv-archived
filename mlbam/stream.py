@@ -4,15 +4,13 @@ Streaming functions
 
 import logging
 import os
-import requests
 import subprocess
 import sys
 import time
-import urllib.request
-import urllib.error
-import urllib.parse
 
 from datetime import datetime
+from dateutil import parser
+from datetime import timezone
 from dateutil import tz
 
 import mlbam.config as config
@@ -45,7 +43,9 @@ def select_feed_for_team(game_rec, team_code, feedtype=None):
         if feedtype not in game_rec['feed']:
             LOG.error("Feed is not available: {}".format(feedtype))
             return None, None
-        return game_rec['feed'][feedtype]['mediaPlaybackId'], game_rec['feed'][feedtype]['eventId']
+        return game_rec['feed'][feedtype]['mediaPlaybackId'],\
+               game_rec['feed'][feedtype]['mediaState'],\
+               game_rec['feed'][feedtype]['eventId']
     return None, None
 
 
@@ -58,7 +58,7 @@ def find_highlight_url_for_team(game_rec, feedtype):
     return None
 
 
-def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fetch, wait_for_start):
+def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fetch, wait_for_start, from_start, inning_ident):
     """ game_number_str: is an string 1 or 2 indicating game number for doubleheader
     """
     game_rec = None
@@ -98,13 +98,16 @@ def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fe
                 if count % 6 == 0:
                     print('.', end='', flush=True)
 
-        media_playback_id, event_id = select_feed_for_team(game_rec, team_to_play, feedtype)
+        media_playback_id, media_state, event_id = select_feed_for_team(game_rec, team_to_play, feedtype)
         if media_playback_id is not None:
             stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
             if stream_url is not None:
                 if config.DEBUG:
                     mlb_session.save_playlist_to_file(stream_url)
-                streamlink(stream_url, mlb_session, get_fetch_filename(date_str, game_rec, feedtype, fetch))
+                if inning_ident:
+                    offset = _calculate_inning_offset(inning_ident, media_state, game_rec)
+                    #raise Exception("Inning offset: " + offset)
+                streamlink(stream_url, mlb_session, get_fetch_filename(date_str, game_rec, feedtype, fetch), from_start, offset)
             else:
                 LOG.error("No stream URL")
         else:
@@ -115,10 +118,74 @@ def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fe
 def get_fetch_filename(date_str, game_rec, feedtype, fetch):
     if fetch:
         if feedtype is None:
-            return '{}-{}-{}.mp4'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'])
+            return '{}-{}-{}.ts'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'])
         else:
-            return '{}-{}-{}-{}.mp4'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype)
+            return '{}-{}-{}-{}.ts'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype)
     return None
+
+
+def _lookup_inning_timestamp(game_pk, inning, inning_half='top', overwrite_json=True):
+    playbyplay_url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay'.format(gamepk=game_pk)
+    LOG.info("Retrieving inning info to locate '{} {}' inning".format(inning_half, inning))
+    json_data = util.fetch_json_from_url(playbyplay_url, 'playbyplay', overwrite_json)
+
+    if json_data['allPlays'] is None or len(json_data['allPlays']) < 1:
+        LOG.debug("_lookup_inning_timestamp: no play data for %s", playbyplay_url)
+        return None
+
+    inning_timestamps = list()
+    for play in json_data['allPlays']:
+        if str(play['about']['inning']) == inning and str(play['about']['halfInning']) == inning_half:
+            LOG.debug("Retrieved inning start: %s", str(play['about']['startTime']))
+            return str(play['about']['startTime'])
+    LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
+    return None
+
+def _calculate_inning_offset(inning_offset, media_state, game_rec):
+    inning_half = 'top'
+    if inning_offset.startswith('b'):
+        inning_half = 'bottom'
+    inning = inning_offset[-1]
+    inning_timestamp = _lookup_inning_timestamp(game_rec['game_pk'], inning, inning_half)
+    if inning_timestamp is None:
+        LOG.error(("Inning '%s' not found in play-by-play data. "
+                   "Proceeding without inning input", inning_offset))
+        return None
+
+    # inning_timestamp is of form: 2018-04-02T17:08:23.000Z
+    inning_start_datetime = parser.parse(inning_timestamp)
+
+    # now calculate the HH:MM:SS offset for livestream.
+    # It is complicated by:
+    #     - if stream is live then the offset is from the end of stream
+    #     - if stream is archive then offset is from beginning of stream
+    if media_state == 'MEDIA_ON':
+        #     start          offset       endofstream
+        #     |        | <----------------> |
+        #            inning
+        LOG.info("Live game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp)
+        now = datetime.now(timezone.utc)
+        now_timestamp = now.timestamp()
+        inning_start_timestamp = inning_start_datetime.timestamp()
+        offset_secs = now_timestamp - inning_start_timestamp
+        LOG.debug("now_timestamp: %s, inning_start_timestamp: %s, offset=%s", now_timestamp, inning_start_timestamp, offset_secs)
+        logstr = "Calculated live game negative inning offset (from now): %s"
+    else:
+        #     start      inning        endofstream
+        #     | <--------> |                |
+        #         offset                
+        LOG.info("Archive game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp)
+        inning_start_timestamp = inning_start_datetime.timestamp()
+        game_start_timestamp = game_rec['mlbdate'].timestamp()
+        offset_secs = inning_start_timestamp - game_start_timestamp
+        LOG.debug("inning_start_timestamp: %s, game_start_timestamp: %s, offset=%s", inning_start_timestamp, game_start_timestamp, offset_secs)
+        logstr = "Calculated archive game inning offset (from start): %s"
+
+    hours, remainder_secs = divmod(offset_secs, 3600)
+    minutes, secs = divmod(remainder_secs, 60)
+    offset = '{:02d}:{:02d}:{:02d}'.format(int(hours), int(minutes), int(secs))
+    LOG.info(logstr, offset)
+    return offset
 
 
 def play_highlight(playback_url, fetch_filename):
@@ -154,9 +221,8 @@ def streamlink_highlight(playback_url, fetch_filename):
     subprocess.run(streamlink_cmd)
 
 
-def streamlink(stream_url, mlb_session, fetch_filename=None):
+def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, offset=None):
     LOG.debug("Stream url: " + stream_url)
-    auth_cookie_str = "Authorization=" + mlb_session.access_token
     # media_auth_cookie_str = access_token
     #user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_iphone
     user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_pc
@@ -166,14 +232,21 @@ def streamlink(stream_url, mlb_session, fetch_filename=None):
                       "--http-no-ssl-verify",
                       "--player-no-close",
                       "--http-header", user_agent_hdr,
-                      "--http-cookie", auth_cookie_str]
-                      # "--http-cookie", media_auth_cookie_str,
+                      "--http-cookie", "Authorization=" + mlb_session.access_token]
 
     # include our cookies
-    cookie_dict = mlb_session.get_cookie_dict()
-    for cookie_name in cookie_dict:
-        streamlink_cmd.append("--http-cookie")
-        streamlink_cmd.append('{}={}'.format(cookie_name, cookie_dict[cookie_name]))
+    # cookie_dict = mlb_session.get_cookie_dict()
+    # for cookie_name in cookie_dict:
+    #     streamlink_cmd.append("--http-cookie")
+    #     streamlink_cmd.append('{}={}'.format(cookie_name, cookie_dict[cookie_name]))
+
+    if from_start:
+        streamlink_cmd.append("--hls-live-restart")
+        LOG.info("Starting from beginning [--hls-live-restart]")
+    elif offset:
+        streamlink_cmd.append("--hls-start-offset")
+        streamlink_cmd.append(offset)
+        LOG.debug("Using --hls-start-offset " + offset)
 
     if fetch_filename is not None:
         if os.path.exists(fetch_filename):

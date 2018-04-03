@@ -42,6 +42,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=HELP_HEADER, epilog=HELP_FOOTER,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-d", "--date", help="Display games/standings for date. Format: yyyy-mm-dd")
+    parser.add_argument("--inning", help=("Start live/archive stream from inning. Format: {t|b}{inning_num}. "
+                                          "t|b: (optional) top or bottom, inning_num: inning number. "
+                                          "e.g.  '5' - start at 5th inning. 't5' start at top 5th. "
+                                          "'b5' start at bottom 5th."
+                                          ))
+    parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
     parser.add_argument("--days", type=int, default=1, help="Number of days to display")
     parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
@@ -144,7 +150,8 @@ def main(argv=None):
         # nothing to stream
         return 0
 
-    return stream.play_stream(game_data, team_to_play, args.game, feedtype, args.date, args.fetch, args.wait)
+    return stream.play_stream(game_data, team_to_play, args.game, feedtype, args.date,
+                              args.fetch, args.wait, args.from_start, args.inning)
 
 
 if __name__ == "__main__" or __name__ == "main":

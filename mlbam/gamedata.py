@@ -11,6 +11,7 @@ import time
 
 from datetime import datetime
 from datetime import timedelta
+from dateutil import parser
 
 import mlbam.auth as auth
 import mlbam.config as config
@@ -71,6 +72,32 @@ def filter_favs(game_rec):
     return None
 
 
+#def fetch_json_from_url(url, output_filename=None, overwrite_json=True, suffix=''):
+#    if suffix:
+#        suffix = '-' + suffix
+#    if config.SAVE_JSON_FILE_BY_TIMESTAMP:
+#        json_file = os.path.join(config.CONFIG.dir, '{}{}-{}.json'.format(output_filename, suffix, time.strftime("%Y-%m-%d-%H%M")))
+#    else:
+#        json_file = os.path.join(config.CONFIG.dir, '{}{}.json'.format(output_filename, suffix))
+#    if overwrite_json or not os.path.exists(json_file):
+#        LOG.debug('Getting url={} ...'.format(url))
+#        # query nhl.com for today's schedule
+#        headers = {
+#            'User-Agent': config.CONFIG.ua_iphone,
+#            'Connection': 'close'
+#        }
+#        util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
+#        r = requests.get(url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
+#
+#        with open(json_file, 'w') as f:  # write date to json_file
+#            f.write(r.text)
+#
+#    with open(json_file) as games_file:
+#        json_data = json.load(games_file)
+#
+#    return json_data
+
+
 class GameData:
 
     def __init__(self, feedtype_map=FEEDTYPE_MAP):
@@ -108,32 +135,6 @@ class GameData:
                     highlight_feeds.append(feed)
         return '{:7} {}'.format('/'.join(non_highlight_feeds), '/'.join(highlight_feeds))
 
-    @staticmethod
-    def _fetch_json_from_url(url, overwrite_json=True, suffix=''):
-        if suffix:
-            suffix = '-' + suffix
-        if config.SAVE_JSON_FILE_BY_TIMESTAMP:
-            json_file = os.path.join(config.CONFIG.dir, 'mlbgamedata{}-{}.json'.format(suffix, time.strftime("%Y-%m-%d-%H%M")))
-        else:
-            json_file = os.path.join(config.CONFIG.dir, 'mlbgamedata{}.json'.format(suffix))
-        if overwrite_json or not os.path.exists(json_file):
-            LOG.debug('Getting url={} ...'.format(url))
-            # query nhl.com for today's schedule
-            headers = {
-                'User-Agent': config.CONFIG.ua_iphone,
-                'Connection': 'close'
-            }
-            util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
-            r = requests.get(url, headers=headers, cookies=auth.load_cookies(), verify=config.VERIFY_SSL)
-
-            with open(json_file, 'w') as f:  # write date to json_file
-                f.write(r.text)
-
-        with open(json_file) as games_file:
-            json_data = json.load(games_file)
-
-        return json_data
-
     def _get_game_data(self, date_str=None, overwrite_json=True):
         if date_str is None:
             date_str = time.strftime("%Y-%m-%d")
@@ -144,7 +145,7 @@ class GameData:
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
         url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.api_url, date_str, hydrate)
 
-        json_data = self._fetch_json_from_url(url, overwrite_json)
+        json_data = util.fetch_json_from_url(url, 'gamedata', overwrite_json)
 
         game_data = dict()  # we return this dictionary
 
@@ -165,7 +166,7 @@ class GameData:
             game_rec['detailedState'] = str(game['status']['detailedState'])
             game_rec['doubleHeader'] = str(game['doubleHeader'])
             game_rec['gameNumber'] = str(game['gameNumber'])
-            game_rec['mlbdate'] = datetime.strptime(str(game['gameDate']), "%Y-%m-%dT%H:%M:%SZ")
+            game_rec['mlbdate'] = parser.parse(str(game['gameDate']))
             game_rec['gamesInSeries'] = str(game['gamesInSeries'])
             game_rec['seriesGameNumber'] = str(game['seriesGameNumber'])
 
@@ -242,6 +243,7 @@ class GameData:
                                 feedtype = str(stream['mediaFeedType']).lower()  # home, away, national, french, ...
                                 game_rec['feed'][feedtype] = dict()
                                 game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
+                                game_rec['feed'][feedtype]['mediaState'] = str(stream['mediaState'])
                                 game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
                                 game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
                 for media in game['content']['media']['epgAlternate']:

@@ -180,6 +180,20 @@ Example:
     mlbv --yesterday -t tor  # play yesterday's Blue Jays game (see below for options on specifying dates)
 
 
+#### Controlling where the stream starts
+
+You can start from the top or bottom of an inning:
+
+    mlbv --team tor --inning t5  # start from top of 5th
+    mlbv --team tor --inning b5  # start from bottom of 5th
+
+This works for either live or archived games.
+
+For a live game, you can start from the beginning with:
+
+    mlbv --team tor --from-start  # start stream at beginning, live games only
+
+
 #### Doubleheader
 
 If a game is a doubleheader then you can select the second game using the `-g/--game` argument. By default it
