@@ -83,19 +83,10 @@ def get_standings(standings_option='all', date_str=None):
 
 
 def display_standings(standings_type, display_title, date_str, rank_tag='divisionRank', header_tags=('league', 'division')):
-    headers = {
-        'User-Agent': config.CONFIG.ua_iphone,
-        'Connection': 'close'
-    }
+
     season_str = datetime.strftime(datetime.strptime(date_str, "%Y-%m-%d"), "%Y")
     url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season=season_str, date=date_str)
-    util.log_http(url, 'get', headers, sys._getframe().f_code.co_name)
-    resp = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
-
-    json_file = os.path.join(config.CONFIG.dir, 'standings.json')
-    with open(json_file, 'w') as f:  # write date to json_file
-        f.write(resp.text)
-    json_data = resp.json()
+    json_data = util.fetch_json_from_url(url, output_filename='standings', overwrite_json=True)
 
     outl = list()
     if display_title != '':

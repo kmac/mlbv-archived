@@ -102,11 +102,11 @@ def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fe
         if media_playback_id is not None:
             stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
             if stream_url is not None:
+                offset = None
                 if config.DEBUG:
                     mlb_session.save_playlist_to_file(stream_url)
                 if inning_ident:
                     offset = _calculate_inning_offset(inning_ident, media_state, game_rec)
-                    #raise Exception("Inning offset: " + offset)
                 streamlink(stream_url, mlb_session, get_fetch_filename(date_str, game_rec, feedtype, fetch), from_start, offset)
             else:
                 LOG.error("No stream URL")
