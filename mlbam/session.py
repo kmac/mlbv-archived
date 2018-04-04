@@ -265,9 +265,10 @@ class MLBSession(object):
         response = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers)
         stream = response.json()
         LOG.debug("lookup_stream_url, stream response: %s", stream)
-        stream_url = stream['stream']['complete']
         if "errors" in stream and len(stream["errors"]):
+            LOG.error("Could not load stream\n%s", stream)
             return None
+        stream_url = stream['stream']['complete']
         return stream_url
 
     def save_playlist_to_file(self, stream_url):
