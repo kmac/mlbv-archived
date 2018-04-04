@@ -26,10 +26,6 @@ LEAGUE_ID_MAP = {
     'nl': 104,
 }
 
-# https://statsapi.mlb.com/api/v1/standings?leagueId=103,104&season=2017&standingsTypes=regularSeason&hydrate=division,conference,sport,league,team
-# https://statsapi.mlb.com/api/v1/standings/regularSeason?leagueId=103,104&season=2018
-#STANDINGS_URL = ('https://statsapi.mlb.com/api/v1/standings/{standings_type}?'
-#                 'leagueId={league_ids}&season={season}&date={date}&hydrate=division,conference,sport,league,team')
 STANDINGS_URL = ('https://statsapi.mlb.com/api/v1/standings/{standings_type}?'
                  'leagueId={league_ids}&season={season}{date}&hydrate=division,conference,sport,league,team')
 
@@ -64,28 +60,28 @@ def _match(input_option, full_option, min_chars=2):
 
 
 def get_standings(standings_option='all', date_str=None):
-    # if date_str is None:
-    #     date_str = time.strftime("%Y-%m-%d")
     LOG.debug('Getting standings for %s, option=%s', date_str, standings_option)
+    if date_str == time.strftime("%Y-%m-%d"):
+        # strip out date string from url (issue #5)
+        date_str = None
     if _match(standings_option, 'all') or _match(standings_option, 'division'):
-        display_standings('byDivision', 'Division', date_str, header_tags=('division',))
+        _display_standings('byDivision', 'Division', date_str, header_tags=('division',))
         _match(standings_option, 'all') and print('')
     if _match(standings_option, 'all') or _match(standings_option, 'wildcard'):
-        display_standings('wildCard', 'Wildcard', date_str, rank_tag='wildCardRank', header_tags=('league', ))
+        _display_standings('wildCard', 'Wildcard', date_str, rank_tag='wildCardRank', header_tags=('league', ))
         _match(standings_option, 'all') and print('')
     if _match(standings_option, 'all') or _match(standings_option, 'overall') \
             or _match(standings_option, 'league') or _match(standings_option, 'conference'):
-        display_standings('byLeague', 'League', date_str, rank_tag='leagueRank', header_tags=('league', ))
+        _display_standings('byLeague', 'League', date_str, rank_tag='leagueRank', header_tags=('league', ))
         _match(standings_option, 'all') and print('')
 
     if _match(standings_option, 'playoff') or _match(standings_option, 'postseason'):
-        display_standings('postseason', 'Playoffs', date_str)
+        _display_standings('postseason', 'Playoffs', date_str)
     if _match(standings_option, 'preseason'):
-        display_standings('preseason', 'Preseason', date_str)
+        _display_standings('preseason', 'Preseason', date_str)
 
 
-def display_standings(standings_type, display_title, date_str, rank_tag='divisionRank', header_tags=('league', 'division')):
-
+def _display_standings(standings_type, display_title, date_str, rank_tag='divisionRank', header_tags=('league', 'division')):
     if date_str is None:
         season_str = time.strftime("%Y")
         url_date_str = ''
