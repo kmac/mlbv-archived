@@ -93,7 +93,7 @@ def display_standings(standings_type, display_title, date_str, rank_tag='divisio
         season_str = datetime.strftime(datetime.strptime(date_str, "%Y-%m-%d"), "%Y")
         url_date_str = '&date=' + date_str
     url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season=season_str, date=url_date_str)
-    json_data = util.fetch_json_from_url(url, output_filename='standings', overwrite_json=True)
+    json_data = util.request_json(url, 'standings')
 
     outl = list()
     if display_title != '':

@@ -12,6 +12,7 @@ import argparse
 import logging
 import os
 import sys
+import time
 
 from datetime import datetime
 from datetime import timedelta
@@ -150,8 +151,30 @@ def main(argv=None):
         # nothing to stream
         return 0
 
-    return stream.play_stream(game_data, team_to_play, args.game, feedtype, args.date,
-                              args.fetch, args.wait, args.from_start, args.inning)
+    game_rec = stream.get_game_rec(game_data, team_to_play, args.game)
+
+    if args.wait and not util.has_reached_time(game_rec['mlbdate']):
+        LOG.info('Waiting for game to start. Local start time is %s', util.convert_time_to_local(game_rec['mlbdate']))
+        print('Use Ctrl-c to quit .', end='', flush=True)
+        count = 0
+        while not util.has_reached_time(game_rec['mlbdate']):
+            time.sleep(10)
+            count += 1
+            if count % 6 == 0:
+                print('.', end='', flush=True)
+
+        # refresh the game data
+        LOG.info('Game time. Refreshing game data after wait...')
+        game_data_list = mlb_gamedata.fetch_game_data(args.date, 1, team_to_play is None)
+        if len(game_data_list) > 0:
+            game_data = game_data_list[0]
+        else:
+            LOG.error('Unexpected error: no game data found after refresh on wait')
+            return 0
+
+        game_rec = stream.get_game_rec(game_data, team_to_play, args.game)
+
+    return stream.play_stream(game_rec, team_to_play, feedtype, args.date, args.fetch, args.from_start, args.inning)
 
 
 if __name__ == "__main__" or __name__ == "main":

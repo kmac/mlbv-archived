@@ -5,13 +5,10 @@ Streaming functions
 import logging
 import os
 import subprocess
-import sys
-import time
 
 from datetime import datetime
-from dateutil import parser
 from datetime import timezone
-from dateutil import tz
+from dateutil import parser
 
 import mlbam.config as config
 import mlbam.util as util
@@ -21,7 +18,7 @@ LOG = logging.getLogger(__name__)
 
 
 def _has_game_started(start_time_utc):
-    return start_time_utc.replace(tzinfo=tz.tzutc()) < datetime.now(tz.tzutc())
+    return start_time_utc.replace(timezone.utc) < datetime.now(timezone.utc)
 
 
 def select_feed_for_team(game_rec, team_code, feedtype=None):
@@ -39,13 +36,11 @@ def select_feed_for_team(game_rec, team_code, feedtype=None):
             LOG.info('Default (home/away) feed not found: choosing first available feed')
             if len(game_rec['feed']) > 0:
                 feedtype = list(game_rec['feed'].keys())[0]
-                LOG.info("Chose '{}' feed (override with --feed option)".format(feedtype))
+                LOG.info("Chose '%s' feed (override with --feed option)", feedtype)
         if feedtype not in game_rec['feed']:
             LOG.error("Feed is not available: {}".format(feedtype))
             return None, None
-        return game_rec['feed'][feedtype]['mediaPlaybackId'],\
-               game_rec['feed'][feedtype]['mediaState'],\
-               game_rec['feed'][feedtype]['eventId']
+        return game_rec['feed'][feedtype]['mediaPlaybackId'], game_rec['feed'][feedtype]['mediaState']
     return None, None
 
 
@@ -58,7 +53,7 @@ def find_highlight_url_for_team(game_rec, feedtype):
     return None
 
 
-def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fetch, wait_for_start, from_start, inning_ident):
+def get_game_rec(game_data, team_to_play, game_number_str):
     """ game_number_str: is an string 1 or 2 indicating game number for doubleheader
     """
     game_rec = None
@@ -73,7 +68,10 @@ def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fe
         if int(game_number_str) > 1:
             util.die("No second game available for team {}".format(team_to_play))
         util.die("No game found for team {}".format(team_to_play))
+    return game_rec
 
+
+def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, inning_ident):
     if game_rec['doubleHeader'] != 'N':
         LOG.info('Selected game number %s of doubleheader', game_rec['gameNumber'])
     if feedtype is not None and feedtype in config.HIGHLIGHT_FEEDTYPES:
@@ -88,17 +86,7 @@ def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fe
         import mlbam.session as session
         mlb_session = session.MLBSession()
 
-        if wait_for_start and not _has_game_started(game_rec['mlbdate']):
-            LOG.info('Waiting for game to start. Local start time is ' + util.convert_time_to_local(game_rec['mlbdate']))
-            print('Use Ctrl-c to quit .', end='', flush=True)
-            count = 0
-            while not _has_game_started(game_rec['mlbdate']):
-                time.sleep(10)
-                count += 1
-                if count % 6 == 0:
-                    print('.', end='', flush=True)
-
-        media_playback_id, media_state, event_id = select_feed_for_team(game_rec, team_to_play, feedtype)
+        media_playback_id, media_state = select_feed_for_team(game_rec, team_to_play, feedtype)
         if media_playback_id is not None:
             stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
             if stream_url is not None:
@@ -109,9 +97,9 @@ def play_stream(game_data, team_to_play, game_number_str, feedtype, date_str, fe
                     offset = _calculate_inning_offset(inning_ident, media_state, game_rec)
                 streamlink(stream_url, mlb_session, get_fetch_filename(date_str, game_rec, feedtype, fetch), from_start, offset)
             else:
-                LOG.error("No stream URL")
+                LOG.error("No stream URL found")
         else:
-            LOG.info("No game found for {}".format(team_to_play))
+            LOG.info("No game stream found for %s", team_to_play)
     return 0
 
 
@@ -127,25 +115,29 @@ def get_fetch_filename(date_str, game_rec, feedtype, fetch):
 def _lookup_inning_timestamp(game_pk, inning, inning_half='top', overwrite_json=True):
     playbyplay_url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay'.format(gamepk=game_pk)
     LOG.info("Retrieving inning info to locate '{} {}' inning".format(inning_half, inning))
-    json_data = util.fetch_json_from_url(playbyplay_url, 'playbyplay', overwrite_json)
+    json_data = util.request_json(playbyplay_url, 'playbyplay')
 
     if json_data['allPlays'] is None or len(json_data['allPlays']) < 1:
         LOG.debug("_lookup_inning_timestamp: no play data for %s", playbyplay_url)
         return None
 
-    inning_timestamps = list()
     for play in json_data['allPlays']:
         if str(play['about']['inning']) == inning and str(play['about']['halfInning']) == inning_half:
-            LOG.debug("Retrieved inning start: %s", str(play['about']['startTime']))
+            LOG.info("Found inning start: %s", str(play['about']['startTime']))
+            LOG.debug("Inning start play data: %s", play['about'])
             return str(play['about']['startTime'])
     LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
     return None
+
 
 def _calculate_inning_offset(inning_offset, media_state, game_rec):
     inning_half = 'top'
     if inning_offset.startswith('b'):
         inning_half = 'bottom'
-    inning = inning_offset[-1]
+    if inning_offset[-2].isnumeric():
+        inning = inning_offset[-2:]  # double digits, extra innings
+    else:
+        inning = inning_offset[-1]  # single digit inning
     inning_timestamp = _lookup_inning_timestamp(game_rec['game_pk'], inning, inning_half)
     if inning_timestamp is None:
         LOG.error(("Inning '%s' not found in play-by-play data. "
@@ -164,8 +156,7 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         #     |        | <----------------> |
         #            inning
         LOG.info("Live game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp)
-        now = datetime.now(timezone.utc)
-        now_timestamp = now.timestamp()
+        now_timestamp = datetime.now(timezone.utc).timestamp()
         inning_start_timestamp = inning_start_datetime.timestamp()
         offset_secs = now_timestamp - inning_start_timestamp
         LOG.debug("now_timestamp: %s, inning_start_timestamp: %s, offset=%s", now_timestamp, inning_start_timestamp, offset_secs)
@@ -173,12 +164,13 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
     else:
         #     start      inning        endofstream
         #     | <--------> |                |
-        #         offset                
+        #         offset
         LOG.info("Archive game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp)
         inning_start_timestamp = inning_start_datetime.timestamp()
         game_start_timestamp = game_rec['mlbdate'].timestamp()
         offset_secs = inning_start_timestamp - game_start_timestamp
-        LOG.debug("inning_start_timestamp: %s, game_start_timestamp: %s, offset=%s", inning_start_timestamp, game_start_timestamp, offset_secs)
+        LOG.debug("inning_start_timestamp: %s, game_start_timestamp: %s, offset=%s",
+                  inning_start_timestamp, game_start_timestamp, offset_secs)
         logstr = "Calculated archive game inning offset (from start): %s"
 
     hours, remainder_secs = divmod(offset_secs, 3600)
@@ -193,7 +185,7 @@ def play_highlight(playback_url, fetch_filename):
     if (fetch_filename is None or fetch_filename != '') \
             and not config.CONFIG.parser.getboolean('streamlink_highlights', True):
         cmd = [video_player, playback_url]
-        LOG.info('Playing highlight: ' + str(cmd))
+        LOG.info('Playing highlight: %s', str(cmd))
         subprocess.run(cmd)
     else:
         streamlink_highlight(playback_url, fetch_filename)
@@ -224,7 +216,7 @@ def streamlink_highlight(playback_url, fetch_filename):
 def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, offset=None):
     LOG.debug("Stream url: " + stream_url)
     # media_auth_cookie_str = access_token
-    #user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_iphone
+    # user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_iphone
     user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_pc
 
     video_player = config.CONFIG.parser['video_player']
@@ -246,7 +238,7 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
     elif offset:
         streamlink_cmd.append("--hls-start-offset")
         streamlink_cmd.append(offset)
-        LOG.debug("Using --hls-start-offset " + offset)
+        LOG.debug("Using --hls-start-offset %s", offset)
 
     if fetch_filename is not None:
         if os.path.exists(fetch_filename):
@@ -254,11 +246,11 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
             fetch_filename_orig = fetch_filename
             fsplit = os.path.splitext(fetch_filename)
             fetch_filename = '{}-{}{}'.format(fsplit[0], datetime.strftime(datetime.today(), "%H%m"), fsplit[1])
-            LOG.info('File {} exists, using {} instead'.format(fetch_filename_orig, fetch_filename))
+            LOG.info('File %s exists, using %s instead', fetch_filename_orig, fetch_filename)
         streamlink_cmd.append("--output")
         streamlink_cmd.append(fetch_filename)
     elif video_player is not None and video_player != '':
-        LOG.debug('Using video_player: {}'.format(video_player))
+        LOG.debug('Using video_player: %s', video_player)
         streamlink_cmd.append("--player")
         streamlink_cmd.append(video_player)
         if config.CONFIG.parser.getboolean('streamlink_passthrough', False):
@@ -269,7 +261,7 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
     streamlink_cmd.append(stream_url)
     streamlink_cmd.append(config.CONFIG.parser.get('resolution', 'best'))
 
-    LOG.debug('Playing: ' + str(streamlink_cmd))
+    LOG.debug('Playing: %s', str(streamlink_cmd))
     subprocess.run(streamlink_cmd)
 
     return streamlink_cmd

@@ -1,12 +1,9 @@
 """
 Models the game data retrieved via JSON.
 """
-import json
+
 import logging
-import os
 import pprint
-import requests
-import sys
 import time
 
 from datetime import datetime
@@ -46,6 +43,12 @@ def get_feedtype_keystring():
     return ', '.join(reverse_list)
 
 
+def convert_feedtype_to_short(feedtype):
+    if feedtype in FEEDTYPE_MAP:
+        return FEEDTYPE_MAP[feedtype]
+    return feedtype
+
+
 def is_fav(game_rec):
     if 'favourite' in game_rec:
         return game_rec['favourite']
@@ -73,22 +76,8 @@ def filter_favs(game_rec):
 
 class GameData:
 
-    def __init__(self, feedtype_map=FEEDTYPE_MAP):
+    def __init__(self):
         self.game_data_list = list()
-        self.feedtype_map = feedtype_map
-
-    def convert_feedtype_to_short(self, feedtype):
-        if feedtype in self.feedtype_map:
-            return self.feedtype_map[feedtype]
-        return feedtype
-
-    def convert_to_long_feedtype(self, feed):
-        if feed in self.feedtype_map:
-            return feed
-        for feedtype in self.feedtype_map:
-            if self.feedtype_map[feedtype] == feed:
-                return feedtype
-        return feed
 
     def __get_feeds_for_display(self, game_rec):
         non_highlight_feeds = list()
@@ -96,14 +85,14 @@ class GameData:
         for feed in sorted(game_rec['feed'].keys()):
             if feed not in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
                 if use_short_feeds:
-                    non_highlight_feeds.append(self.convert_feedtype_to_short(feed))
+                    non_highlight_feeds.append(convert_feedtype_to_short(feed))
                 else:
                     non_highlight_feeds.append(feed)
         highlight_feeds = list()
         for feed in game_rec['feed'].keys():
             if feed in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
                 if use_short_feeds:
-                    highlight_feeds.append(self.convert_feedtype_to_short(feed))
+                    highlight_feeds.append(convert_feedtype_to_short(feed))
                 else:
                     highlight_feeds.append(feed)
         return '{:7} {}'.format('/'.join(non_highlight_feeds), '/'.join(highlight_feeds))
@@ -118,7 +107,7 @@ class GameData:
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
         url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.api_url, date_str, hydrate)
 
-        json_data = util.fetch_json_from_url(url, 'gamedata', overwrite_json)
+        json_data = util.request_json(url, 'gamedata')
 
         game_data = dict()  # we return this dictionary
 
@@ -357,22 +346,24 @@ class GameData:
             score = ''
             if game_rec['abstractGameState'] not in ('Preview', ):
                 score = '{}-{}'.format(game_rec['linescore']['away']['runs'], game_rec['linescore']['home']['runs'])
-            outl.append("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | {gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}"\
-                            .format(coloron=color_on, coloroff=color_off,
-                                    ginfo=game_info_str,
-                                    series=series_info,
-                                    score=score,
-                                    gscoloron=game_state_color_on,
-                                    gstate=game_state,
-                                    gscoloroff=game_state_color_off,
-                                    feeds=self.__get_feeds_for_display(game_rec)))
+            outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
+                         "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                        .format(coloron=color_on, coloroff=color_off,
+                                ginfo=game_info_str,
+                                series=series_info,
+                                score=score,
+                                gscoloron=game_state_color_on,
+                                gstate=game_state,
+                                gscoloroff=game_state_color_off,
+                                feeds=self.__get_feeds_for_display(game_rec)))
         else:
-            outl.append("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{gstate:^9}{coloroff} | {coloron}{feeds}{coloroff}"\
-                            .format(coloron=color_on, coloroff=color_off,
-                                    ginfo=game_info_str,
-                                    series=series_info,
-                                    gstate=game_state,
-                                    feeds=self.__get_feeds_for_display(game_rec)))
+            outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | "
+                         "{coloron}{gstate:^9}{coloroff} | {coloron}{feeds}{coloroff}")
+                        .format(coloron=color_on, coloroff=color_off,
+                                ginfo=game_info_str,
+                                series=series_info,
+                                gstate=game_state,
+                                feeds=self.__get_feeds_for_display(game_rec)))
         if config.CONFIG.parser.getboolean('debug') and config.CONFIG.parser.getboolean('verbose'):
             for feedtype in game_rec['feed']:
                 outl.append('    {}: {}  [game_pk:{}, mediaPlaybackId:{}]'.format(feedtype,

@@ -15,6 +15,7 @@ CONFIG = None  # holds a Config instance
 DEBUG = False
 VERBOSE = False
 VERIFY_SSL = True
+SAVE_JSON_FILE = True
 SAVE_JSON_FILE_BY_TIMESTAMP = False  # normally false; will save many .json files if set
 # SAVE_JSON_FILE_BY_TIMESTAMP = True  # normally false; will save many .json files if set
 

@@ -2,16 +2,17 @@
 Utility functions
 """
 
-import json
 import logging
 import os.path
 import sys
+import tempfile
 import time
 
 import requests
 
-from dateutil import tz
 from datetime import datetime
+from datetime import timezone
+from dateutil import tz
 
 import mlbam.config as config
 
@@ -61,31 +62,36 @@ def die(msg, exit_code=1):
     sys.exit(exit_code)
 
 
-def fetch_json_from_url(url, output_filename=None, overwrite_json=True, suffix=''):
-    if suffix:
-        suffix = '-' + suffix
-    if config.SAVE_JSON_FILE_BY_TIMESTAMP:
-        json_file = os.path.join(config.CONFIG.dir,
-                                 '{}{}-{}.json'.format(output_filename, suffix, time.strftime("%Y-%m-%d-%H%M")))
-    else:
-        json_file = os.path.join(config.CONFIG.dir, '{}{}.json'.format(output_filename, suffix))
-    if overwrite_json or not os.path.exists(json_file):
-        LOG.debug('Getting url={} ...'.format(url))
-        # query nhl.com for today's schedule
-        headers = {
-            'User-Agent': config.CONFIG.ua_iphone,
-            'Connection': 'close'
-        }
-        log_http(url, 'get', headers, sys._getframe().f_code.co_name)
-        r = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
+def get_tempdir():
+    """Create a directory for ourselves in the system tempdir."""
+    script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+    tempdir = os.path.join(tempfile.gettempdir(), script_name)
+    if not os.path.exists(tempdir):
+        os.makedirs(tempdir)
+    return tempdir
 
-        with open(json_file, 'w') as f:  # write date to json_file
-            f.write(r.text)
 
-    with open(json_file) as games_file:
-        json_data = json.load(games_file)
+def request_json(url, output_filename=None):
+    """Sends a request expecting a json-formatted response."""
+    LOG.debug('Getting url=%s ...', url)
+    headers = {
+        'User-Agent': config.CONFIG.ua_iphone,
+        'Connection': 'close'
+    }
+    log_http(url, 'get', headers, sys._getframe().f_code.co_name)
+    response = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
+    response.raise_for_status()
 
-    return json_data
+    if output_filename is not None and config.SAVE_JSON_FILE:
+        if config.SAVE_JSON_FILE_BY_TIMESTAMP:
+            json_file = os.path.join(get_tempdir(),
+                                     '{}-{}.json'.format(output_filename, time.strftime("%Y-%m-%d-%H%M")))
+        else:
+            json_file = os.path.join(get_tempdir(), '{}.json'.format(output_filename))
+        with open(json_file, 'w') as out:  # write date to json_file
+            out.write(response.text)
+
+    return response.json()
 
 
 def convert_time_to_local(d):
@@ -93,6 +99,11 @@ def convert_time_to_local(d):
     to_zone = tz.tzlocal()
     utc = d.replace(tzinfo=from_zone)
     return utc.astimezone(to_zone).strftime('%H:%M')
+
+
+def has_reached_time(datetime_val_utc):
+    # return datetime_val_utc.replace(timezone.utc) < datetime.now(timezone.utc)
+    return datetime_val_utc < datetime.now(timezone.utc)
 
 
 def get_csv_list(csv_string):
