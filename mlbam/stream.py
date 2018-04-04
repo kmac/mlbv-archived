@@ -139,7 +139,7 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
     inning_half = 'top'
     if inning_offset.startswith('b'):
         inning_half = 'bottom'
-    if inning_offset[-2].isnumeric():
+    if len(inning_offset) > 1 and inning_offset[-2].isnumeric():
         inning = inning_offset[-2:]  # double digits, extra innings
     else:
         inning = inning_offset[-1]  # single digit inning

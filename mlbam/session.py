@@ -21,6 +21,7 @@ import requests
 import dateutil.parser
 
 import mlbam.config as config
+import mlbam.util as util
 
 
 LOG = logging.getLogger(__name__)
@@ -281,7 +282,7 @@ class MLBSession(object):
         # util.log_http(stream_url, 'get', headers, sys._getframe().f_code.co_name)
         resp = self.session.get(stream_url, headers=headers)
         playlist = resp.text
-        playlist_file = os.path.join(config.CONFIG.dir, 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
+        playlist_file = os.path.join(util.get_tempdir(), 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
         LOG.debug('writing playlist to: {}'.format(playlist_file))
         with open(playlist_file, 'w') as f:
             f.write(playlist)
