@@ -49,6 +49,15 @@ def convert_feedtype_to_short(feedtype):
     return feedtype
 
 
+def convert_to_long_feedtype(feed):
+    if feed in FEEDTYPE_MAP:
+        return feed
+    for feedtype in FEEDTYPE_MAP:
+        if FEEDTYPE_MAP[feedtype] == feed:
+            return feedtype
+    return feed
+
+
 def is_fav(game_rec):
     if 'favourite' in game_rec:
         return game_rec['favourite']

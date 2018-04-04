@@ -114,7 +114,7 @@ def main(argv=None):
             # Issue #4 all-star game has funky team codes
             LOG.warn('Unexpected team code: {}'.format(team_to_play))
     if args.feed:
-        feedtype = mlb_gamedata.convert_to_long_feedtype(args.feed.lower())
+        feedtype = gamedata.convert_to_long_feedtype(args.feed.lower())
     if args.resolution:
         config.CONFIG.parser['resolution'] = args.resolution
     if args.scores:
