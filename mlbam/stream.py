@@ -119,15 +119,20 @@ def _lookup_inning_timestamp(game_pk, inning, inning_half='top', overwrite_json=
 
     if json_data['allPlays'] is None or len(json_data['allPlays']) < 1:
         LOG.debug("_lookup_inning_timestamp: no play data for %s", playbyplay_url)
-        return None
+        return None, None
 
+    first_play = None
     for play in json_data['allPlays']:
+        if first_play is None:
+            first_play = str(play['about']['startTime'])
+            LOG.debug("First play: %s", str(play['about']['startTime']))
+            LOG.debug("First play data: %s", play)
         if str(play['about']['inning']) == inning and str(play['about']['halfInning']) == inning_half:
             LOG.info("Found inning start: %s", str(play['about']['startTime']))
-            LOG.debug("Inning start play data: %s", play['about'])
-            return str(play['about']['startTime'])
+            LOG.debug("Inning start play data: %s", play)
+            return first_play, str(play['about']['startTime'])
     LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
-    return None
+    return first_play, None
 
 
 def _calculate_inning_offset(inning_offset, media_state, game_rec):
@@ -138,14 +143,15 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         inning = inning_offset[-2:]  # double digits, extra innings
     else:
         inning = inning_offset[-1]  # single digit inning
-    inning_timestamp = _lookup_inning_timestamp(game_rec['game_pk'], inning, inning_half)
-    if inning_timestamp is None:
+    first_play_timestamp_str, inning_timestamp_str = _lookup_inning_timestamp(game_rec['game_pk'], inning, inning_half)
+    if inning_timestamp_str is None:
         LOG.error(("Inning '%s' not found in play-by-play data. "
                    "Proceeding without inning input", inning_offset))
         return None
 
-    # inning_timestamp is of form: 2018-04-02T17:08:23.000Z
-    inning_start_datetime = parser.parse(inning_timestamp)
+    # inning_timestamp_str is of form: 2018-04-02T17:08:23.000Z
+    inning_start_datetime = parser.parse(inning_timestamp_str)
+    inning_start_timestamp = inning_start_datetime.timestamp()
 
     # now calculate the HH:MM:SS offset for livestream.
     # It is complicated by:
@@ -155,9 +161,8 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         #     start          offset       endofstream
         #     |        | <----------------> |
         #            inning
-        LOG.info("Live game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp)
+        LOG.info("Live game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp_str)
         now_timestamp = datetime.now(timezone.utc).timestamp()
-        inning_start_timestamp = inning_start_datetime.timestamp()
         offset_secs = now_timestamp - inning_start_timestamp
         LOG.debug("now_timestamp: %s, inning_start_timestamp: %s, offset=%s", now_timestamp, inning_start_timestamp, offset_secs)
         logstr = "Calculated live game negative inning offset (from now): %s"
@@ -165,12 +170,11 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         #     start      inning        endofstream
         #     | <--------> |                |
         #         offset
-        LOG.info("Archive game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp)
-        inning_start_timestamp = inning_start_datetime.timestamp()
-        game_start_timestamp = game_rec['mlbdate'].timestamp()
-        offset_secs = inning_start_timestamp - game_start_timestamp
-        LOG.debug("inning_start_timestamp: %s, game_start_timestamp: %s, offset=%s",
-                  inning_start_timestamp, game_start_timestamp, offset_secs)
+        LOG.info("Archive game: game start: %s, inning start: %s", first_play_timestamp_str, inning_timestamp_str)
+        first_play_timestamp = parser.parse(first_play_timestamp_str).timestamp()
+        offset_secs = inning_start_timestamp - first_play_timestamp
+        LOG.debug("inning_start_timestamp: %s, first_play_timestamp: %s, offset=%s",
+                  inning_start_timestamp, first_play_timestamp, offset_secs)
         logstr = "Calculated archive game inning offset (from start): %s"
 
     hours, remainder_secs = divmod(offset_secs, 3600)
