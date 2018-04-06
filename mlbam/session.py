@@ -263,6 +263,16 @@ class MLBSession(object):
             "origin": "https://www.mlb.com"
         }
         response = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers)
+        if response is not None and config.SAVE_JSON_FILE:
+            output_filename = 'stream'
+            if config.SAVE_JSON_FILE_BY_TIMESTAMP:
+                json_file = os.path.join(util.get_tempdir(),
+                                         '{}-{}.json'.format(output_filename, time.strftime("%Y-%m-%d-%H%M")))
+            else:
+                json_file = os.path.join(util.get_tempdir(), '{}.json'.format(output_filename))
+            with open(json_file, 'w') as out:  # write date to json_file
+                out.write(response.text)
+
         stream = response.json()
         LOG.debug("lookup_stream_url, stream response: %s", stream)
         if "errors" in stream and len(stream["errors"]):

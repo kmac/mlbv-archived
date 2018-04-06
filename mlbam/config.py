@@ -18,6 +18,7 @@ VERIFY_SSL = True
 SAVE_JSON_FILE = True
 SAVE_JSON_FILE_BY_TIMESTAMP = False  # normally false; will save many .json files if set
 # SAVE_JSON_FILE_BY_TIMESTAMP = True  # normally false; will save many .json files if set
+SAVE_PLAYLIST_FILE = False
 
 LOG = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class Config:
             'streamlink_highlights': 'true',  # if false will send url direct to video_player (no resolution selection)
             'streamlink_passthrough_highlights': 'true',  # allows seeking
             'streamlink_passthrough': 'false',
+            'stream_start_offset_secs': '240',
             'audio_player': 'mpv',
             'debug': 'false',
             'verbose': 'false',
@@ -96,8 +98,6 @@ class Config:
 
 
 class MLBConfig(Config):
-    """This is a TODO."""
-    # example: https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2017-08-10&endDate=2017-08-10&expand=schedule.teams,schedule.linescore,schedule.game.content.media.epg
     api_url = 'https://statsapi.mlb.com'
     # ?? mf_svc_url = 'https://mf.svc.nhl.com/ws/media/mf/v2.4/stream'
     # ?? ua_nhl = 'NHL/11479 CFNetwork/887 Darwin/17.0.0'
