@@ -214,36 +214,38 @@ class GameData:
                             if stream['mediaFeedType'] != 'COMPOSITE' and stream['mediaFeedType'] != 'ISO':
                                 feedtype = str(stream['mediaFeedType']).lower()  # home, away, national, french, ...
                                 game_rec['feed'][feedtype] = dict()
-                                game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
-                                game_rec['feed'][feedtype]['mediaState'] = str(stream['mediaState'])
-                                game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
-                                game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
-                for media in game['content']['media']['epgAlternate']:
-                    if media['title'] == 'Extended Highlights':
-                        feedtype = 'condensed'
-                        if len(media['items']) > 0:
-                            game_rec['feed'][feedtype] = dict()
-                            stream = media['items'][0]
-                            game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
-                            for playback_item in stream['playbacks']:
-                                if playback_item['name'] == config.CONFIG.playback_scenario:
-                                    game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
-                    elif media['title'] == 'Daily Recap':
-                        feedtype = 'recap'
-                        if len(media['items']) > 0:
-                            game_rec['feed'][feedtype] = dict()
-                            stream = media['items'][0]
-                            game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
-                            for playback_item in stream['playbacks']:
-                                if playback_item['name'] == config.CONFIG.playback_scenario:
-                                    game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
-                    # elif media['title'] == 'Audio':
-                    #     for stream in media['items']:
-                    #         feedtype = 'audio-' + str(stream['mediaFeedType']).lower()  # home, away, national, french, ...
-                    #         game_rec['feed'][feedtype] = dict()
-                    #         game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
-                    #         game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
-                    #         game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
+                                if 'mediaId' in stream:
+                                    game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
+                                    game_rec['feed'][feedtype]['mediaState'] = str(stream['mediaState'])
+                                    game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
+                                    game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
+                if 'epgAlternate' in game['content']['media']:
+                    for media in game['content']['media']['epgAlternate']:
+                        if media['title'] == 'Extended Highlights':
+                            feedtype = 'condensed'
+                            if len(media['items']) > 0:
+                                game_rec['feed'][feedtype] = dict()
+                                stream = media['items'][0]
+                                game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
+                                for playback_item in stream['playbacks']:
+                                    if playback_item['name'] == config.CONFIG.playback_scenario:
+                                        game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
+                        elif media['title'] == 'Daily Recap':
+                            feedtype = 'recap'
+                            if len(media['items']) > 0:
+                                game_rec['feed'][feedtype] = dict()
+                                stream = media['items'][0]
+                                game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
+                                for playback_item in stream['playbacks']:
+                                    if playback_item['name'] == config.CONFIG.playback_scenario:
+                                        game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
+                        # elif media['title'] == 'Audio':
+                        #     for stream in media['items']:
+                        #         feedtype = 'audio-' + str(stream['mediaFeedType']).lower()  # home, away, national, french, ...
+                        #         game_rec['feed'][feedtype] = dict()
+                        #         game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
+                        #         game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
+                        #         game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
 
         return game_data
 
@@ -338,7 +340,7 @@ class GameData:
                     game_state_color_off = util.ANSI_CONTROL_CODES['reset']
                 if game_rec['detailedState'] in ('Final', ):
                     game_state = game_rec['detailedState']
-                    if int(game_rec['linescore']['currentInning']) != 9:
+                    if 'currentInning' in game_rec['linescore'] and int(game_rec['linescore']['currentInning']) != 9:
                         game_state += '({})'.format(game_rec['linescore']['currentInning'])
                 else:
                     if game_rec['linescore']['inningState'] != '':
@@ -358,31 +360,35 @@ class GameData:
             score = ''
             if game_rec['abstractGameState'] not in ('Preview', ):
                 score = '{}-{}'.format(game_rec['linescore']['away']['runs'], game_rec['linescore']['home']['runs'])
-            if show_linescore and 'raw' in game_rec['linescore'] and game_rec['linescore']['raw']['innings']:
+            if show_linescore and game_rec['abstractGameState'] not in ('Preview', ) and \
+                    'raw' in game_rec['linescore'] and game_rec['linescore']['raw']['innings']:
                 linescore_dict = self.get_linescore_dict(game_rec)
-                # outl.append('{:7}{}'.format('', linescore_dict['header']))
-                # outl.append('{:7}{}'.format('', linescore_dict['away']))
-                # outl.append('{:7}{}'.format('', linescore_dict['home']))
                 outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
                              "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
                             .format(coloron=color_on, coloroff=color_off,
                                     ginfo=game_info_str, series=series_info, score=score,
                                     gscoloron=game_state_color_on, gstate=game_state,
                                     gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
-                #game_info_str = '{time:7}{hdr}'.format(time=util.convert_time_to_local(game_rec['mlbdate']), hdr=linescore_dict['header'])
-                #outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
-                #             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
-                #            .format(coloron=color_on, coloroff=color_off,
-                #                    ginfo=game_info_str, series=series_info, score=score, gscoloron=game_state_color_on,
-                #                    gstate=game_state, gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
+                # game_info_str = '{time:7}{hdr}'.format(time=util.convert_time_to_local(game_rec['mlbdate']), hdr=linescore_dict['header'][4:])
+                # outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
+                #              "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                #             .format(coloron=color_on, coloroff=color_off,
+                #                     ginfo=game_info_str, series=series_info, score=score, gscoloron=game_state_color_on,
+                #                     gstate=game_state, gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
                 game_info_str = '{:3}{}'.format('', linescore_dict['header'])
+                if game_rec['abstractGameState'] in ('Live',) and game_rec['linescore']['inningState'] != 'Mid':
+                    # score_field = '{}-{} {} out'.format(game_rec['linescore']['raw']['balls'],
+                    #                                     game_rec['linescore']['raw']['strikes'],
+                    #                                     game_rec['linescore']['raw']['outs'])
+                    score_field = '{} out'.format(game_rec['linescore']['raw']['outs'])
+                else:
+                    score_field = ''
                 outl.append(("{coloron}{ginfo:<63} {coloroff} | {coloron}{score:^5}{coloroff} | "
                              "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
                             .format(coloron=color_on, coloroff=color_off,
                                     ginfo=game_info_str, score='', gscoloron=game_state_color_on,
-                                    gstate='', gscoloroff=game_state_color_off, feeds=''))
+                                    gstate=score_field, gscoloroff=game_state_color_off, feeds=''))
                 for team in ('away', 'home'):
-                    #game_info_str = '{:7}{}'.format('', linescore_dict[team])
                     game_info_str = '{:3}{}'.format('', linescore_dict[team])
                     outl.append(("{coloron}{ginfo:<63} {coloroff} | {coloron}{score:^5}{coloroff} | "
                                  "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
@@ -446,7 +452,7 @@ class GameData:
                     outd[team] += '{:>3}'.format(inning[team]['runs'])
                 else:
                     outd[team] += '{:>3}'.format('')
-        for inning_num in range(current_inning+1, 9):  # fill in remaining innings, if any
+        for inning_num in range(current_inning+1, 10):  # fill in remaining innings, if any
             outd['header'] += '{:>3}'.format(inning_num)
             outd['away'] += '{:>3}'.format('')
             outd['home'] += '{:>3}'.format('')
