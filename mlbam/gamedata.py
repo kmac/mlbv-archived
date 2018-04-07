@@ -143,6 +143,7 @@ class GameData:
 
             game_rec['linescore'] = dict()
             if 'linescore' in game:
+                game_rec['linescore']['raw'] = game['linescore']
                 if 'currentInning' in game['linescore']:
                     game_rec['linescore']['currentInning'] = str(game['linescore']['currentInning'])
                 else:
@@ -246,9 +247,10 @@ class GameData:
 
         return game_data
 
-    def fetch_game_data(self, game_date, num_days=1, show_games=True):
+    def retrieve_and_display_game_data(self, game_date, num_days=1, show_games=True):
         game_data_list = list()
         show_scores = config.CONFIG.parser.getboolean('scores')
+        show_linescore = config.CONFIG.parser.getboolean('linescore')
         for i in range(0, num_days):
             game_data = self._get_game_data(game_date)
             outl = list()  # holds list of strings for output
@@ -279,16 +281,17 @@ class GameData:
                         outl.append("{:55} {}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 11, ' ' * 12))
                     for game_pk in live_game_pks:
                         if filter_favs(game_data[game_pk]) is not None:
-                            outl.extend(self.show_game_details(game_pk, game_data[game_pk]))
+                            outl.extend(self.display_game_details(game_pk, game_data[game_pk], show_linescore))
                             print_outl = True
                     if show_scores:
                         outl.append("{:55} {}|{}|{}|{}".format('-----', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
+                        outl.append("{:55} {}|{}|{}|{}".format('Non-Live Games:', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
                     else:
                         outl.append("{:55} {}|{}|{}".format('-----', ' ' * 9, ' ' * 11, ' ' * 12))
                 for game_pk in game_data:
                     if game_data[game_pk]['abstractGameState'] != 'Live':
                         if filter_favs(game_data[game_pk]) is not None:
-                            outl.extend(self.show_game_details(game_pk, game_data[game_pk]))
+                            outl.extend(self.display_game_details(game_pk, game_data[game_pk], show_linescore))
                             print_outl = True
                 # print(' ' * 5, get_feedtype_keystring())
             else:
@@ -303,7 +306,7 @@ class GameData:
 
         return game_data_list
 
-    def show_game_details(self, game_pk, game_rec):
+    def display_game_details(self, game_pk, game_rec, show_linescore):
         outl = list()
         color_on = ''
         color_off = ''
@@ -355,16 +358,54 @@ class GameData:
             score = ''
             if game_rec['abstractGameState'] not in ('Preview', ):
                 score = '{}-{}'.format(game_rec['linescore']['away']['runs'], game_rec['linescore']['home']['runs'])
-            outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
-                         "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
-                        .format(coloron=color_on, coloroff=color_off,
-                                ginfo=game_info_str,
-                                series=series_info,
-                                score=score,
-                                gscoloron=game_state_color_on,
-                                gstate=game_state,
-                                gscoloroff=game_state_color_off,
-                                feeds=self.__get_feeds_for_display(game_rec)))
+            if show_linescore and 'raw' in game_rec['linescore'] and game_rec['linescore']['raw']['innings']:
+                linescore_dict = self.get_linescore_dict(game_rec)
+                # outl.append('{:7}{}'.format('', linescore_dict['header']))
+                # outl.append('{:7}{}'.format('', linescore_dict['away']))
+                # outl.append('{:7}{}'.format('', linescore_dict['home']))
+                outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
+                             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                            .format(coloron=color_on, coloroff=color_off,
+                                    ginfo=game_info_str, series=series_info, score=score,
+                                    gscoloron=game_state_color_on, gstate=game_state,
+                                    gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
+                #game_info_str = '{time:7}{hdr}'.format(time=util.convert_time_to_local(game_rec['mlbdate']), hdr=linescore_dict['header'])
+                #outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
+                #             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                #            .format(coloron=color_on, coloroff=color_off,
+                #                    ginfo=game_info_str, series=series_info, score=score, gscoloron=game_state_color_on,
+                #                    gstate=game_state, gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
+                game_info_str = '{:3}{}'.format('', linescore_dict['header'])
+                outl.append(("{coloron}{ginfo:<63} {coloroff} | {coloron}{score:^5}{coloroff} | "
+                             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                            .format(coloron=color_on, coloroff=color_off,
+                                    ginfo=game_info_str, score='', gscoloron=game_state_color_on,
+                                    gstate='', gscoloroff=game_state_color_off, feeds=''))
+                for team in ('away', 'home'):
+                    #game_info_str = '{:7}{}'.format('', linescore_dict[team])
+                    game_info_str = '{:3}{}'.format('', linescore_dict[team])
+                    outl.append(("{coloron}{ginfo:<63} {coloroff} | {coloron}{score:^5}{coloroff} | "
+                                 "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                                .format(coloron=color_on, coloroff=color_off,
+                                        ginfo=game_info_str, score='', gscoloron=game_state_color_on,
+                                        gstate='', gscoloroff=game_state_color_off, feeds=''))
+                #game_info_str = ''
+                #outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
+                #             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                #            .format(coloron=color_on, coloroff=color_off,
+                #                    ginfo=game_info_str, series='', score='', gscoloron=game_state_color_on,
+                #                    gstate='', gscoloroff=game_state_color_off, feeds=''))
+            else:
+                outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
+                             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
+                            .format(coloron=color_on, coloroff=color_off,
+                                    ginfo=game_info_str,
+                                    series=series_info,
+                                    score=score,
+                                    gscoloron=game_state_color_on,
+                                    gstate=game_state,
+                                    gscoloroff=game_state_color_off,
+                                    feeds=self.__get_feeds_for_display(game_rec)))
         else:
             outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | "
                          "{coloron}{gstate:^9}{coloroff} | {coloron}{feeds}{coloroff}")
@@ -380,6 +421,43 @@ class GameData:
                                                                                   game_pk,
                                                                                   game_rec['feed'][feedtype]['mediaPlaybackId']))
         return outl
+
+    def get_linescore_dict(self, game_rec):
+        """
+             1  2  3  4  5  6  7  8  9 10 11  R  H  E
+        TOR  1  0  0  0  0  0  0  3  0  0  0  4  8  0
+        NYY  0  0  0  0  1  0  0  0  4  0  0  5  8  0
+
+        Returns a dictionary for easy processing of home/away
+        """
+        linescore_json = game_rec['linescore']['raw']
+        outd = dict()
+        outd['header'] = '{title:<4}'.format(title='')
+        outd['away'] = '{title:<4}'.format(title=game_rec['away']['abbrev'].upper())
+        outd['home'] = '{title:<4}'.format(title=game_rec['home']['abbrev'].upper())
+        if 'currentInning' in linescore_json:
+            current_inning = int(linescore_json['currentInning'])
+        else:
+            current_inning = 0
+        for inning in linescore_json['innings']:
+            outd['header'] += '{:>3}'.format(inning['num'])
+            for team in ('away', 'home'):
+                if 'runs' in inning[team]:
+                    outd[team] += '{:>3}'.format(inning[team]['runs'])
+                else:
+                    outd[team] += '{:>3}'.format('')
+        for inning_num in range(current_inning+1, 9):  # fill in remaining innings, if any
+            outd['header'] += '{:>3}'.format(inning_num)
+            outd['away'] += '{:>3}'.format('')
+            outd['home'] += '{:>3}'.format('')
+        outd['header'] += '{:>3}{:>3}{:>3}'.format('R', 'H', 'E')
+        for team in ('away', 'home'):
+            if 'teams' in linescore_json and team in linescore_json['teams'] \
+                    and 'runs' in linescore_json['teams'][team]:
+                outd[team] += '{:>3}{:>3}{:>3}'.format(linescore_json['teams'][team]['runs'],
+                                                       linescore_json['teams'][team]['hits'],
+                                                       linescore_json['teams'][team]['errors'])
+        return outd
 
     def get_audio_stream_url(self):
         # http://hlsaudio-akc.med2.med.nhl.com/ls04/nhl/2017/12/31/NHL_GAME_AUDIO_TORVGK_M2_VISIT_20171231_1513799214035/master_radio.m3u8

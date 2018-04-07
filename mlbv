@@ -43,11 +43,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=HELP_HEADER, epilog=HELP_FOOTER,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("-d", "--date", help="Display games/standings for date. Format: yyyy-mm-dd")
-    parser.add_argument("--inning", help=("Start live/archive stream from inning. Format: {t|b}{inning_num}. "
-                                          "t|b: (optional) top or bottom, inning_num: inning number. "
-                                          "e.g.  '5' - start at 5th inning. 't5' start at top 5th. "
-                                          "'b5' start at bottom 5th."
-                                          ))
+    parser.add_argument("-i", "--inning", help=("Start live/archive stream from inning. Format: {t|b}{inning_num}. "
+                                                "t|b: (optional) top or bottom, inning_num: inning number. "
+                                                "e.g.  '5' - start at 5th inning. 't5' start at top 5th. "
+                                                "'b5' start at bottom 5th."))
+    parser.add_argument("--inning-offset", type=int, metavar='secs',
+                        help="Override the inning offset time in seconds. Default=240 (4 minutes)")
     parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
     parser.add_argument("--days", type=int, default=1, help="Number of days to display")
     parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
@@ -62,12 +63,13 @@ def main(argv=None):
     parser.add_argument("--filter", action="store_true", help="Filter output for favourite teams only")
     parser.add_argument("-g", "--game", default='1', choices=('1', '2'),
                         help="Select game number of double-header")
-    parser.add_argument("-r", "--resolution", metavar='RES',
-                        help="Stream resolution for streamlink, one of: {}".format(config.BANDWIDTH_CHOICES))
+    parser.add_argument("-r", "--resolution", choices=config.BANDWIDTH_CHOICES,
+                        help="Stream resolution for streamlink (overrides settting in config file)")
     parser.add_argument("-s", "--scores", action="store_true",
                         help="Show scores (default off; overrides config file)")
     parser.add_argument("-n", "--no-scores", action="store_true",
                         help="Do not show scores (default on; overrides config file)")
+    parser.add_argument("-l", "--linescore", action="store_true", help="Show linescores")
     parser.add_argument("--username", help="MLB.tv username. Required for live/archived games.")
     parser.add_argument("--password", help="MLB.tv password. Required for live/archived games.")
     parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
@@ -108,6 +110,8 @@ def main(argv=None):
         config.CONFIG.parser['username'] = args.username
     if args.password:
         config.CONFIG.parser['password'] = args.password
+    if args.inning_offset:
+        config.CONFIG.parser['stream_start_offset_secs'] = args.inning_offset
     if args.team:
         team_to_play = args.team.lower()
         if team_to_play not in gamedata.TEAM_CODES:
@@ -121,6 +125,8 @@ def main(argv=None):
         config.CONFIG.parser['scores'] = 'true'
     elif args.no_scores:
         config.CONFIG.parser['scores'] = 'false'
+    if args.linescore:
+        config.CONFIG.parser['linescore'] = 'true'
     if args.favs:
         config.CONFIG.parser['favs'] = args.favs
     if args.filter:
@@ -138,7 +144,7 @@ def main(argv=None):
         return 0
 
     # fetch and display games (don't display if we're going to start a stream)
-    game_data_list = mlb_gamedata.fetch_game_data(args.date, args.days, team_to_play is None)
+    game_data_list = mlb_gamedata.retrieve_and_display_game_data(args.date, args.days, team_to_play is None)
 
     if team_to_play is None:
         # nothing to play; we're done
@@ -165,7 +171,7 @@ def main(argv=None):
 
         # refresh the game data
         LOG.info('Game time. Refreshing game data after wait...')
-        game_data_list = mlb_gamedata.fetch_game_data(args.date, 1, team_to_play is None)
+        game_data_list = mlb_gamedata.retrieve_and_display_game_data(args.date, 1, team_to_play is None)
         if len(game_data_list) > 0:
             game_data = game_data_list[0]
         else:

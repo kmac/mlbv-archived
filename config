@@ -31,6 +31,9 @@
 # Show scores. Scores are hidden by default. If this is set to true then scores are shown.
 #scores=false
 
+# Show linescores. Requires scores=true above.
+#linescore=false
+
 # Use shorter feed names in game listings
 #use_short_feeds=true
 

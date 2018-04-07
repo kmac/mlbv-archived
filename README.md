@@ -26,28 +26,47 @@ to local blackout restrictions. However, if you don't have a subscription you ca
 condensed games.
 
 
-Sample console output:
+Sample console output (with linescore enabled):
 
 ````
-       2018-03-31                                                | Score |   State   | Feeds
+       2018-04-07                                        Series  | Score |   State   | Feeds
 -----------------------------------------------------------------|-------|-----------|--------------
-Live Games:                                                      |       |           |
-16:05: Houston (HOU) at Texas (TEX)                              |  9-3  |   End 9th | a/h/mkt_a
-16:05: LA Angels (LAA) at Oakland (OAK)                          |  8-3  |   Bot 9th | a/h
-18:10: Boston (BOS) at Tampa Bay (TB)                            |  2-0  |   Top 5th | a/h
-19:05: Minnesota (MIN) at Baltimore (BAL)                        |  1-0  |   Top 2nd | a/h
-19:10: Chi Cubs (CHC) at Miami (MIA)                             |  0-2  |   Top 2nd | a/h
-19:10: Philadelphia (PHI) at Atlanta (ATL)                       |  2-1  |   Bot 1st | a/h
-19:15: Chi White Sox (CWS) at Kansas City (KC)                   |  0-0  |   Top 1st | a/h
------                                                            |       |           |
-13:10: Pittsburgh (PIT) at Detroit (DET)                         |  0-0  | Postponed |
-13:10: St. Louis (STL) at NY Mets (NYM)                          |  2-6  |     Final | a/h     cnd/rcp
-14:10: Washington (WSH) at Cincinnati (CIN)                      | 13-7  |     Final | a/h     cnd/rcp
-16:07: NY Yankees (NYY) at Toronto (TOR)                         |  3-5  |     Final | a/h
-16:10: Cleveland (CLE) at Seattle (SEA)                          |  6-5  |   Bot 9th | a/h/mkt_h
-20:10: Colorado (COL) at Arizona (ARI)                           |       |           |
-20:40: Milwaukee (MIL) at San Diego (SD)                         |       |           |
-21:10: San Francisco (SF) at LA Dodgers (LAD)                    |       |           |
+Live Games:                                                      |       |           |            
+13:05: Baltimore (BAL) at NY Yankees (NYY)                 3/4   |  3-3  |  Bot 6th  | a/h     
+         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+   BAL   0  0  2  1  0  0        3  4  0                         |       |           | 
+   NYY   0  2  0  0  1           3  5  1                         |       |           | 
+13:05: NY Mets (NYM) at Washington (WSH)                   2/3   |  1-2  |  Bot 6th  | a/h     
+         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+   NYM   0  0  0  0  0  1        1  6  1                         |       |           | 
+   WSH   0  0  0  0  1  1        2  4  1                         |       |           | 
+13:05: Tampa Bay (TB) at Boston (BOS)                      2/3   |  2-8  |  Top 6th  | a/h     
+         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+   TB    2  0  0  0  0           2  4  0                         |       |           | 
+   BOS   4  4  0  0  0           8  6  0                         |       |           | 
+14:10: Detroit (DET) at Chi White Sox (CWS)                2/3   |  0-0  |  Top 3rd  | a/h     
+         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+   DET   0  0                    0  0  0                         |       |           | 
+   CWS   0  0                    0  2  0                         |       |           | 
+14:10: Seattle (SEA) at Minnesota (MIN)                    2/3   |  0-0  |  Top 4th  | a/h/mkt_a 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+   SEA   0  0  0                 0  0  0                         |       |           | 
+   MIN   0  0  0                 0  1  0                         |       |           | 
+14:15: Arizona (ARI) at St. Louis (STL)                    2/3   |  1-1  |  Bot 2nd  | a/h     
+         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+   ARI   1  0                    1  1  0                         |       |           | 
+   STL   1                       1  3  0                         |       |           | 
+-----                                                            |       |           |            
+Non-Live Games:                                                  |       |           |            
+16:05: Chi Cubs (CHC) at Milwaukee (MIL)                   3/4   |       |           |         
+16:10: Kansas City (KC) at Cleveland (CLE)                 2/3   |       |           |         
+18:05: LA Dodgers (LAD) at San Francisco (SF)              1/2   |       |           |         
+18:05: Miami (MIA) at Philadelphia (PHI)                   2/3   |       |           |         
+19:05: Cincinnati (CIN) at Pittsburgh (PIT)                3/4   |       |           |         
+19:10: San Diego (SD) at Houston (HOU)                     2/3   |       |           |         
+20:05: Toronto (TOR) at Texas (TEX)                        2/3   |       |           |         
+20:10: Atlanta (ATL) at Colorado (COL)                     2/3   |       |           |         
+21:07: Oakland (OAK) at LA Angels (LAA)                    2/3   |       |           |         
 ````
 
 Sample standings output:
