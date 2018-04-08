@@ -261,11 +261,6 @@ class GameData:
                 game_data_list.append(game_data)
                 if not show_games:
                     continue
-                live_game_pks = list()
-                for game_pk in game_data:
-                    if game_data[game_pk]['abstractGameState'] == 'Live':
-                        if filter_favs(game_data[game_pk]) is not None:
-                            live_game_pks.append(game_pk)
 
                 # print header
                 date_hdr = '{:7}{}'.format('', '{}'.format(game_date))
@@ -276,26 +271,11 @@ class GameData:
                     outl.append("{:56} {:^7} | {:^9} | {}".format(date_hdr, 'Series', 'State', 'Feeds'))
                     outl.append("{}|{}|{}".format('-' * 65, '-' * 11, '-' * 12))
 
-                if len(live_game_pks) > 0:
-                    if show_scores:
-                        outl.append("{:55} {}|{}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
-                    else:
-                        outl.append("{:55} {}|{}|{}".format('Live Games:', ' ' * 9, ' ' * 11, ' ' * 12))
-                    for game_pk in live_game_pks:
-                        if filter_favs(game_data[game_pk]) is not None:
-                            outl.extend(self.display_game_details(game_pk, game_data[game_pk], show_linescore))
-                            print_outl = True
-                    if show_scores:
-                        outl.append("{:55} {}|{}|{}|{}".format('-----', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
-                        outl.append("{:55} {}|{}|{}|{}".format('Non-Live Games:', ' ' * 9, ' ' * 7, ' ' * 11, ' ' * 12))
-                    else:
-                        outl.append("{:55} {}|{}|{}".format('-----', ' ' * 9, ' ' * 11, ' ' * 12))
                 for game_pk in game_data:
-                    if game_data[game_pk]['abstractGameState'] != 'Live':
+                    if True or game_data[game_pk]['abstractGameState'] != 'Live':
                         if filter_favs(game_data[game_pk]) is not None:
                             outl.extend(self.display_game_details(game_pk, game_data[game_pk], show_linescore))
                             print_outl = True
-                # print(' ' * 5, get_feedtype_keystring())
             else:
                 outl.append("No game data for {}".format(game_date))
                 print_outl = True
@@ -369,12 +349,6 @@ class GameData:
                                     ginfo=game_info_str, series=series_info, score=score,
                                     gscoloron=game_state_color_on, gstate=game_state,
                                     gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
-                # game_info_str = '{time:7}{hdr}'.format(time=util.convert_time_to_local(game_rec['mlbdate']), hdr=linescore_dict['header'][4:])
-                # outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
-                #              "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
-                #             .format(coloron=color_on, coloroff=color_off,
-                #                     ginfo=game_info_str, series=series_info, score=score, gscoloron=game_state_color_on,
-                #                     gstate=game_state, gscoloroff=game_state_color_off, feeds=self.__get_feeds_for_display(game_rec)))
                 game_info_str = '{:3}{}'.format('', linescore_dict['header'])
                 if game_rec['abstractGameState'] in ('Live',) and game_rec['linescore']['inningState'] != 'Mid':
                     # score_field = '{}-{} {} out'.format(game_rec['linescore']['raw']['balls'],
@@ -395,12 +369,6 @@ class GameData:
                                 .format(coloron=color_on, coloroff=color_off,
                                         ginfo=game_info_str, score='', gscoloron=game_state_color_on,
                                         gstate='', gscoloroff=game_state_color_off, feeds=''))
-                #game_info_str = ''
-                #outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
-                #             "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
-                #            .format(coloron=color_on, coloroff=color_off,
-                #                    ginfo=game_info_str, series='', score='', gscoloron=game_state_color_on,
-                #                    gstate='', gscoloroff=game_state_color_off, feeds=''))
             else:
                 outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
                              "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
