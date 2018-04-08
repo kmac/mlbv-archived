@@ -31,33 +31,30 @@ Sample console output (with linescore enabled):
 ````
        2018-04-07                                        Series  | Score |   State   | Feeds
 -----------------------------------------------------------------|-------|-----------|--------------
-Live Games:                                                      |       |           |            
 13:05: Baltimore (BAL) at NY Yankees (NYY)                 3/4   |  3-3  |  Bot 6th  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |   0 out   | 
    BAL   0  0  2  1  0  0        3  4  0                         |       |           | 
    NYY   0  2  0  0  1           3  5  1                         |       |           | 
 13:05: NY Mets (NYM) at Washington (WSH)                   2/3   |  1-2  |  Bot 6th  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |   2 out   | 
    NYM   0  0  0  0  0  1        1  6  1                         |       |           | 
    WSH   0  0  0  0  1  1        2  4  1                         |       |           | 
 13:05: Tampa Bay (TB) at Boston (BOS)                      2/3   |  2-8  |  Top 6th  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |   1 out   | 
    TB    2  0  0  0  0           2  4  0                         |       |           | 
    BOS   4  4  0  0  0           8  6  0                         |       |           | 
 14:10: Detroit (DET) at Chi White Sox (CWS)                2/3   |  0-0  |  Top 3rd  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |   0 out   | 
    DET   0  0                    0  0  0                         |       |           | 
    CWS   0  0                    0  2  0                         |       |           | 
 14:10: Seattle (SEA) at Minnesota (MIN)                    2/3   |  0-0  |  Top 4th  | a/h/mkt_a 
-         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |   2 out   | 
    SEA   0  0  0                 0  0  0                         |       |           | 
    MIN   0  0  0                 0  1  0                         |       |           | 
 14:15: Arizona (ARI) at St. Louis (STL)                    2/3   |  1-1  |  Bot 2nd  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |           | 
+         1  2  3  4  5  6  7  8  R  H  E                         |       |   2 out   | 
    ARI   1  0                    1  1  0                         |       |           | 
    STL   1                       1  3  0                         |       |           | 
------                                                            |       |           |            
-Non-Live Games:                                                  |       |           |            
 16:05: Chi Cubs (CHC) at Milwaukee (MIL)                   3/4   |       |           |         
 16:10: Kansas City (KC) at Cleveland (CLE)                 2/3   |       |           |         
 18:05: LA Dodgers (LAD) at San Francisco (SF)              1/2   |       |           |         

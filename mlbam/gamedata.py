@@ -289,6 +289,7 @@ class GameData:
         return game_data_list
 
     def display_game_details(self, game_pk, game_rec, show_linescore):
+        show_scores = config.CONFIG.parser.getboolean('scores')
         outl = list()
         color_on = ''
         color_off = ''
@@ -296,7 +297,6 @@ class GameData:
             if config.CONFIG.parser['fav_colour'] != '':
                 color_on = util.fg_ansi_colour(config.CONFIG.parser['fav_colour'])
                 color_off = util.ANSI_CONTROL_CODES['reset']
-        show_scores = config.CONFIG.parser.getboolean('scores')
         if game_rec['doubleHeader'] == 'N':
             series_info = "{sgn}/{gis}".format( sgn=game_rec['seriesGameNumber'], gis=game_rec['gamesInSeries'])
         else:
@@ -307,12 +307,10 @@ class GameData:
             .format(time=util.convert_time_to_local(game_rec['mlbdate']),
                     a1=game_rec['away']['display'], a2=game_rec['away']['abbrev'].upper(),
                     h1=game_rec['home']['display'], h2=game_rec['home']['abbrev'].upper())
-        # if game_rec['doubleHeader'] != 'N':
-        #     game_info_str = "{ginfo:<57}{dh}".format(ginfo=game_info_str, dh=doubleheader_info)
         game_state = ''
         game_state_color_on = color_on
         game_state_color_off = color_off
-        # LOG.debug("Checking game state: %s, %s", game_rec['abstractGameState'], game_rec['detailedState'])
+
         if game_rec['abstractGameState'] not in ('Preview', ):
             if show_scores:
                 if 'Critical' in game_rec['detailedState']:
@@ -334,12 +332,13 @@ class GameData:
                     game_state = game_rec['detailedState'].split('In Progress - ')[-1]
                 elif game_rec['detailedState'] not in ('Live', 'Final', 'Scheduled', 'In Progress'):
                     game_state = game_rec['detailedState']
-        # else:
-        #    game_state = 'Pending'
+
         if show_scores:
             score = ''
             if game_rec['abstractGameState'] not in ('Preview', ):
                 score = '{}-{}'.format(game_rec['linescore']['away']['runs'], game_rec['linescore']['home']['runs'])
+
+            # linescore
             if show_linescore and game_rec['abstractGameState'] not in ('Preview', ) and \
                     'raw' in game_rec['linescore'] and game_rec['linescore']['raw']['innings']:
                 linescore_dict = self.get_linescore_dict(game_rec)
@@ -373,27 +372,15 @@ class GameData:
                 outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | {coloron}{score:^5}{coloroff} | "
                              "{gscoloron}{gstate:^9}{gscoloroff} | {coloron}{feeds}{coloroff}")
                             .format(coloron=color_on, coloroff=color_off,
-                                    ginfo=game_info_str,
-                                    series=series_info,
-                                    score=score,
-                                    gscoloron=game_state_color_on,
-                                    gstate=game_state,
-                                    gscoloroff=game_state_color_off,
+                                    ginfo=game_info_str, series=series_info, score=score,
+                                    gscoloron=game_state_color_on, gstate=game_state, gscoloroff=game_state_color_off,
                                     feeds=self.__get_feeds_for_display(game_rec)))
-        else:
+        else:  # no scores
             outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | "
                          "{coloron}{gstate:^9}{coloroff} | {coloron}{feeds}{coloroff}")
                         .format(coloron=color_on, coloroff=color_off,
-                                ginfo=game_info_str,
-                                series=series_info,
-                                gstate=game_state,
+                                ginfo=game_info_str, series=series_info, gstate=game_state,
                                 feeds=self.__get_feeds_for_display(game_rec)))
-        if config.CONFIG.parser.getboolean('debug') and config.CONFIG.parser.getboolean('verbose'):
-            for feedtype in game_rec['feed']:
-                outl.append('    {}: {}  [game_pk:{}, mediaPlaybackId:{}]'.format(feedtype,
-                                                                                  game_rec['abstractGameState'],
-                                                                                  game_pk,
-                                                                                  game_rec['feed'][feedtype]['mediaPlaybackId']))
         return outl
 
     def get_linescore_dict(self, game_rec):
