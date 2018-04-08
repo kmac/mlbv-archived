@@ -5,3 +5,4 @@ __pycache__
 *.log
 *.m3u8
 *.pyc
+mlbv.egg-info/*

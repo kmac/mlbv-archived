@@ -142,12 +142,8 @@ This software is tested under linux. It should work under Windows or Mac with th
 
 ## Installation
 
-1. Install the pre-requisites: 
-    * Python 3.x is required
-    * Install the python-requests module (via pip or your distribution's package manager) 
-    * Install streamlink, which is required to view the HLS streams
-
-2. Clone this repository.
+1. Clone this repository.
+2. Run `pip install .`
 
 
 ## Configuration
