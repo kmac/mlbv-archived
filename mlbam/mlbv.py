@@ -111,7 +111,7 @@ def main(argv=None):
     if args.password:
         config.CONFIG.parser['password'] = args.password
     if args.inning_offset:
-        config.CONFIG.parser['stream_start_offset_secs'] = args.inning_offset
+        config.CONFIG.parser['stream_start_offset_secs'] = str(args.inning_offset)
     if args.team:
         team_to_play = args.team.lower()
         if team_to_play not in gamedata.TEAM_CODES:

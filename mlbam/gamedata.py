@@ -20,6 +20,13 @@ LOG = logging.getLogger(__name__)
 TEAM_CODES = ('ari', 'atl', 'bal', 'bos', 'chc', 'cws', 'cin', 'cle', 'col', 'det', 'fla', 'hou', 'kan', 'laa', 'lad',
               'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'wsh')
 
+# unicode characters:  '─' '┄' '╌' '═' '━' '─'
+BORDER_COLOR = util.fg_ansi_colour('darkgrey')
+COLOR_OFF = util.ANSI_CONTROL_CODES['reset']
+DASH = '─'
+DOUBLEDASH = '─'
+PIPE = BORDER_COLOR + '│' + COLOR_OFF
+JUNCTION = '┼'
 
 # this map is used to transform the statsweb feed name to something shorter
 FEEDTYPE_MAP = {
@@ -105,7 +112,7 @@ class GameData:
                 else:
                     highlight_feeds.append(feed)
         if len(highlight_feeds) > 0:
-            return '{} / {}'.format(','.join(non_highlight_feeds), ','.join(highlight_feeds))
+            return '{} {}'.format(','.join(non_highlight_feeds), ','.join(highlight_feeds))
         return '{}'.format(','.join(non_highlight_feeds))
 
     def _get_game_data(self, date_str=None, overwrite_json=True):
@@ -265,17 +272,24 @@ class GameData:
                     continue
 
                 # print header
-                date_hdr = '{:7}{}'.format('', '{}'.format(game_date))
+                date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
                 if show_scores:
                     if show_linescore:
                         outl.append("{:56}".format(date_hdr))
-                        outl.append("{}".format('-' * 91))
+                        outl.append('{c_on}{dash}{c_off}'.format(c_on=BORDER_COLOR,
+                                                                       dash=DOUBLEDASH*91,
+                                                                       c_off=COLOR_OFF))
                     else:
-                        outl.append("{:56} {:^7} | {:^5} | {:^9} | {}".format(date_hdr, 'Series', 'Score', 'State', 'Feeds'))
-                        outl.append("{}|{}|{}|{}".format('-' * 65, '-' * 7, '-' * 11, '-' * 16))
+                        outl.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
+                                    .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=PIPE))
+                        outl.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
+                                    .format(DOUBLEDASH * 57, DOUBLEDASH * 7, DOUBLEDASH * 11, DOUBLEDASH * 16,
+                                            pipe=JUNCTION, c_on=BORDER_COLOR, c_off=COLOR_OFF))
                 else:
-                    outl.append("{:56} {:^7} | {:^9} | {}".format(date_hdr, 'Series', 'State', 'Feeds'))
-                    outl.append("{}|{}|{}".format('-' * 65, '-' * 11, '-' * 16))
+                    outl.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=PIPE))
+                    outl.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
+                                .format(DOUBLEDASH * 57, DOUBLEDASH * 11, DOUBLEDASH * 16,
+                                        pipe=JUNCTION, c_on=BORDER_COLOR, c_off=COLOR_OFF))
 
                 game_count = 0
                 for game_pk in game_data:
@@ -355,7 +369,6 @@ class GameData:
             if game_rec['abstractGameState'] not in ('Preview', ) and game_rec['detailedState'] not in ('Postponed', ):
                 score = '{}-{}'.format(game_rec['linescore']['away']['runs'], game_rec['linescore']['home']['runs'])
 
-            common_line_suffix_fmt = " | {coloron}{score:^5}{coloroff} | {gscoloron}{gstate:<9}{gscoloroff} | {coloron}{feeds}{coloroff}"
             # linescore
             if show_linescore:
                 linescore_dict = self.get_linescore_dict(game_rec)
@@ -365,8 +378,12 @@ class GameData:
                        Feeds: a,h / cnd,rcp                        SF    1  0  0  2  0  1  0  0  0  0  0  0  0  3  7 17  1
                 """
                 line_fmt = "{coloron}{ginfo:<50} {lscore}{coloroff}"
+                # if game_rec['abstractGameState'] not in ('Live', 'Final'):  # or game_rec['detailedState'] in ('Postponed', ):
+                #     outl.append(line_fmt.format(coloron=color_on, coloroff=color_off, ginfo=game_info_str, lscore=''))
+                #     return outl
+
                 outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
-                                            ginfo=game_info_str, lscore=linescore_dict['header']))
+                                            ginfo=game_info_str, lscore=linescore_dict['header'], pipe=PIPE))
                 if game_state == '':
                     # game_info_str = '{series:7}Not Started'.format(series=series_info)
                     game_info_str = '{series:7}'.format(series=series_info)
@@ -377,8 +394,8 @@ class GameData:
                     else:
                         outs_info = ''
                     if score:
-                        game_info_str = '{series:7}{gstate}: {score} {outs}'.format(series=series_info,
-                                                                                    gstate=game_state, score=score, outs=outs_info)
+                        game_info_str = '{series:7}{gstate}: {score}{outs}'.format(series=series_info,
+                                                                                   gstate=game_state, score=score, outs=outs_info)
                     else:
                         game_info_str = '{series:7}{gstate}'.format(series=series_info, gstate=game_state)
                 outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
@@ -389,24 +406,28 @@ class GameData:
                     game_info_str = '{:7}Feeds: {feeds}'.format('', feeds=self.__get_feeds_for_display(game_rec))
                     outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
                                                 ginfo=game_info_str, lscore=linescore_dict['home']))
-                    if not is_last:
-                        outl.append('')
                 else:
                     outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
                                                 ginfo='', lscore=linescore_dict['home']))
+                if not is_last:
+                    outl.append('{coloron}{dash}{coloroff}'.format(coloron=util.fg_ansi_colour('darkgrey'),
+                                                                   dash=DASH*91,
+                                                                   coloroff=util.ANSI_CONTROL_CODES['reset']))
             else:
                 # single-line game score
-                outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff}" + common_line_suffix_fmt)
+                outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} "
+                             "{pipe} {coloron}{score:^5}{coloroff} {pipe} "
+                             "{gscoloron}{gstate:<9}{gscoloroff} {pipe} {coloron}{feeds}{coloroff}")
                             .format(coloron=color_on, coloroff=color_off,
                                     ginfo=game_info_str, series=series_info, score=score,
                                     gscoloron=game_state_color_on, gstate=game_state, gscoloroff=game_state_color_off,
-                                    feeds=self.__get_feeds_for_display(game_rec)))
+                                    feeds=self.__get_feeds_for_display(game_rec), pipe=PIPE))
         else:  # no scores
-            outl.append(("{coloron}{ginfo:<56} {series:^7}{coloroff} | "
-                         "{coloron}{gstate:^9}{coloroff} | {coloron}{feeds}{coloroff}")
+            outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} {pipe} "
+                         "{coloron}{gstate:^9}{coloroff} {pipe} {coloron}{feeds}{coloroff}")
                         .format(coloron=color_on, coloroff=color_off,
                                 ginfo=game_info_str, series=series_info, gstate=game_state,
-                                feeds=self.__get_feeds_for_display(game_rec)))
+                                feeds=self.__get_feeds_for_display(game_rec), pipe=PIPE))
         return outl
 
     def get_linescore_dict(self, game_rec):

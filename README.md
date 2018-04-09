@@ -121,42 +121,35 @@ This project incorporates some code modified from the following projects:
 
 * python 
     - python v3 (tested with 3.6) 
-* python modules:
+* python modules (installed by `pip install`):
     - [requests](http://python-requests.org/) module 
     - [python-dateutil](https://dateutil.readthedocs.io/en/stable/) module
     - [python-lxml](http://lxml.de/) module
 * [streamlink](https://streamlink.github.io/)
 * a video player. Either `vlc` or `mpv` is recommended.
 
-
-Note on installing python modules: 
-
-Install via `pip` (preferably using virtualenv):
-
-    pip install requests
-    pip install python-dateutil
-    pip install python-lxml
-
-This software is tested under linux. It should work under Windows or Mac with the pre-requisites installed, but may require minor tweaks.
+This software is tested under linux. It should work under Windows or Mac with the pre-requisites installed, but may require minor tweaks (bug reports are welcome).
 
 
 ## Installation
 
 1. Clone this repository.
 2. Run `pip install .`
+3. Create a configuration directory and copy/customize the `config` file (see next section)
 
 
 ## Configuration
 
-An example config file is provided in the repository. The properties in the config file are documented. If you
-want to stream live or archived games, you must provide valid login credentials. 
+An example `config` file is provided in the repository. The properties in the config file are documented. 
+If you want to stream live or archived games then you must provide valid login credentials. If you don't have
+MLB.tv you can still see scores and watch highlights.
 
 Some things you may want to set:
 
 * username: MLB.tv account username
 * password: MLB.tv account password
 * favs: a comma-separated list of team codes which are 1) highlighted in the game data and 2) can be filtered on using the --filter option to show only the favourite team(s)
-* scores: a boolean specifying whether or not you want to see scores in the game information. Spoilers.
+* scores: a boolean specifying whether or not you want to see scores in the game information. Warning: spoilers!
 * resolution: the stream quality (passed in to streamlink). Use 'best' for full HD at 60 frames/sec.
     - others options are: 'worst', '360p', '540p', '720p_alt', '720p', 'best'
 
@@ -208,8 +201,8 @@ For a live game, you can start from the beginning with:
 
 #### Doubleheader
 
-If a game is a doubleheader then you can select the second game using the `-g/--game` argument. By default it
-will select the first game.
+If a game is a doubleheader then you can select the second game using the `-g/--game` argument. 
+By default it will select the first game.
 
 
 ### Fetching
@@ -284,13 +277,13 @@ Note: the common options have both short and long options. Both are shown in the
 #### Live Games
 
     mlbv --team tor               # play the live Jays game. The feed is chosen based on Jays being home vs. away
-    mlbv -t tor --feed national  # play live game, choose the national feed
-    mlbv -t tor --feed away      # play live game, choose the away feed. If the Jays are the home team this would choose
+    mlbv -t tor --feed national   # play live game, choose the national feed
+    mlbv -t tor --feed away       # play live game, choose the away feed. If the Jays are the home team this would choose
                                   # the opponent's feed
 
 #### Archived Games
 
-    mlbv --yesterday -t tor         # play yesterday's Jays game
+    mlbv --yesterday -t tor        # play yesterday's Jays game
     mlbv --date 2018-03-31 -t tor  # watch the Jays beat the Yankees #spoiler
 
 #### Highlights
@@ -302,7 +295,7 @@ Use the `--feed` option to select the highlight feed (`recap` or `condensed`):
 
 #### Fetch
 
-In these examples the game is save to a .mp4 file in the current directory.
+In these examples the game is save to a `.ts` file in the current directory.
 
     mlbv --team tor --fetch
     mlbv --yesterday -t tor -f recap --fetch   # fetch yesterday's recap
@@ -312,6 +305,12 @@ In these examples the game is save to a .mp4 file in the current directory.
     mlbv --days 7           # show schedule for upcoming week
     mlbv --days 7 --filter  # show schedule for upcoming week, filtered on favourite teams (from config file)
     mlbv --days 7 --filter --favs 'tor,wsh' # show schedule filtered on favourite teams (from option)
+
+#### Linescores
+
+    mlbv -l        # show linescores for today
+    mlbv --yes -l  # show linescores for yesterday
+    mlbv --date 2018-03-29 --linescore --days 7 --filter  # show linescores for favs in week 1
 
 #### Standings
 

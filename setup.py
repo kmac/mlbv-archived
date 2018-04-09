@@ -12,8 +12,15 @@ setup(
     version='0.1',
     packages=['mlbam'],
     url='https://github.com/kmac/mlbv',
+    description="Command-line interface to streaming MLB games with a valid MLB.tv subscription. Game schedule and scores.",
     long_description=long_description,
     long_description_content_type='text/markdown',
+    classifiers=[
+        "Environment :: Console",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Intended Audience :: End Users/Desktop",
+    ],
+    license="GPLv3",
     entry_points={
         "console_scripts": [
             "mlbv=mlbam.mlbv:main"

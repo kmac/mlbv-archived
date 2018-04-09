@@ -1,0 +1,13 @@
+#!/usr/bin/env python
+"""
+Wrapper to call in to mlbv.py if not installed via pip
+"""
+
+import sys
+
+import mlbam.mlbv as mlbv
+
+if __name__ == "__main__" or __name__ == "main":
+    sys.exit(mlbv.main())
+
+# vim: set filetype=python
