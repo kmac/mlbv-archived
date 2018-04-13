@@ -86,32 +86,13 @@ def filter_favs(game_rec):
     return None
 
 
-class GameData:
+class GameDataRetriever:
+    """Retrieves and parses game data from statsapi.mlb.com"""
 
     def __init__(self):
         self.game_data_list = list()
 
-    def __get_feeds_for_display(self, game_rec):
-        non_highlight_feeds = list()
-        use_short_feeds = config.CONFIG.parser.getboolean('use_short_feeds', True)
-        for feed in sorted(game_rec['feed'].keys()):
-            if feed not in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
-                if use_short_feeds:
-                    non_highlight_feeds.append(convert_feedtype_to_short(feed))
-                else:
-                    non_highlight_feeds.append(feed)
-        highlight_feeds = list()
-        for feed in game_rec['feed'].keys():
-            if feed in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
-                if use_short_feeds:
-                    highlight_feeds.append(convert_feedtype_to_short(feed))
-                else:
-                    highlight_feeds.append(feed)
-        if len(highlight_feeds) > 0:
-            return '{} {}'.format(','.join(non_highlight_feeds), ','.join(highlight_feeds))
-        return '{}'.format(','.join(non_highlight_feeds))
-
-    def _get_game_data(self, date_str=None, overwrite_json=True):
+    def _get_games_by_date(self, date_str=None, overwrite_json=True):
         if date_str is None:
             date_str = time.strftime("%Y-%m-%d")
 
@@ -123,17 +104,17 @@ class GameData:
 
         json_data = util.request_json(url, 'gamedata')
 
-        game_data = dict()  # we return this dictionary
+        game_records = dict()  # we return this dictionary
 
         if json_data['dates'] is None or len(json_data['dates']) < 1:
-            LOG.debug("_get_game_data: no game data for {}".format(date_str))
+            LOG.debug("_get_games_by_date: no game data for {}".format(date_str))
             return None
 
         for game in json_data['dates'][0]['games']:
             # LOG.debug('game: {}'.format(game))
             game_pk_str = str(game['gamePk'])
-            game_data[game_pk_str] = dict()
-            game_rec = game_data[game_pk_str]
+            game_records[game_pk_str] = dict()
+            game_rec = game_records[game_pk_str]
             game_rec['game_pk'] = game_pk_str
 
             game_rec['abstractGameState'] = str(game['status']['abstractGameState'])  # Preview, Live, Final
@@ -252,66 +233,99 @@ class GameData:
                         #         game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
                         #         game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
 
-        return game_data
+        return game_records
 
     def get_audio_stream_url(self):
         # http://hlsaudio-akc.med2.med.nhl.com/ls04/nhl/2017/12/31/NHL_GAME_AUDIO_TORVGK_M2_VISIT_20171231_1513799214035/master_radio.m3u8
         pass
 
-    def retrieve_and_display_game_data(self, game_date, num_days=1, show_games=True):
-        game_data_list = list()
+    def process_game_data(self, game_date, num_days=1):
+        game_days_list = list()
+        for i in range(0, num_days):
+            game_records = self._get_games_by_date(game_date)
+            if game_records is not None:
+                game_days_list.append((game_date, game_records))
+            game_date = datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d") + timedelta(days=1), "%Y-%m-%d")
+        return game_days_list
+
+
+class GameDatePresenter:
+    """Formats game data for CLI output."""
+
+    def __get_feeds_for_display(self, game_rec):
+        non_highlight_feeds = list()
+        use_short_feeds = config.CONFIG.parser.getboolean('use_short_feeds', True)
+        for feed in sorted(game_rec['feed'].keys()):
+            if feed not in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
+                if use_short_feeds:
+                    non_highlight_feeds.append(convert_feedtype_to_short(feed))
+                else:
+                    non_highlight_feeds.append(feed)
+        highlight_feeds = list()
+        for feed in game_rec['feed'].keys():
+            if feed in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
+                if use_short_feeds:
+                    highlight_feeds.append(convert_feedtype_to_short(feed))
+                else:
+                    highlight_feeds.append(feed)
+        if len(highlight_feeds) > 0:
+            return '{} {}'.format(','.join(non_highlight_feeds), ','.join(highlight_feeds))
+        return '{}'.format(','.join(non_highlight_feeds))
+
+    def display_game_data(self, game_date, game_records):
         show_scores = config.CONFIG.parser.getboolean('scores')
         show_linescore = config.CONFIG.parser.getboolean('linescore')
         border = displayutil.Border(use_unicode=config.UNICODE)
-        for i in range(0, num_days):
-            game_data = self._get_game_data(game_date)
-            outl = list()  # holds list of strings for output
-            print_outl = False
-            if game_data is not None:
-                game_data_list.append(game_data)
-                if not show_games:
-                    continue
+        if game_records is None:
+            # outl.append("No game data for {}".format(game_date))
+            LOG.info("No game data for {}".format(game_date))
+            # LOG.info("No game data to display")
+            return
 
-                # print header
-                date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
-                if show_scores:
-                    if show_linescore:
-                        outl.append("{:56}".format(date_hdr))
-                        outl.append('{c_on}{dash}{c_off}'.format(c_on=border.border_color,
-                                                                       dash=border.thickdash*91,
-                                                                       c_off=border.color_off))
-                    else:
-                        outl.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
-                                    .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
-                        outl.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
-                                    .format(border.thickdash * 57, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
-                                            pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
-                else:
-                    outl.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
-                    outl.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
-                                .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
-                                        pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
+        outl = list()  # holds list of strings for output
+        print_outl = False
 
-                game_count = 0
-                for game_pk in game_data:
-                    game_count += 1
-                    if filter_favs(game_data[game_pk]) is not None:
-                        outl.extend(self.display_game_details(game_pk, game_data[game_pk], show_linescore,
-                                                              game_count % 2, game_count == len(game_data)))
-                        print_outl = True
+        # print header
+        date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
+        if show_scores:
+            if show_linescore:
+                outl.append("{:56}".format(date_hdr))
+                outl.append('{c_on}{dash}{c_off}'.format(c_on=border.border_color,
+                                                               dash=border.thickdash*91,
+                                                               c_off=border.color_off))
             else:
-                outl.append("No game data for {}".format(game_date))
+                outl.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
+                            .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
+                outl.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
+                            .format(border.thickdash * 57, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
+                                    pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
+        else:
+            outl.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
+            outl.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
+                        .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
+                                pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
+
+        game_count = 0
+        for game_pk in game_records:
+            game_count += 1
+            if filter_favs(game_records[game_pk]) is not None:
+                outl.extend(self._display_game_details(game_pk, game_records[game_pk], show_linescore,
+                                                      game_count % 2, game_count == len(game_records)))
                 print_outl = True
-            if print_outl:
-                print('\n'.join(outl))
-                if num_days > 1:
-                    print('')  # add line feed between days
 
-            game_date = datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d") + timedelta(days=1), "%Y-%m-%d")
+        if print_outl:
+            print('\n'.join(outl))
 
-        return game_data_list
+            # if num_days > 1:
+            #     print('')  # add line feed between days
 
-    def display_game_details(self, game_pk, game_rec, show_linescore, odd_even, is_last):
+            # else:
+            #     outl.append("No game data for {}".format(game_date))
+            #     print_outl = True
+
+            #game_date = datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d") + timedelta(days=1), "%Y-%m-%d")
+
+    def _display_game_details(self, game_pk, game_rec, show_linescore, odd_even, is_last):
         show_scores = config.CONFIG.parser.getboolean('scores')
         outl = list()
         border = displayutil.Border(use_unicode=config.UNICODE)
@@ -373,7 +387,7 @@ class GameData:
 
             # linescore
             if show_linescore:
-                linescore_dict = self.get_linescore_dict(game_rec)
+                linescore_dict = self._format_linescore(game_rec)
                 """
                 18:05: LA Dodgers (LAD) at San Francisco (SF)            1  2  3  4  5  6  7  8  9 10 11 12 13 14  R  H  E
                 1/2    Final(14): 5-7                              LAD   0  0  1  0  0  2  1  0  0  0  0  0  0  1  5 12  0
@@ -432,13 +446,11 @@ class GameData:
                                 feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
         return outl
 
-    def get_linescore_dict(self, game_rec):
-        """
+    def _format_linescore(self, game_rec):
+        """Returns a dictionary indexed by keys: 'header', 'away', 'home'
              1  2  3  4  5  6  7  8  9 10 11  R  H  E
         TOR  1  0  0  0  0  0  0  3  0  0  0  4  8  0
         NYY  0  0  0  0  1  0  0  0  4  0  0  5  8  0
-
-        Returns a dictionary for easy processing of home/away
         """
         if 'raw' in game_rec['linescore']:
             linescore_json = game_rec['linescore']['raw']

@@ -97,8 +97,6 @@ def main(argv=None):
     util.init_logging(os.path.join(config.CONFIG.dir,
                                    os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.log'), True)
 
-    mlb_gamedata = gamedata.GameData()
-
     global LOG
     LOG = logging.getLogger(__name__)
 
@@ -143,16 +141,21 @@ def main(argv=None):
         standings.get_standings(args.standings, args.date)
         return 0
 
-    # fetch and display games (don't display if we're going to start a stream)
-    game_data_list = mlb_gamedata.retrieve_and_display_game_data(args.date, args.days, team_to_play is None)
+    gamedata_parser = gamedata.GameDataRetriever()
+
+    # retrieve all games for the dates given
+    game_day_tuple_list = gamedata_parser.process_game_data(args.date, args.days)
 
     if team_to_play is None:
-        # nothing to play; we're done
+        # nothing to play; display the games
+        presenter = gamedata.GameDatePresenter()
+        for game_date, game_records in game_day_tuple_list:
+            presenter.display_game_data(game_date, game_records)
         return 0
 
     # from this point we only care about first day in list
-    if len(game_data_list) > 0:
-        game_data = game_data_list[0]
+    if len(game_day_tuple_list) > 0:
+        game_date, game_data = game_day_tuple_list[0]
     else:
         # nothing to stream
         return 0
@@ -171,9 +174,9 @@ def main(argv=None):
 
         # refresh the game data
         LOG.info('Game time. Refreshing game data after wait...')
-        game_data_list = mlb_gamedata.retrieve_and_display_game_data(args.date, 1, False)
-        if len(game_data_list) > 0:
-            game_data = game_data_list[0]
+        game_day_tuple_list = gamedata_parser.process_game_data(args.date, 1)
+        if len(game_day_tuple_list) > 0:
+            game_date, game_data = game_day_tuple_list[0]
         else:
             LOG.error('Unexpected error: no game data found after refresh on wait')
             return 0
