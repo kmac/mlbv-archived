@@ -293,6 +293,13 @@ Use the `--feed` option to select the highlight feed (`recap` or `condensed`):
     mlbv --yesterday -t tor --feed condensed  # condensed feed
     mlbv --yesterday -t tor -f recap          # recap feed
 
+You can also use the `--recaps` option to show highlights for games on given day.
+This will show all chosen recaps, one-by-one until finished. A highlight reel.
+
+    mlbv --yesterday --recaps all         # show all available recaps for yesterday games
+    mlbv --yesterday --recaps tor,wsh,bos # show recaps for given set of teams
+    mlbv --yesterday --recaps --fetch     # fetch all recaps
+
 #### Fetch
 
 In these examples the game is save to a `.ts` file in the current directory.

@@ -71,7 +71,7 @@ def get_game_rec(game_data, team_to_play, game_number_str):
     return game_rec
 
 
-def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, inning_ident):
+def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, inning_ident, is_multi_highlight=False):
     if game_rec['doubleHeader'] != 'N':
         LOG.info('Selected game number %s of doubleheader', game_rec['gameNumber'])
     if feedtype is not None and feedtype in config.HIGHLIGHT_FEEDTYPES:
@@ -79,7 +79,7 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
         playback_url = find_highlight_url_for_team(game_rec, feedtype)
         if playback_url is None:
             util.die("No playback url for feed '{}'".format(feedtype))
-        play_highlight(playback_url, get_fetch_filename(date_str, game_rec, feedtype, fetch))
+        play_highlight(playback_url, get_fetch_filename(date_str, game_rec, feedtype, fetch), is_multi_highlight)
     else:
         # handle full game (live or archive)
         # this is the only feature requiring an authenticated session
@@ -105,10 +105,13 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
 
 def get_fetch_filename(date_str, game_rec, feedtype, fetch):
     if fetch:
+        suffix = 'ts'
         if feedtype is None:
-            return '{}-{}-{}.ts'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'])
+            return '{}-{}-{}.{}'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], suffix)
         else:
-            return '{}-{}-{}-{}.ts'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype)
+            if feedtype in ('recap', 'condensed', ):
+                suffix = 'mp4'
+            return '{}-{}-{}-{}.{}'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype, suffix)
     return None
 
 
@@ -231,7 +234,7 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
     return offset
 
 
-def play_highlight(playback_url, fetch_filename):
+def play_highlight(playback_url, fetch_filename, is_multi_highlight=False):
     video_player = config.CONFIG.parser['video_player']
     if (fetch_filename is None or fetch_filename != '') \
             and not config.CONFIG.parser.getboolean('streamlink_highlights', True):
@@ -239,17 +242,22 @@ def play_highlight(playback_url, fetch_filename):
         LOG.info('Playing highlight: %s', str(cmd))
         subprocess.run(cmd)
     else:
-        streamlink_highlight(playback_url, fetch_filename)
+        streamlink_highlight(playback_url, fetch_filename, is_multi_highlight)
 
 
-def streamlink_highlight(playback_url, fetch_filename):
+def streamlink_highlight(playback_url, fetch_filename, is_multi_highlight=False):
     video_player = config.CONFIG.parser['video_player']
+    # the --playe-no-close is required so it doesn't shut things down 
+    # prematurely after the stream is fully fetched
     streamlink_cmd = ["streamlink", "--player-no-close", ]
     if fetch_filename is not None:
         streamlink_cmd.append("--output")
         streamlink_cmd.append(fetch_filename)
     elif video_player is not None and video_player != '':
         LOG.debug('Using video_player: {}'.format(video_player))
+        if is_multi_highlight:
+            if video_player == 'mpv':
+                video_player += " --keep-open=no"
         streamlink_cmd.append("--player")
         streamlink_cmd.append(video_player)
     if config.CONFIG.parser.getboolean('streamlink_passthrough_highlights', True):

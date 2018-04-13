@@ -83,6 +83,10 @@ def main(argv=None):
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
+    parser.add_argument("--recaps", nargs='?', const='all', metavar='TEAMS',
+                        help=("Play recaps for given teams. "
+                              "TEAMS is either 'all' [default] or a comma-separated list of team codes, eg: tor.bos,wsh. "
+                              "Can be combined with --filter to only show favs."))
     parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity")
     parser.add_argument("-D", "--debug", action="store_true", help="Turn on debug output")
     args = parser.parse_args()
@@ -146,7 +150,7 @@ def main(argv=None):
     # retrieve all games for the dates given
     game_day_tuple_list = gamedata_parser.process_game_data(args.date, args.days)
 
-    if team_to_play is None:
+    if team_to_play is None and not args.recaps:
         # nothing to play; display the games
         presenter = gamedata.GameDatePresenter()
         for game_date, game_records in game_day_tuple_list:
@@ -158,6 +162,30 @@ def main(argv=None):
         game_date, game_data = game_day_tuple_list[0]
     else:
         # nothing to stream
+        return 0
+
+    if args.recaps:
+        recap_teams = list()
+        if args.recaps == 'all':
+            for game_pk in game_data:
+                # add the home team
+                recap_teams.append(game_data[game_pk]['home']['abbrev'])
+        else:
+            for team in args.recaps.split(','):
+                recap_teams.append(team.strip())
+        for game_pk in game_data:
+            game_rec = game_data[game_pk]
+            if game_rec['home']['abbrev'] in recap_teams or game_rec['away']['abbrev'] in recap_teams:
+                if 'recap' in game_rec['feed']:
+                    LOG.info("Playing recap for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
+                    game_num = 1
+                    if game_rec['doubleHeader'] != 'N':
+                        game_num = game_rec['gameNumber']
+                    stream_game_rec = stream.get_game_rec(game_data, game_rec['home']['abbrev'], game_num)
+                    stream.play_stream(stream_game_rec, game_rec['home']['abbrev'], 'recap', game_date,
+                                       args.fetch, None, None, is_multi_highlight=True)
+                else:
+                    LOG.info("No recap available for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
         return 0
 
     game_rec = stream.get_game_rec(game_data, team_to_play, args.game)
