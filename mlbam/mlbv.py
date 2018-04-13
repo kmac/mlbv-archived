@@ -171,7 +171,7 @@ def main(argv=None):
 
         # refresh the game data
         LOG.info('Game time. Refreshing game data after wait...')
-        game_data_list = mlb_gamedata.retrieve_and_display_game_data(args.date, 1, team_to_play is None)
+        game_data_list = mlb_gamedata.retrieve_and_display_game_data(args.date, 1, False)
         if len(game_data_list) > 0:
             game_data = game_data_list[0]
         else:

@@ -11,10 +11,11 @@ import time
 
 from datetime import datetime
 
-import requests
-
+import mlbam.displayutil as displayutil
 import mlbam.util as util
 import mlbam.config as config
+
+from mlbam.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)
@@ -91,13 +92,16 @@ def _display_standings(standings_type, display_title, date_str, rank_tag='divisi
     url = STANDINGS_URL.format(standings_type=standings_type, league_ids='103,104', season=season_str, date=url_date_str)
     json_data = util.request_json(url, 'standings')
 
+    border = displayutil.Border(use_unicode=config.UNICODE)
+
     outl = list()
     if display_title != '':
-        outl.append('{color_on}{name:22}\t{win:>3} {loss:>3} {pct:<5} {gb:<4} {wgb:<4} {streak}{color_off}'
-                    .format(color_on=util.ANSI_CONTROL_CODES['bold'],
-                            name='   ======  {}  ======'.format(display_title),
+        outl.append('{color_on}{name:31} {win:>3} {loss:>3} {pct:<5} {gb:<4} {wgb:<4} {streak}{color_off}'
+                    .format(color_on=border.border_color,
+                            name='   {thickborder} {title} {thickborder}'.format(title=display_title,
+                                                                                 thickborder=border.doubledash * int((29-len(display_title))/2 - 1)),
                             win='W', loss='L', pct='PCT', gb='GB', wgb='WGB', streak='Streak',
-                            color_off=util.ANSI_CONTROL_CODES['reset']))
+                            color_off=ANSI.reset()))
     needs_line_hr = False
     for record in json_data['records']:
         if standings_type == record['standingsType']:
@@ -112,7 +116,11 @@ def _display_standings(standings_type, display_title, date_str, rank_tag='divisi
                     else:
                         header = _add_to_header(header, record[tag])
             if header:
-                header = '--- ' + header + ' ---'
+                header = '{color_on}{b1} {title} {b2}{color_off}'.format(color_on=border.border_color,
+                                                                         title=header,
+                                                                         b1=border.dash*3,
+                                                                         b2=border.dash*(52-len(header)),
+                                                                         color_off=ANSI.reset())
                 outl.append('   {}'.format(header))
                 needs_line_hr = True
         else:
@@ -128,9 +136,9 @@ def _display_standings(standings_type, display_title, date_str, rank_tag='divisi
             color_off = ''
             if _is_fav(teamrec['team']['name']):
                 if config.CONFIG.parser['fav_colour'] != '':
-                    color_on = util.fg_ansi_colour(config.CONFIG.parser['fav_colour'])
-                    color_off = util.ANSI_CONTROL_CODES['reset']
-            outl.append('{color_on}{rank:2} {clinch}{name:22}\t{win:3} {loss:3} {pct:5} {gb:4} {wgb:4} [{streak}]{color_off}'
+                    color_on = ANSI.fg(config.CONFIG.parser['fav_colour'])
+                    color_off = ANSI.reset()
+            outl.append('{color_on}{rank:2} {clinch}{name:28} {win:3} {loss:3} {pct:5} {gb:4} {wgb:4} [{streak}]{color_off}'
                         .format(color_on=color_on, rank=rank, clinch=clinch, name=teamrec['team']['name'],
                                 win=teamrec['leagueRecord']['wins'],
                                 loss=teamrec['leagueRecord']['losses'],

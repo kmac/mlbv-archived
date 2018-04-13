@@ -11,7 +11,10 @@ from datetime import timedelta
 from dateutil import parser
 
 import mlbam.config as config
+import mlbam.displayutil as displayutil
 import mlbam.util as util
+
+from mlbam.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)
@@ -20,13 +23,6 @@ LOG = logging.getLogger(__name__)
 TEAM_CODES = ('ari', 'atl', 'bal', 'bos', 'chc', 'cws', 'cin', 'cle', 'col', 'det', 'fla', 'hou', 'kan', 'laa', 'lad',
               'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'wsh')
 
-# unicode characters:  '─' '┄' '╌' '═' '━' '─'
-BORDER_COLOR = util.fg_ansi_colour('darkgrey')
-COLOR_OFF = util.ANSI_CONTROL_CODES['reset']
-DASH = '─'
-DOUBLEDASH = '─'
-PIPE = BORDER_COLOR + '│' + COLOR_OFF
-JUNCTION = '┼'
 
 # this map is used to transform the statsweb feed name to something shorter
 FEEDTYPE_MAP = {
@@ -258,10 +254,15 @@ class GameData:
 
         return game_data
 
+    def get_audio_stream_url(self):
+        # http://hlsaudio-akc.med2.med.nhl.com/ls04/nhl/2017/12/31/NHL_GAME_AUDIO_TORVGK_M2_VISIT_20171231_1513799214035/master_radio.m3u8
+        pass
+
     def retrieve_and_display_game_data(self, game_date, num_days=1, show_games=True):
         game_data_list = list()
         show_scores = config.CONFIG.parser.getboolean('scores')
         show_linescore = config.CONFIG.parser.getboolean('linescore')
+        border = displayutil.Border(use_unicode=config.UNICODE)
         for i in range(0, num_days):
             game_data = self._get_game_data(game_date)
             outl = list()  # holds list of strings for output
@@ -276,20 +277,20 @@ class GameData:
                 if show_scores:
                     if show_linescore:
                         outl.append("{:56}".format(date_hdr))
-                        outl.append('{c_on}{dash}{c_off}'.format(c_on=BORDER_COLOR,
-                                                                       dash=DOUBLEDASH*91,
-                                                                       c_off=COLOR_OFF))
+                        outl.append('{c_on}{dash}{c_off}'.format(c_on=border.border_color,
+                                                                       dash=border.thickdash*91,
+                                                                       c_off=border.color_off))
                     else:
                         outl.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
-                                    .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=PIPE))
+                                    .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
                         outl.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
-                                    .format(DOUBLEDASH * 57, DOUBLEDASH * 7, DOUBLEDASH * 11, DOUBLEDASH * 16,
-                                            pipe=JUNCTION, c_on=BORDER_COLOR, c_off=COLOR_OFF))
+                                    .format(border.thickdash * 57, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
+                                            pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
                 else:
-                    outl.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=PIPE))
+                    outl.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
                     outl.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
-                                .format(DOUBLEDASH * 57, DOUBLEDASH * 11, DOUBLEDASH * 16,
-                                        pipe=JUNCTION, c_on=BORDER_COLOR, c_off=COLOR_OFF))
+                                .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
+                                        pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
 
                 game_count = 0
                 for game_pk in game_data:
@@ -313,20 +314,21 @@ class GameData:
     def display_game_details(self, game_pk, game_rec, show_linescore, odd_even, is_last):
         show_scores = config.CONFIG.parser.getboolean('scores')
         outl = list()
+        border = displayutil.Border(use_unicode=config.UNICODE)
         color_on = ''
         color_off = ''
         # if odd_even:
-        #     color_on = util.fg_ansi_colour('yellow')
+        #     color_on = ANSI.fg('yellow')
         # else:
-        #     color_on = util.fg_ansi_colour('lightblue')
-        color_off = util.ANSI_CONTROL_CODES['reset']
+        #     color_on = display'reset'.ANSI.fg('lightblue')
+        color_off = ANSI.reset()
         if is_fav(game_rec):
             if config.CONFIG.parser['fav_colour'] != '':
-                color_on = util.fg_ansi_colour(config.CONFIG.parser['fav_colour'])
-                color_off = util.ANSI_CONTROL_CODES['reset']
+                color_on = ANSI.fg(config.CONFIG.parser['fav_colour'])
+                color_off = ANSI.reset()
         if game_rec['abstractGameState'] == 'Live':
-            color_on += util.ANSI_CONTROL_CODES['bold']
-            color_off = util.ANSI_CONTROL_CODES['reset']
+            color_on += ANSI.control_code('bold')
+            color_off = ANSI.reset()
         if game_rec['doubleHeader'] == 'N':
             series_info = "{sgn}/{gis}".format(sgn=game_rec['seriesGameNumber'], gis=game_rec['gamesInSeries'])
         else:
@@ -345,8 +347,8 @@ class GameData:
         if game_rec['abstractGameState'] not in ('Preview', ):
             if show_scores:
                 if 'Critical' in game_rec['detailedState']:
-                    game_state_color_on = util.fg_ansi_colour(config.CONFIG.parser['game_critical_colour'])
-                    game_state_color_off = util.ANSI_CONTROL_CODES['reset']
+                    game_state_color_on = ANSI.fg(config.CONFIG.parser['game_critical_colour'])
+                    game_state_color_off = ANSI.reset()
                 if game_rec['detailedState'] in ('Final', ):
                     game_state = game_rec['detailedState']
                     if 'currentInning' in game_rec['linescore'] and int(game_rec['linescore']['currentInning']) != 9:
@@ -383,7 +385,7 @@ class GameData:
                 #     return outl
 
                 outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
-                                            ginfo=game_info_str, lscore=linescore_dict['header'], pipe=PIPE))
+                                            ginfo=game_info_str, lscore=linescore_dict['header'], pipe=border.pipe))
                 if game_state == '':
                     # game_info_str = '{series:7}Not Started'.format(series=series_info)
                     game_info_str = '{series:7}'.format(series=series_info)
@@ -410,9 +412,9 @@ class GameData:
                     outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
                                                 ginfo='', lscore=linescore_dict['home']))
                 if not is_last:
-                    outl.append('{coloron}{dash}{coloroff}'.format(coloron=util.fg_ansi_colour('darkgrey'),
-                                                                   dash=DASH*91,
-                                                                   coloroff=util.ANSI_CONTROL_CODES['reset']))
+                    outl.append('{coloron}{dash}{coloroff}'.format(coloron=ANSI.fg('darkgrey'),
+                                                                   dash=border.dash*91,
+                                                                   coloroff=ANSI.reset()))
             else:
                 # single-line game score
                 outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} "
@@ -421,13 +423,13 @@ class GameData:
                             .format(coloron=color_on, coloroff=color_off,
                                     ginfo=game_info_str, series=series_info, score=score,
                                     gscoloron=game_state_color_on, gstate=game_state, gscoloroff=game_state_color_off,
-                                    feeds=self.__get_feeds_for_display(game_rec), pipe=PIPE))
+                                    feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
         else:  # no scores
             outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} {pipe} "
                          "{coloron}{gstate:^9}{coloroff} {pipe} {coloron}{feeds}{coloroff}")
                         .format(coloron=color_on, coloroff=color_off,
                                 ginfo=game_info_str, series=series_info, gstate=game_state,
-                                feeds=self.__get_feeds_for_display(game_rec), pipe=PIPE))
+                                feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
         return outl
 
     def get_linescore_dict(self, game_rec):
@@ -469,7 +471,3 @@ class GameData:
                                                        linescore_json['teams'][team]['hits'],
                                                        linescore_json['teams'][team]['errors'])
         return outd
-
-    def get_audio_stream_url(self):
-        # http://hlsaudio-akc.med2.med.nhl.com/ls04/nhl/2017/12/31/NHL_GAME_AUDIO_TORVGK_M2_VISIT_20171231_1513799214035/master_radio.m3u8
-        pass

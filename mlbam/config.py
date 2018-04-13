@@ -19,6 +19,7 @@ SAVE_JSON_FILE = True
 SAVE_JSON_FILE_BY_TIMESTAMP = False  # normally false; will save many .json files if set
 # SAVE_JSON_FILE_BY_TIMESTAMP = True  # normally false; will save many .json files if set
 SAVE_PLAYLIST_FILE = False
+UNICODE = True
 
 LOG = logging.getLogger(__name__)
 
@@ -47,6 +48,7 @@ class Config:
             'game_critical_colour': 'yellow',
             'verify_ssl': 'true',
             'save_json_file_by_timestamp': 'false',
+            'unicode': 'true',
         }
     }
     platform = 'IPHONE'
@@ -64,6 +66,8 @@ class Config:
         VERBOSE = self.parser.getboolean('verbose', VERBOSE)
         global VERIFY_SSL
         VERIFY_SSL = self.parser.getboolean('verify_ssl', VERIFY_SSL)
+        global UNICODE
+        UNICODE = self.parser.getboolean('unicode', UNICODE)
 
     @staticmethod
     def __find_config_dir(script_name):
