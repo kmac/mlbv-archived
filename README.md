@@ -26,86 +26,79 @@ to local blackout restrictions. However, if you don't have a subscription you ca
 condensed games.
 
 
-Sample console output (with linescore enabled):
+Sample console output (default, no linescore):
 
 ````
-       2018-04-07                                        Series  | Score |   State   | Feeds
------------------------------------------------------------------|-------|-----------|--------------
-13:05: Baltimore (BAL) at NY Yankees (NYY)                 3/4   |  3-3  |  Bot 6th  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |   0 out   | 
-   BAL   0  0  2  1  0  0        3  4  0                         |       |           | 
-   NYY   0  2  0  0  1           3  5  1                         |       |           | 
-13:05: NY Mets (NYM) at Washington (WSH)                   2/3   |  1-2  |  Bot 6th  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |   2 out   | 
-   NYM   0  0  0  0  0  1        1  6  1                         |       |           | 
-   WSH   0  0  0  0  1  1        2  4  1                         |       |           | 
-13:05: Tampa Bay (TB) at Boston (BOS)                      2/3   |  2-8  |  Top 6th  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |   1 out   | 
-   TB    2  0  0  0  0           2  4  0                         |       |           | 
-   BOS   4  4  0  0  0           8  6  0                         |       |           | 
-14:10: Detroit (DET) at Chi White Sox (CWS)                2/3   |  0-0  |  Top 3rd  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |   0 out   | 
-   DET   0  0                    0  0  0                         |       |           | 
-   CWS   0  0                    0  2  0                         |       |           | 
-14:10: Seattle (SEA) at Minnesota (MIN)                    2/3   |  0-0  |  Top 4th  | a/h/mkt_a 
-         1  2  3  4  5  6  7  8  R  H  E                         |       |   2 out   | 
-   SEA   0  0  0                 0  0  0                         |       |           | 
-   MIN   0  0  0                 0  1  0                         |       |           | 
-14:15: Arizona (ARI) at St. Louis (STL)                    2/3   |  1-1  |  Bot 2nd  | a/h     
-         1  2  3  4  5  6  7  8  R  H  E                         |       |   2 out   | 
-   ARI   1  0                    1  1  0                         |       |           | 
-   STL   1                       1  3  0                         |       |           | 
-16:05: Chi Cubs (CHC) at Milwaukee (MIL)                   3/4   |       |           |         
-16:10: Kansas City (KC) at Cleveland (CLE)                 2/3   |       |           |         
-18:05: LA Dodgers (LAD) at San Francisco (SF)              1/2   |       |           |         
-18:05: Miami (MIA) at Philadelphia (PHI)                   2/3   |       |           |         
-19:05: Cincinnati (CIN) at Pittsburgh (PIT)                3/4   |       |           |         
-19:10: San Diego (SD) at Houston (HOU)                     2/3   |       |           |         
-20:05: Toronto (TOR) at Texas (TEX)                        2/3   |       |           |         
-20:10: Atlanta (ATL) at Colorado (COL)                     2/3   |       |           |         
-21:07: Oakland (OAK) at LA Angels (LAA)                    2/3   |       |           |         
+       2018-04-10 Tue                            Series  │ Score │   State   │ Feeds
+─────────────────────────────────────────────────────────┼───────┼───────────┼────────────────
+14:10: Tampa Bay (TB) at Chi White Sox (CWS)       2/3   │  6-5  │ Final     │ a,h cnd,rcp
+14:20: Pittsburgh (PIT) at Chi Cubs (CHC)          1/3   │  8-5  │ Final     │ a,h,ima cnd,rcp
+18:10: Detroit (DET) at Cleveland (CLE)            2/4   │  1-2  │ Final     │ a,h cnd,rcp
+19:05: Atlanta (ATL) at Washington (WSH)           2/3   │  1-4  │ Final     │ a,h cnd,rcp
+19:05: Cincinnati (CIN) at Philadelphia (PHI)      2/3   │  1-6  │ Final     │ a,h cnd,rcp
+19:05: Toronto (TOR) at Baltimore (BAL)            2/3   │  2-1  │ Final     │ a,h cnd,rcp
+19:10: NY Mets (NYM) at Miami (MIA)                2/3   │  8-6  │ Final     │ a,h cnd,rcp
+19:10: NY Yankees (NYY) at Boston (BOS)            1/3   │ 1-14  │ Final     │ a,h cnd,rcp
+20:05: LA Angels (LAA) at Texas (TEX)              2/3   │ 11-1  │ Final     │ a,h cnd,rcp
+20:10: Houston (HOU) at Minnesota (MIN)            2/3   │  1-4  │ Final     │ a,h,ima cnd,rcp
+20:15: Milwaukee (MIL) at St. Louis (STL)          2/3   │  3-5  │ Final(11) │ a,h cnd,rcp
+20:15: Seattle (SEA) at Kansas City (KC)           2/3   │  8-3  │ Final     │ a,h,ima cnd,rcp
+20:40: San Diego (SD) at Colorado (COL)            2/3   │  5-2  │ Final     │ a,h,imh cnd,rcp
+22:10: Oakland (OAK) at LA Dodgers (LAD)           1/2   │  0-4  │ Final     │ a,h cnd,rcp
+22:15: Arizona (ARI) at San Francisco (SF)         2/3   │  4-5  │ Final     │ a,h cnd,rcp
 ````
 
-Sample standings output:
+Linescore output:
 
 ````
-   ========  Division  ========   W   L PCT   GB   WGB  Streak
-   --- American League West ---
-1  Houston Astros                 2   1 .667  -    -    [W1]
-2  Los Angeles Angels             2   1 .667  -    -    [W2]
-3  Seattle Mariners               1   1 .500  0.5  0.5  [L1]
-4  Oakland Athletics              1   2 .333  1.0  1.0  [L2]
-5  Texas Rangers                  1   2 .333  1.0  1.0  [L1]
-   --- American League East ---
-1  Boston Red Sox                 2   1 .667  -    -    [W2]
-2  New York Yankees               2   1 .667  -    -    [L1]
-3  Baltimore Orioles              1   1 .500  0.5  0.5  [L1]
-4  Tampa Bay Rays                 1   2 .333  1.0  1.0  [L2]
-5  Toronto Blue Jays              1   2 .333  1.0  1.0  [W1]
-   --- American League Central ---
-1  Chicago White Sox              2   0 1.000 -    -    [W2]
-2  Cleveland Indians              1   1 .500  1.0  0.5  [W1]
-3  Minnesota Twins                1   1 .500  1.0  0.5  [W1]
-4  Detroit Tigers                 0   1 .000  1.5  1.0  [L1]
-5  Kansas City Royals             0   2 .000  2.0  1.5  [L2]
-   --- National League Central ---
-1  Milwaukee Brewers              3   0 1.000 -    -    [W3]
-2  Pittsburgh Pirates             1   0 1.000 1.0  -    [W1]
-3  Chicago Cubs                   2   1 .667  1.0  -    [W1]
-4  Cincinnati Reds                0   2 .000  2.5  1.5  [L2]
-5  St. Louis Cardinals            0   2 .000  2.5  1.5  [L2]
-   --- National League West ---
-1  Arizona Diamondbacks           2   1 .667  -    -    [L1]
-2  San Francisco Giants           2   1 .667  -    -    [L1]
-3  Colorado Rockies               1   2 .333  1.0  1.0  [W1]
-4  Los Angeles Dodgers            1   2 .333  1.0  1.0  [W1]
-5  San Diego Padres               0   3 .000  2.0  2.0  [L3]
-   --- National League East ---
-1  New York Mets                  2   0 1.000 -    +0.5 [W2]
-2  Washington Nationals           2   0 1.000 -    +0.5 [W2]
-3  Atlanta Braves                 2   1 .667  0.5  -    [W1]
-4  Miami Marlins                  1   2 .333  1.5  1.0  [L1]
-5  Philadelphia Phillies          1   2 .333  1.5  1.0  [L1]
+       2018-04-10 Tue
+───────────────────────────────────────────────────────────────────────────────────────────
+19:05: Toronto (TOR) at Baltimore (BAL)                  1  2  3  4  5  6  7  8  9  R  H  E
+2/3    Final: 2-1                                  TOR   0  0  0  0  0  0  0  1  1  2  7  0
+       Feeds: a,h cnd,rcp                          BAL   0  0  0  0  0  0  0  1  0  1  3  2
+───────────────────────────────────────────────────────────────────────────────────────────
+````
+
+Standings output:
+
+````
+   ═════════ Division ═════════   W   L PCT   GB   WGB  Streak
+   ─── American League West ────────────────────────────────
+1  Los Angeles Angels            12   3 .800  -    -    [W6]
+2  Houston Astros                10   4 .714  1.5  +1.0 [W1]
+3  Seattle Mariners               7   4 .636  3.0  0.5  [W3]
+4  Oakland Athletics              5   9 .357  6.5  4.0  [L1]
+5  Texas Rangers                  4  11 .267  8.0  5.5  [L5]
+   ─── American League East ────────────────────────────────
+1  Boston Red Sox                11   2 .846  -    -    [W2]
+2  Toronto Blue Jays              9   5 .643  2.5  -    [W1]
+3  New York Yankees               7   7 .500  4.5  2.0  [W1]
+4  Baltimore Orioles              5   9 .357  6.5  4.0  [L1]
+5  Tampa Bay Rays                 3  10 .231  8.0  5.5  [L2]
+   ─── American League Central ─────────────────────────────
+1  Minnesota Twins                7   4 .636  -    -    [W3]
+2  Cleveland Indians              8   6 .571  0.5  1.0  [L1]
+3  Chicago White Sox              4   8 .333  3.5  4.0  [L1]
+4  Detroit Tigers                 4   9 .308  4.0  4.5  [L5]
+5  Kansas City Royals             3   9 .250  4.5  5.0  [L4]
+   ─── National League Central ─────────────────────────────
+1  Pittsburgh Pirates             9   4 .692  -    -    [L1]
+2  Milwaukee Brewers              7   7 .500  2.5  1.0  [L1]
+3  St. Louis Cardinals            7   7 .500  2.5  1.0  [W2]
+4  Chicago Cubs                   6   7 .462  3.0  1.5  [L2]
+5  Cincinnati Reds                2  11 .154  7.0  5.5  [L6]
+   ─── National League West ────────────────────────────────
+1  Arizona Diamondbacks          10   3 .769  -    -    [W2]
+2  Colorado Rockies               8   7 .533  3.0  0.5  [W3]
+3  San Francisco Giants           6   7 .462  4.0  1.5  [L1]
+4  Los Angeles Dodgers            4   8 .333  5.5  3.0  [L2]
+5  San Diego Padres               5  10 .333  6.0  3.5  [W1]
+   ─── National League East ────────────────────────────────
+1  New York Mets                 11   1 .917  -    -    [W9]
+2  Atlanta Braves                 8   5 .615  3.5  +0.5 [W2]
+3  Philadelphia Phillies          7   5 .583  4.0  -    [W4]
+4  Washington Nationals           6   8 .429  6.0  2.0  [L3]
+5  Miami Marlins                  4   9 .308  7.5  3.5  [W1]
 ````
 
 This project incorporates some code modified from the following projects: 
@@ -128,10 +121,11 @@ This project incorporates some code modified from the following projects:
 * [streamlink](https://streamlink.github.io/)
 * a video player. Either `vlc` or `mpv` is recommended.
 
-This software is tested under linux. It should work under Windows or Mac with the pre-requisites installed, but may require minor tweaks (bug reports are welcome).
+This software is tested under linux. It should work under Windows or Mac with the pre-requisites installed,
+but may require minor tweaks (bug reports are welcome).
 
 
-## Installation
+## 1. Installation
 
 1. Clone this repository.
 2. Run `pip install .`
@@ -139,17 +133,20 @@ This software is tested under linux. It should work under Windows or Mac with th
    with defaults and the required MLB.tv username and password.
 
 
-## Configuration
+## 2. Configuration
 
-An example `config` file is provided in the repository. You can run `mlbv --init` to copy the config file into
-a local config directory (which will be created) and then populate it with the prompted MLB.tv username and password.
-The `config` file will be located at `$HOME/.config/mlbv/config`. The directories are created if necessary.
+After installing, run:
 
-The properties in the config file are documented in the file itself. If you want to stream live or archived
+    mlbv --init
+
+This will create the initial config file/directory and populate it with the prompted MLB.tv username and password.
+The `config` file will be located at `$HOME/.config/mlbv/config`. Directories are created if necessary.
+
+Other properties in the config file are documented in the file itself. If you want to stream live or archived
 games then you must provide valid login credentials (if you don't have MLB.tv you can still see scores and
 watch highlights).
 
-Some things you may want to set in the `config` file:
+Some properties you may want to set in the `config` file:
 
 * `username`: MLB.tv account username
 * `password`: MLB.tv account password
@@ -157,32 +154,64 @@ Some things you may want to set in the `config` file:
 * `scores`: a boolean specifying whether or not you want to see scores in the game information. Warning: spoilers!
 * `resolution`: the stream quality (passed in to streamlink). Use 'best' for full HD at 60 frames/sec.
     - others options are: 'worst', '360p', '540p', '720p_alt', '720p', 'best'
+* `linescore`: to enable linescores by default (if scores are enabled)
 
 
-## Usage
+## 3. QUICKSTART
+
+Here's a quick overview of the most common usage options:
+
+    mlbv               # show today's schedule/scores
+    mlbv -l            # show today's linescores
+    mlbv -t tor        # play today's Jays game, either live (if in-progress), or from the start (if archived)
+    mlbv --recaps      # play all of today's recaps
+    mlbv --standings   # show current standings
+
 
 Help is available by running:
 
-    mlbv --help
+    mlbv --help   # short help
+    mlbv --usage  # view full documenation
+ 
 
-Running `mlbv` without options shows you the status of today's games, including scores unless you've
-configured to hide scores by default.
+## 4. Default Behaviour: Show Schedule/Scores
 
-#### Usage note: shorter arguments
+Running `mlbv` by itself shows you the status of today's games, including scores (unless you've configured to hide scores by default).
 
-In general, you can shorten the long option names down to something unique. 
+### Scores/No-Scores
 
-For example, rather than having to type `--yesterday` you can shorten it right down to `--y`.
-However, you can one shorten `--tomorrow` down to `--to` since there is also the `--team` option which matches
-up to `--t`.
+The `scores` option in the config file controls whether or not scores are shown. If false then no scores are
+shown. Scores are also not shown before a feed is launched.
+
+You can temporarily override the config file using either `-s/--scores` or `-n/--no-scores` options.
 
 
-### Playing a Live or Archived Game
+### Linescores
 
-If you pass the `-t/--team TEAM` option, the game stream (live or archived) is launched for the given team. By
-default the local feed for the given team is chosen - i.e., it will follow the home/away feed appropriate for
-the team so that you get the local team feed.  You can override the feed using the `-f/--feed` option. This
-works for either live games or for archived games (e.g. if you use the `--date` option to select an earlier date).
+Linescores are displayed using the `-l/--linescore` option. You can also make linescores the default in the config file.
+
+Since linescores take up more screen real estate it can be useful to combine them with a filter to limit the number of games shown. 
+
+
+### Dates and Filters
+
+See the sections below on Dates and Filters for more information on specifying dates and filtering output based on
+league, division, favourites, or arbitrary teams.
+
+
+> Note on Arguments
+> 
+> Frequently used arguments have both a long form with double-dash `--` argument and a short form which uses a single dash `-`. 
+> 
+> For the long form arguments, you can shorten any option name down to the shortest unique value.  For example,
+> rather than having to type `--yesterday` you can shorten it right down to `--y`.  However, you can only
+> shorten `--tomorrow` down to `--to` since there is also the `--team` option (which makes `--t` non-unique).
+
+
+## 5. Watching a Live or Archived Game
+
+Watching a game is triggered by the `-t/--team TEAM` option. With this option the game stream (live or
+archived) is launched for the given team. 
 
 Example:
 
@@ -190,27 +219,50 @@ Example:
     mlbv --yesterday -t tor  # play yesterday's Blue Jays game (see below for options on specifying dates)
 
 
-#### Controlling where the stream starts
+### Feed Selection
 
-You can start from the top or bottom of an inning:
+By default the local feed for the given team is chosen - i.e., it will follow the home/away feed appropriate
+for the given team so that you get the team's local feed if available.  You can override the feed using the
+`-f/--feed` option. This works for either live games or for archived games (e.g. if you use the `--date`
+option to select an earlier date).
+
+    mlbv --team tor --feed away  # choose the away feed (assuming Toronto is the home team, you will get the
+                                 # opposing team's feed)
+
+
+### Specifying Stream Start Location
+
+For an in-progress game, the stream will join the live game at the current time. Use either  `--from-start` or
+the `--inning` option to override this behaviour.
+
+For an archived game, the stream will start from the beginning.
+
+
+#### Start from Inning
+
+For both live and archived games you can start from the top or bottom of an inning:
 
     mlbv --team tor --inning t5  # start from top of 5th
     mlbv --team tor --inning b5  # start from bottom of 5th
 
-This works for either live or archived games.
+NOTE: there's currently an issue (#7) with starting archived games from an inning. It's currently an estimated
+position.
+
+
+#### Start from Beginning (Live Game)
 
 For a live game, you can start from the beginning with:
 
     mlbv --team tor --from-start  # start stream at beginning, live games only
 
 
-#### Doubleheaders
+### Doubleheaders
 
 If a game is a doubleheader then you can select the second game using the `-g/--game` argument. 
 By default it will select the first game.
 
 
-### Fetching
+## 6. Record/Fetch
 
 If you pass the `-f/--fetch` option, instead of launching the video player, the selected stream is saved to
 disk. The stream is named to convention: `<date>-<away_team>-<home_team>-<feed>.ts`.
@@ -220,8 +272,8 @@ disk. The stream is named to convention: `<date>-<away_team>-<home_team>-<feed>.
 
 Example: `2018-03-31-nyy-tor-home.ts`.
 
-You can select the stream for fetch, then manually launch your video player at a later time while the
-stream is being saved to file. 
+If your player supports it, you can select the stream to fetch, then manually launch your video player at a
+later time while the stream is being saved to file. 
 
 Example:
 
@@ -229,7 +281,7 @@ Example:
                              # Most video players let you view while downloading
 
 
-### Highlights: Recap or Condensed Games
+## 7. Highlights: Recap or Condensed Games
 
 Playing the game highlight is triggered by using the `-f/--feed` option. The `recap` or `condensed` feeds show
 up after a game has ended. To watch the highlight, specify one of those feeds along with the team name in the
@@ -242,20 +294,28 @@ Example:
 
 NOTE: You don't need login credentials to play highlights.
 
-#### Watching Multiple Game Recaps (for a given day)
 
-You can start watching a series of game recaps for a given day using the `--recaps` option. This option shows game
-recaps for either all games or for a selected set of teams.
+### Playing Multiple Game Recaps (for a given day)
 
-Example:
+The `--recaps` option lets you select a batch of game recaps to watch for a given day.
+This option shows game recaps either for all games or for a selected set of teams (using a filter).
+If no argument is given to `recaps` then no filter is applied.
+
+Usage:
+
+    --recaps ?filter?  : filter is optional, if not supplied then all games are selected
+
+Examples:
 
     mlbv --recaps                       # show all available game recaps for today's games
     mlbv --yesterday --recaps           # show all available game recaps for yesterday's games
+    mlbv --yesterday --recaps ale       # show available game recaps for yesterday's games
+                                        # in the American League East
     mlbv --yesterday --recaps tor,wsh   # show game recaps for yesterday's Toronto, Boston games
     mlbv --yesterday --recaps tor,wsh --fetch   # same as above but save to disk instead of view
 
 
-### Specifying Dates
+## 8. Specifying Dates
 
 You can specify the date to view using one of the following:
 
@@ -268,7 +328,46 @@ For listing game data only (doesn't make sense for viewing), you can specify a n
 favourite team(s).
 
 
-### Standings
+## 9. Filters
+
+You can filter the schedule/scores displays using the `--filter` argument. 
+The filter argument allows you to provide either a built-in filter name or a comma-separated list of team codes.
+
+The filter option has the form:
+
+    --filter ?filter?  : where ?filter? is optional, and is either 
+                         a 'filter name' or a comma-separated list of teams
+
+> Note: Aside from the `--filter` command, other command arguments accept the same 'filter' string.
+>       For example `--linescore ?filter?` and `--recaps ?filter?`
+
+
+### Built-in Filters
+
+If `?filter?` is not given then the built-in filter `favs` is used. `favs` is a filter which you can define 
+in the config file to list your favourite team(s).
+
+Other built-in filters are available which group teams by league and division. The filter names are:
+
+* `al`, `ale`, `alc`, `alw` (American League, AL East, AL Central, AL West)
+* `nl`, `nle`, `nlc`, `nlw` (National League, NL East, NL Central, NL West)
+
+Using one of the above filter names will include those selected teams in the output.
+
+
+### Ad-hoc Filters
+
+You can also use any comma-separated list of team codes for a filter.
+
+Examples:
+
+    --filter tor            # single team filter
+    --filter tor,bos,wsh    # multiple team filter
+
+Note: Do not use spaces between commas unless you encapsulate the list in quotes.
+
+
+## 10. Standings
 
 You can display standings via the `--standings` option. This option displays the given standings category then
 exits.
@@ -290,24 +389,25 @@ You don't have to specify the full standings category, it will match any substri
 will match division or `--standings wild` will match wildcard.
 
 
-## Examples
+## 11. Examples
 
 Note: the common options have both short and long options. Both are shown in these examples.
 
 
-#### Live Games
+### Live Games
 
     mlbv --team tor               # play the live Jays game. The feed is chosen based on Jays being home vs. away
     mlbv -t tor --feed national   # play live game, choose the national feed
     mlbv -t tor --feed away       # play live game, choose the away feed. If the Jays are the home team this would choose
                                   # the opponent's feed
 
-#### Archived Games
+### Archived Games
 
     mlbv --yesterday -t tor        # play yesterday's Jays game
     mlbv --date 2018-03-31 -t tor  # watch the Jays beat the Yankees #spoiler
 
-#### Highlights
+
+### Highlights
 
 Use the `--feed` option to select the highlight feed (`recap` or `condensed`):
 
@@ -322,26 +422,26 @@ This will show all chosen recaps, one-by-one until finished. A highlight reel.
     mlbv --yesterday --recaps tor,wsh,bos # show recaps for given set of teams
     mlbv --yesterday --recaps --fetch     # fetch all recaps
 
-#### Fetch
+### Fetch
 
 In these examples the game is save to a `.ts` file in the current directory.
 
     mlbv --team tor --fetch
     mlbv --yesterday -t tor -f recap --fetch   # fetch yesterday's recap
 
-#### Using `--days` for Schedule View
+### Using `--days` for Schedule View
 
     mlbv --days 7           # show schedule for upcoming week
     mlbv --days 7 --filter  # show schedule for upcoming week, filtered on favourite teams (from config file)
     mlbv --days 7 --filter --favs 'tor,wsh' # show schedule filtered on favourite teams (from option)
 
-#### Linescores
+### Linescores
 
     mlbv -l        # show linescores for today
     mlbv --yes -l  # show linescores for yesterday
     mlbv --date 2018-03-29 --linescore --days 7 --filter  # show linescores for favs in week 1
 
-#### Standings
+### Standings
 
     mlbv --standings           # display division standings
     mlbv --standings division  # display division standings

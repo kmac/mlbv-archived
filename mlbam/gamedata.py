@@ -23,6 +23,18 @@ LOG = logging.getLogger(__name__)
 TEAM_CODES = ('ari', 'atl', 'bal', 'bos', 'chc', 'cws', 'cin', 'cle', 'col', 'det', 'fla', 'hou', 'kan', 'laa', 'lad',
               'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'wsh')
 
+FILTERS = {
+    'favs': '',  # is filled out by config parser
+    'ale': 'bal,bos,nyy,tb,tor',
+    'alc': 'cle,cws,det,kan,min',
+    'alw': 'hou,laa,oak,sea,tex',
+    'nle': 'atl,fla,nym,phi,wsh',
+    'nlc': 'chc,cin,mil,pit,stl,',
+    'nlw': 'ari,col,lad,sd,sf',
+}
+FILTERS['al'] = '{},{},{}'.format(FILTERS['ale'], FILTERS['alc'], FILTERS['alw'])
+FILTERS['nl'] = '{},{},{}'.format(FILTERS['nle'], FILTERS['nlc'], FILTERS['nlw'])
+
 
 # this map is used to transform the statsweb feed name to something shorter
 FEEDTYPE_MAP = {
@@ -34,8 +46,8 @@ FEEDTYPE_MAP = {
     'in_market_home': 'imh',
     'condensed': 'cnd',
     'recap': 'rcp',
-    'audio-away': 'aud-a',
-    'audio-home': 'aud-h',
+    # 'audio-away': 'aud-a',
+    # 'audio-home': 'aud-h',
 }
 
 
@@ -66,23 +78,28 @@ def is_fav(game_rec):
         return game_rec['favourite']
     if config.CONFIG.parser['favs'] is None or config.CONFIG.parser['favs'] == '':
         return False
-    for fav in config.CONFIG.parser['favs'].split(','):
-        fav = fav.strip()
+    for fav in util.get_csv_list(config.CONFIG.parser['favs']):
         if fav in (game_rec['away']['abbrev'], game_rec['home']['abbrev']):
             return True
     return False
 
 
-def filter_favs(game_rec):
-    """Returns the game_rec if the game matches the favourites, or if no filtering is active."""
-    if not config.CONFIG.parser.getboolean('filter', 'false'):
+def apply_filter(game_rec, filter):
+    """Returns the game_rec if the game matches the filter, or if no filtering is active.
+    """
+    if filter == 'favs':
+        filter = config.CONFIG.parser['favs']
+    elif filter in FILTERS:
+        filter = FILTERS[filter]
+    elif not filter:
         return game_rec
-    if config.CONFIG.parser['favs'] is None or config.CONFIG.parser['favs'] == '':
-        return game_rec
-    for fav in config.CONFIG.parser['favs'].split(','):
-        fav = fav.strip()
-        if fav in (game_rec['away']['abbrev'], game_rec['home']['abbrev']):
+
+    # apply the filter
+    for team in util.get_csv_list(filter):
+        if team in (game_rec['away']['abbrev'], game_rec['home']['abbrev']):
             return game_rec
+
+    # no match
     return None
 
 
@@ -276,7 +293,7 @@ class GameDatePresenter:
             return '{} {}'.format(','.join(non_highlight_feeds), ','.join(highlight_feeds))
         return '{}'.format(','.join(non_highlight_feeds))
 
-    def display_game_data(self, game_date, game_records):
+    def display_game_data(self, game_date, game_records, filter):
         show_scores = config.CONFIG.parser.getboolean('scores')
         show_linescore = config.CONFIG.parser.getboolean('linescore')
         border = displayutil.Border(use_unicode=config.UNICODE)
@@ -312,22 +329,13 @@ class GameDatePresenter:
         game_count = 0
         for game_pk in game_records:
             game_count += 1
-            if filter_favs(game_records[game_pk]) is not None:
+            if apply_filter(game_records[game_pk], filter) is not None:
                 outl.extend(self._display_game_details(game_pk, game_records[game_pk], show_linescore,
                                                       game_count % 2, game_count == len(game_records)))
                 print_outl = True
 
         if print_outl:
             print('\n'.join(outl))
-
-            # if num_days > 1:
-            #     print('')  # add line feed between days
-
-            # else:
-            #     outl.append("No game data for {}".format(game_date))
-            #     print_outl = True
-
-            #game_date = datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d") + timedelta(days=1), "%Y-%m-%d")
 
     def _display_game_details(self, game_pk, game_rec, show_linescore, odd_even, is_last):
         show_scores = config.CONFIG.parser.getboolean('scores')

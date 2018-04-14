@@ -9,8 +9,10 @@ https://github.com/tonycpsu/mlbstreamer - a similar project
 """
 
 import argparse
+import inspect
 import logging
 import os
+import subprocess
 import sys
 import time
 
@@ -29,69 +31,97 @@ LOG = None  # initialized in init_logging
 
 HELP_HEADER = """MLB game tracker and stream viewer.
 """
-HELP_FOOTER = """See README.md for full usage instructions and pre-requisites.
+HELP_FOOTER = """Use --usage for full usage instructions and pre-requisites.
 
-Feed Identifiers
-You can use either the short form feed identifier or the long form:
+Filters:
+    For the --filter option use either the built-in filters (see --list-filters) or
+    provide your own list of teams, separated by comma: e.g. tor,bos,nyy
 
-    {}""".format(gamedata.get_feedtype_keystring())
+Feed Identifiers:
+    You can use either the short form feed identifier or the long form:
+    {feedhelp}""".format(feedhelp=gamedata.get_feedtype_keystring())
 
+
+def display_usage():
+    """Displays contents of readme file."""
+    current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+    readme_path = os.path.abspath(os.path.join(current_dir, '..', 'README.md'))
+    if not os.path.exists(readme_path):
+        print("Could not find documentation file [expected at: {}]".format(readme_path))
+        return -1
+    if 'PAGER' in os.environ:
+        cmd = [os.environ['PAGER'], readme_path]
+        subprocess.run(cmd)
+    else:
+        with open(readme_path, 'r') as infile:
+            for line in infile:
+                print(line, end='')
 
 def main(argv=None):
+    """Entry point for mlbv"""
 
     # using argparse (2.7+) https://docs.python.org/2/library/argparse.html
     parser = argparse.ArgumentParser(description=HELP_HEADER, epilog=HELP_FOOTER,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--init", action="store_true",
+                        help="Generates a config file using a combination of defaults plus prompting for MLB.tv credentials.")
+    parser.add_argument("--usage", action="store_true", help="Display full usage help.")
     parser.add_argument("-d", "--date", help="Display games/standings for date. Format: yyyy-mm-dd")
-    parser.add_argument("-i", "--inning", help=("Start live/archive stream from inning. Format: {t|b}{inning_num}. "
-                                                "t|b: (optional) top or bottom, inning_num: inning number. "
-                                                "e.g.  '5' - start at 5th inning. 't5' start at top 5th. "
-                                                "'b5' start at bottom 5th."))
-    parser.add_argument("--inning-offset", type=int, metavar='secs',
-                        help="Override the inning offset time in seconds. Default=240 (4 minutes)")
-    parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
     parser.add_argument("--days", type=int, default=1, help="Number of days to display")
     parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
-    parser.add_argument("-t", "--team", help="Play game for team, one of: {}".format(gamedata.TEAM_CODES))
+    parser.add_argument("-t", "--team",
+                        help="Play selected game feed for team, one of: {}".format(gamedata.TEAM_CODES))
     parser.add_argument("-f", "--feed",
                         help=("Feed type, either a live/archive game feed or highlight feed "
                               "(if available). Available feeds are shown in game list,"
                               "and have a short form and long form (see 'Feed identifiers' section below)"))
-    parser.add_argument("--favs", help=("Favourite teams, a comma-separated list of favourite teams "
-                                        "(normally specified in config file)"))
-    parser.add_argument("--filter", action="store_true", help="Filter output for favourite teams only")
-    parser.add_argument("-g", "--game", default='1', choices=('1', '2'),
-                        help="Select game number of double-header")
     parser.add_argument("-r", "--resolution", choices=config.BANDWIDTH_CHOICES,
                         help="Stream resolution for streamlink (overrides settting in config file)")
+    parser.add_argument("-i", "--inning",
+                        help=("Start live/archive stream from inning. Format: {t|b}{inning_num}. "
+                              "t|b: (optional) top or bottom, inning_num: inning number. "
+                              "e.g.  '5' - start at 5th inning. 't5' start at top 5th. "
+                              "'b5' start at bottom 5th."))
+    parser.add_argument("--inning-offset", type=int, metavar='SECS',
+                        help="Override the inning offset time in seconds. Default=240 (4 minutes)")
+    parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
+    parser.add_argument("--favs", help=argparse.SUPPRESS)
+                        # help=("Favourite teams, a comma-separated list of favourite teams " "(normally specified in config file)"))
+    parser.add_argument("--filter", nargs='?', const='favs', metavar='filtername|teams',
+                        help=("Filter output. Either a filter name (see --list-filters) or a comma-separated "
+                              "list of team codes, eg: 'tor.bos,wsh'. Default: favs"))
+    parser.add_argument("--list-filters", action='store_true', help="List the built-in filters")
+    parser.add_argument("-g", "--game", default='1', choices=('1', '2'),
+                        help="Select game number of double-header")
     parser.add_argument("-s", "--scores", action="store_true",
                         help="Show scores (default off; overrides config file)")
     parser.add_argument("-n", "--no-scores", action="store_true",
                         help="Do not show scores (default on; overrides config file)")
-    parser.add_argument("-l", "--linescore", action="store_true", help="Show linescores")
-    parser.add_argument("--username", help="MLB.tv username. Required for live/archived games.")
-    parser.add_argument("--password", help="MLB.tv password. Required for live/archived games.")
+    parser.add_argument("-l", "--linescore", nargs='?', const='all', metavar='filter',
+                        help="Show linescores. Optional: specify a filter as per --filter option.")
+    parser.add_argument("--username", help=argparse.SUPPRESS) # help="MLB.tv username. Required for live/archived games.")
+    parser.add_argument("--password", help=argparse.SUPPRESS) # help="MLB.tv password. Required for live/archived games.")
     parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
     parser.add_argument("--wait", action="store_true",
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
                               "Useful when combined with the --fetch option."))
-    parser.add_argument("--standings", nargs='?', const='division', metavar='CATEGORY',
-                        help=("[CATEGORY] is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
+    parser.add_argument("--standings", nargs='?', const='division', metavar='category',
+                        help=("[category] is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
                               "Display standings. This option will display selected standings category, then exit. "
                               "The standings category can be shortened down to one character (all matching "
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
-    parser.add_argument("--init", action="store_true",
-                        help="Generates a config file using a combination of defaults plus prompting for MLB.tv credentials.")
-    parser.add_argument("--recaps", nargs='?', const='all', metavar='TEAMS',
+    parser.add_argument("--recaps", nargs='?', const='all', metavar='FILTER',
                         help=("Play recaps for given teams. "
-                              "TEAMS is either 'all' [default] or a comma-separated list of team codes, eg: tor.bos,wsh. "
-                              "Can be combined with --filter to only show favs."))
-    parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity")
-    parser.add_argument("-D", "--debug", action="store_true", help="Turn on debug output")
+                              "[FILTER] is an optional filter as per --filter option"))
+    parser.add_argument("-v", "--verbose", action="store_true", help=argparse.SUPPRESS) # help="Increase output verbosity")
+    parser.add_argument("-D", "--debug", action="store_true", help=argparse.SUPPRESS)   # help="Turn on debug output")
     args = parser.parse_args()
+
+    if args.usage:
+        return display_usage()
 
     team_to_play = None
     feedtype = None
@@ -109,6 +139,9 @@ def main(argv=None):
     global LOG
     LOG = logging.getLogger(__name__)
 
+    if args.list_filters:
+        print('List of built filters: ' + ', '.join(sorted(gamedata.FILTERS.keys())))
+        return 0
     if args.debug:
         config.CONFIG.parser['debug'] = 'true'
     if args.verbose:
@@ -133,12 +166,16 @@ def main(argv=None):
     elif args.no_scores:
         config.CONFIG.parser['scores'] = 'false'
     if args.linescore:
+        if args.linescore != 'all':
+            config.CONFIG.parser['filter'] = args.linescore
+            # config.CONFIG.parser['favs'] = args.linescore
         config.CONFIG.parser['linescore'] = 'true'
-    if args.favs:
-        config.CONFIG.parser['favs'] = args.favs
+    # if args.favs:
+    #     config.CONFIG.parser['favs'] = args.favs
     if args.filter:
-        config.CONFIG.parser['filter'] = 'true'
-
+        config.CONFIG.parser['filter'] = args.filter
+        # if args.filter != 'favs':
+        #     config.CONFIG.parser['favs'] = args.filter
     if args.yesterday:
         args.date = datetime.strftime(datetime.today() - timedelta(days=1), "%Y-%m-%d")
     elif args.tomorrow:
@@ -159,7 +196,7 @@ def main(argv=None):
         # nothing to play; display the games
         presenter = gamedata.GameDatePresenter()
         for game_date, game_records in game_day_tuple_list:
-            presenter.display_game_data(game_date, game_records)
+            presenter.display_game_data(game_date, game_records, args.filter)
         return 0
 
     # from this point we only care about first day in list
@@ -179,7 +216,7 @@ def main(argv=None):
             for team in args.recaps.split(','):
                 recap_teams.append(team.strip())
         for game_pk in game_data:
-            game_rec = gamedata.filter_favs(game_data[game_pk])
+            game_rec = gamedata.apply_filter(game_data[game_pk], args.filter)
             if game_rec and (game_rec['home']['abbrev'] in recap_teams or game_rec['away']['abbrev'] in recap_teams):
                 if 'recap' in game_rec['feed']:
                     LOG.info("Playing recap for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
