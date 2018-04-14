@@ -135,22 +135,27 @@ This software is tested under linux. It should work under Windows or Mac with th
 
 1. Clone this repository.
 2. Run `pip install .`
-3. Create a configuration directory and copy/customize the `config` file (see next section)
+3. Run `mlbv --init` to create a configuration directory and populate the `config` file
+   with defaults and the required MLB.tv username and password.
 
 
 ## Configuration
 
-An example `config` file is provided in the repository. The properties in the config file are documented. 
-If you want to stream live or archived games then you must provide valid login credentials. If you don't have
-MLB.tv you can still see scores and watch highlights.
+An example `config` file is provided in the repository. You can run `mlbv --init` to copy the config file into
+a local config directory (which will be created) and then populate it with the prompted MLB.tv username and password.
+The `config` file will be located at `$HOME/.config/mlbv/config`. The directories are created if necessary.
 
-Some things you may want to set:
+The properties in the config file are documented in the file itself. If you want to stream live or archived
+games then you must provide valid login credentials (if you don't have MLB.tv you can still see scores and
+watch highlights).
 
-* username: MLB.tv account username
-* password: MLB.tv account password
-* favs: a comma-separated list of team codes which are 1) highlighted in the game data and 2) can be filtered on using the --filter option to show only the favourite team(s)
-* scores: a boolean specifying whether or not you want to see scores in the game information. Warning: spoilers!
-* resolution: the stream quality (passed in to streamlink). Use 'best' for full HD at 60 frames/sec.
+Some things you may want to set in the `config` file:
+
+* `username`: MLB.tv account username
+* `password`: MLB.tv account password
+* `favs`: a comma-separated list of team codes which are 1) highlighted in the game data and 2) can be filtered on using the --filter option to show only the favourite team(s)
+* `scores`: a boolean specifying whether or not you want to see scores in the game information. Warning: spoilers!
+* `resolution`: the stream quality (passed in to streamlink). Use 'best' for full HD at 60 frames/sec.
     - others options are: 'worst', '360p', '540p', '720p_alt', '720p', 'best'
 
 
@@ -163,7 +168,7 @@ Help is available by running:
 Running `mlbv` without options shows you the status of today's games, including scores unless you've
 configured to hide scores by default.
 
-#### Usage note: shortening option arguments:
+#### Usage note: shorter arguments
 
 In general, you can shorten the long option names down to something unique. 
 
@@ -174,10 +179,10 @@ up to `--t`.
 
 ### Playing a Live or Archived Game
 
-If you pass the `-t/--team TEAM` option, the stream is launched for the given team. By default the local feed
-for the given team is chosen - i.e., it will follow the home/away feed appropriate for the team so that you
-get the local team feed.  You can override the feed using the `-f/--feed` option. This works for either live
-games or for archived games (e.g. if you use the `--date` option to select an earlier date).
+If you pass the `-t/--team TEAM` option, the game stream (live or archived) is launched for the given team. By
+default the local feed for the given team is chosen - i.e., it will follow the home/away feed appropriate for
+the team so that you get the local team feed.  You can override the feed using the `-f/--feed` option. This
+works for either live games or for archived games (e.g. if you use the `--date` option to select an earlier date).
 
 Example:
 
@@ -199,7 +204,7 @@ For a live game, you can start from the beginning with:
     mlbv --team tor --from-start  # start stream at beginning, live games only
 
 
-#### Doubleheader
+#### Doubleheaders
 
 If a game is a doubleheader then you can select the second game using the `-g/--game` argument. 
 By default it will select the first game.
@@ -208,9 +213,12 @@ By default it will select the first game.
 ### Fetching
 
 If you pass the `-f/--fetch` option, instead of launching the video player, the selected stream is saved to
-disk. The stream is named to convention: `<date>-<away_team>-<home_team>-<feed>.mp4`. 
+disk. The stream is named to convention: `<date>-<away_team>-<home_team>-<feed>.ts`.
 
-Example: `2018-03-31-nyy-tor-home.mp4`.
+- Live games have extension `.ts`, highlight games are `.mp4`
+
+
+Example: `2018-03-31-nyy-tor-home.ts`.
 
 You can select the stream for fetch, then manually launch your video player at a later time while the
 stream is being saved to file. 
@@ -230,8 +238,21 @@ up after a game has ended. To watch the highlight, specify one of those feeds al
 Example:
 
     mlbv --team tor -f condensed
+    mlbv --team tor -f recap
 
-You don't need login credentials to play highlights.
+NOTE: You don't need login credentials to play highlights.
+
+#### Watching Multiple Game Recaps (for a given day)
+
+You can start watching a series of game recaps for a given day using the `--recaps` option. This option shows game
+recaps for either all games or for a selected set of teams.
+
+Example:
+
+    mlbv --recaps                       # show all available game recaps for today's games
+    mlbv --yesterday --recaps           # show all available game recaps for yesterday's games
+    mlbv --yesterday --recaps tor,wsh   # show game recaps for yesterday's Toronto, Boston games
+    mlbv --yesterday --recaps tor,wsh --fetch   # same as above but save to disk instead of view
 
 
 ### Specifying Dates
@@ -297,6 +318,7 @@ You can also use the `--recaps` option to show highlights for games on given day
 This will show all chosen recaps, one-by-one until finished. A highlight reel.
 
     mlbv --yesterday --recaps all         # show all available recaps for yesterday games
+    mlbv --yesterday --recaps --filter    # show recaps for favourites
     mlbv --yesterday --recaps tor,wsh,bos # show recaps for given set of teams
     mlbv --yesterday --recaps --fetch     # fetch all recaps
 

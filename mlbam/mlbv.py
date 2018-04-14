@@ -83,6 +83,8 @@ def main(argv=None):
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
+    parser.add_argument("--init", action="store_true",
+                        help="Generates a config file using a combination of defaults plus prompting for MLB.tv credentials.")
     parser.add_argument("--recaps", nargs='?', const='all', metavar='TEAMS',
                         help=("Play recaps for given teams. "
                               "TEAMS is either 'all' [default] or a comma-separated list of team codes, eg: tor.bos,wsh. "
@@ -93,6 +95,9 @@ def main(argv=None):
 
     team_to_play = None
     feedtype = None
+
+    if args.init:
+        return config.MLBConfig.generate_config(args.username, args.password)
 
     # get our config
     config.CONFIG = config.MLBConfig()
@@ -174,8 +179,8 @@ def main(argv=None):
             for team in args.recaps.split(','):
                 recap_teams.append(team.strip())
         for game_pk in game_data:
-            game_rec = game_data[game_pk]
-            if game_rec['home']['abbrev'] in recap_teams or game_rec['away']['abbrev'] in recap_teams:
+            game_rec = gamedata.filter_favs(game_data[game_pk])
+            if game_rec and (game_rec['home']['abbrev'] in recap_teams or game_rec['away']['abbrev'] in recap_teams):
                 if 'recap' in game_rec['feed']:
                     LOG.info("Playing recap for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
                     game_num = 1

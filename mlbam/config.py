@@ -1,4 +1,5 @@
 import configparser
+import inspect
 import logging
 import os
 import sys
@@ -51,6 +52,7 @@ class Config:
             'unicode': 'true',
         }
     }
+    config_dir_roots = ('.', os.path.join(os.environ['HOME'], '.config'), )
     platform = 'IPHONE'
     playback_scenario = 'HTTP_CLOUD_TABLET_60'
     ua_pc = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36'
@@ -74,7 +76,7 @@ class Config:
         # use the script name minus any extension for the config directory
         config_dir = None
         searched_paths = list()
-        for config_dir_base in ('.', os.path.join(os.environ['HOME'], '.config'), ):
+        for config_dir_base in Config.config_dir_roots:
             for config_dir_name in (script_name, '.' + script_name):
                 d = os.path.join(config_dir_base, config_dir_name)
                 searched_paths.append(d)
@@ -99,6 +101,46 @@ class Config:
                 config_string = '[{}]\n'.format(script_name) + f.read()
                 parser.read_string(config_string)
         return parser[script_name]
+
+    @staticmethod
+    def generate_config(username=None, password=None):
+        """Creates config file from template + user prompts."""
+        script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        # use the script name minus any extension for the config directory
+        config_dir = None
+        searched_paths = list()
+        config_dir = os.path.join(Config.config_dir_roots[1], script_name)
+        if not os.path.exists(config_dir):
+            print("Creating config directory: {}".format(config_dir))
+            os.makedirs(config_dir)
+        config_file = os.path.join(config_dir, 'config')
+        if os.path.exists(config_file):
+            print("Aborting: The config file already exists at '{}'".format(config_file))
+            return False
+
+        # copy the template config file
+        print("Generating basic config file at: {}".format(config_dir))
+        current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
+        template_config_path = os.path.abspath(os.path.join(current_dir, '..', 'config'))
+        if not os.path.exists(template_config_path):
+            print("Could not find template config file [expected at: {}]".format(template_config_path))
+            return False
+
+        if username is None:
+            username = input('Enter MLB.tv username: ')
+        if password is None:
+            password = input('Enter MLB.tv password: ')
+
+        with open(template_config_path, 'r') as infile, open(config_file, 'w') as outfile:
+            for line in infile:
+                if line.startswith('# username='):
+                    outfile.write("username={}\n".format(username))
+                elif line.startswith('# password='):
+                    outfile.write("password={}\n".format(password))
+                else:
+                    outfile.write(line)
+        print("Finished creating config file: {}".format(config_file))
+        print("You may want to edit it now to set up favourites, etc.")
 
 
 class MLBConfig(Config):
