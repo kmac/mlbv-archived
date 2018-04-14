@@ -130,7 +130,11 @@ class GameDataRetriever:
             game_rec['linescore'] = dict()
             if 'linescore' in game:
                 game_rec['linescore']['raw'] = game['linescore']
-                if 'currentInning' in game['linescore']:
+                if 'Delayed' in game_rec['detailedState']:
+                    game_rec['linescore']['currentInning'] = str(game_rec['detailedState'])
+                    game_rec['linescore']['currentInningOrdinal'] = 'Not Started'
+                    game_rec['linescore']['inningState'] = ''
+                elif 'currentInning' in game['linescore']:
                     game_rec['linescore']['currentInning'] = str(game['linescore']['currentInning'])
                 else:
                     game_rec['linescore']['currentInningOrdinal'] = '0'
@@ -358,9 +362,15 @@ class GameDatePresenter:
         game_state_color_on = color_on
         game_state_color_off = color_off
 
-        if game_rec['abstractGameState'] not in ('Preview', ):
+        if game_rec['abstractGameState'] in ('Preview', ):
+            if game_rec['detailedState'] != 'Scheduled':
+                if 'Delayed' in game_rec['detailedState']:
+                    game_state = 'Delayed'
+                else:
+                    game_state = game_rec['detailedState']
+        else:
             if show_scores:
-                if 'Critical' in game_rec['detailedState']:
+                if game_rec['detailedState'] in ('Critical', ):
                     game_state_color_on = ANSI.fg(config.CONFIG.parser['game_critical_colour'])
                     game_state_color_off = ANSI.reset()
                 if game_rec['detailedState'] in ('Final', ):
