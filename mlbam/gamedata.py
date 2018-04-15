@@ -84,18 +84,18 @@ def is_fav(game_rec):
     return False
 
 
-def apply_filter(game_rec, filter):
+def apply_filter(game_rec, arg_filter):
     """Returns the game_rec if the game matches the filter, or if no filtering is active.
     """
-    if filter == 'favs':
-        filter = config.CONFIG.parser['favs']
-    elif filter in FILTERS:
-        filter = FILTERS[filter]
-    elif not filter:
+    if arg_filter == 'favs':
+        arg_filter = config.CONFIG.parser['favs']
+    elif arg_filter in FILTERS:
+        arg_filter = FILTERS[arg_filter]
+    elif not arg_filter:
         return game_rec
 
     # apply the filter
-    for team in util.get_csv_list(filter):
+    for team in util.get_csv_list(arg_filter):
         if team in (game_rec['away']['abbrev'], game_rec['home']['abbrev']):
             return game_rec
 
@@ -322,24 +322,24 @@ class GameDatePresenter:
                         .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
                                 pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
 
-        game_count = 0
+        games_displayed_count = 0
         for game_pk in game_records:
-            game_count += 1
             if apply_filter(game_records[game_pk], filter) is not None:
-                is_last = game_count == len(game_records)
+                games_displayed_count += 1
                 outl.extend(self._display_game_details(game_pk, game_records[game_pk], show_linescore,
-                                                      game_count % 2, is_last))
+                                                      games_displayed_count))
                 print_outl = True
 
         if print_outl:
             print('\n'.join(outl))
 
-    def _display_game_details(self, game_pk, game_rec, show_linescore, odd_even, is_last):
+    def _display_game_details(self, game_pk, game_rec, show_linescore, games_displayed_count):
         show_scores = config.CONFIG.parser.getboolean('scores')
         outl = list()
         border = displayutil.Border(use_unicode=config.UNICODE)
         color_on = ''
         color_off = ''
+        odd_even = games_displayed_count % 2
         # if odd_even:
         #     color_on = ANSI.fg('yellow')
         # else:
@@ -402,6 +402,10 @@ class GameDatePresenter:
 
             # linescore
             if show_linescore:
+                if games_displayed_count > 1:
+                    outl.append('{coloron}{dash}{coloroff}'.format(coloron=ANSI.fg('darkgrey'),
+                                                                   dash=border.dash*91,
+                                                                   coloroff=ANSI.reset()))
                 linescore_dict = self._format_linescore(game_rec)
                 """
                 18:05: LA Dodgers (LAD) at San Francisco (SF)            1  2  3  4  5  6  7  8  9 10 11 12 13 14  R  H  E
@@ -440,10 +444,6 @@ class GameDatePresenter:
                 else:
                     outl.append(line_fmt.format(coloron=color_on, coloroff=color_off,
                                                 ginfo='', lscore=linescore_dict['home']))
-                if not is_last:
-                    outl.append('{coloron}{dash}{coloroff}'.format(coloron=ANSI.fg('darkgrey'),
-                                                                   dash=border.dash*91,
-                                                                   coloroff=ANSI.reset()))
             else:
                 # single-line game score
                 outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} "
