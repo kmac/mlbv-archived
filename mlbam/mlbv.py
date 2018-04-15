@@ -88,7 +88,7 @@ def main(argv=None):
     parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
     parser.add_argument("--favs", help=argparse.SUPPRESS)
                         # help=("Favourite teams, a comma-separated list of favourite teams " "(normally specified in config file)"))
-    parser.add_argument("--filter", nargs='?', const='favs', metavar='filtername|teams',
+    parser.add_argument("-o", "--filter", nargs='?', const='favs', metavar='filtername|teams',
                         help=("Filter output. Either a filter name (see --list-filters) or a comma-separated "
                               "list of team codes, eg: 'tor.bos,wsh'. Default: favs"))
     parser.add_argument("--list-filters", action='store_true', help="List the built-in filters")
@@ -106,9 +106,9 @@ def main(argv=None):
     parser.add_argument("--wait", action="store_true",
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
                               "Useful when combined with the --fetch option."))
-    parser.add_argument("--standings", nargs='?', const='division', metavar='category',
-                        help=("[category] is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
-                              "Display standings. This option will display selected standings category, then exit. "
+    parser.add_argument("--standings", nargs='?', const='division', metavar='[category]',
+                        help=("Display standings. This option will display the selected standings category, then exit. "
+                              "'[category]' is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
                               "The standings category can be shortened down to one character (all matching "
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
@@ -170,12 +170,11 @@ def main(argv=None):
             config.CONFIG.parser['filter'] = args.linescore
             # config.CONFIG.parser['favs'] = args.linescore
         config.CONFIG.parser['linescore'] = 'true'
-    # if args.favs:
-    #     config.CONFIG.parser['favs'] = args.favs
+    if args.favs:
+        config.CONFIG.parser['favs'] = args.favs
     if args.filter:
         config.CONFIG.parser['filter'] = args.filter
-        # if args.filter != 'favs':
-        #     config.CONFIG.parser['favs'] = args.filter
+
     if args.yesterday:
         args.date = datetime.strftime(datetime.today() - timedelta(days=1), "%Y-%m-%d")
     elif args.tomorrow:
@@ -184,7 +183,7 @@ def main(argv=None):
         args.date = datetime.strftime(datetime.today(), "%Y-%m-%d")
 
     if args.standings:
-        standings.get_standings(args.standings, args.date)
+        standings.get_standings(args.standings, args.date, args.filter)
         return 0
 
     gamedata_parser = gamedata.GameDataRetriever()
@@ -195,8 +194,12 @@ def main(argv=None):
     if team_to_play is None and not args.recaps:
         # nothing to play; display the games
         presenter = gamedata.GameDatePresenter()
+        displayed_count = 0
         for game_date, game_records in game_day_tuple_list:
             presenter.display_game_data(game_date, game_records, args.filter)
+            displayed_count += 1
+            if displayed_count < len(game_day_tuple_list):
+                print('')
         return 0
 
     # from this point we only care about first day in list

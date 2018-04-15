@@ -106,9 +106,6 @@ def apply_filter(game_rec, filter):
 class GameDataRetriever:
     """Retrieves and parses game data from statsapi.mlb.com"""
 
-    def __init__(self):
-        self.game_data_list = list()
-
     def _get_games_by_date(self, date_str=None, overwrite_json=True):
         if date_str is None:
             date_str = time.strftime("%Y-%m-%d")
@@ -311,9 +308,8 @@ class GameDatePresenter:
         if show_scores:
             if show_linescore:
                 outl.append("{:56}".format(date_hdr))
-                outl.append('{c_on}{dash}{c_off}'.format(c_on=border.border_color,
-                                                               dash=border.thickdash*91,
-                                                               c_off=border.color_off))
+                outl.append('{c_on}{dash}{c_off}'
+                            .format(c_on=border.border_color, dash=border.thickdash*91, c_off=border.color_off))
             else:
                 outl.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
                             .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
@@ -330,8 +326,9 @@ class GameDatePresenter:
         for game_pk in game_records:
             game_count += 1
             if apply_filter(game_records[game_pk], filter) is not None:
+                is_last = game_count == len(game_records)
                 outl.extend(self._display_game_details(game_pk, game_records[game_pk], show_linescore,
-                                                      game_count % 2, game_count == len(game_records)))
+                                                      game_count % 2, is_last))
                 print_outl = True
 
         if print_outl:

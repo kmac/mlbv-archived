@@ -150,7 +150,9 @@ Some properties you may want to set in the `config` file:
 
 * `username`: MLB.tv account username
 * `password`: MLB.tv account password
-* `favs`: a comma-separated list of team codes which are 1) highlighted in the game data and 2) can be filtered on using the --filter option to show only the favourite team(s)
+* `favs`: a comma-separated list of team codes which:
+    - 1) are highlighted in the game data, and 
+    - 2) are used for the default filter in the `-o/--filter` option (to show only the favourite team(s))
 * `scores`: a boolean specifying whether or not you want to see scores in the game information. Warning: spoilers!
 * `resolution`: the stream quality (passed in to streamlink). Use 'best' for full HD at 60 frames/sec.
     - others options are: 'worst', '360p', '540p', '720p_alt', '720p', 'best'
@@ -330,13 +332,15 @@ favourite team(s).
 
 ## 9. Filters
 
-You can filter the schedule/scores displays using the `--filter` argument. 
+You can filter the schedule/scores displays using the `-o/--filter` argument. 
 The filter argument allows you to provide either a built-in filter name or a comma-separated list of team codes.
 
 The filter option has the form:
 
-    --filter ?filter?  : where ?filter? is optional, and is either 
-                         a 'filter name' or a comma-separated list of teams
+    -o/--filter ?filter?  : where ?filter? is optional, and is either 
+                            a 'filter name' or a comma-separated list of teams
+
+> Note: -o is used as the short form because -f is taken. Pneumonic: -o -> 'only'
 
 > Note: Aside from the `--filter` command, other command arguments accept the same 'filter' string.
 >       For example `--linescore ?filter?` and `--recaps ?filter?`
@@ -369,13 +373,14 @@ Note: Do not use spaces between commas unless you encapsulate the list in quotes
 
 ## 10. Standings
 
-You can display standings via the `--standings` option. This option displays the given standings category then
-exits.
+You can display standings via the `--standings [category]` option. This option displays the given standings category then exits.
+
+You can also specify a league or division filter via `-o/--filter`.
 
 Standings categories:
 
 * all
-* division
+* division [default]
 * conference
 * wildcard
 * league
@@ -387,6 +392,8 @@ You can add the `-d/--date yyyy-mm-dd` option to show standings for any given da
 
 You don't have to specify the full standings category, it will match any substring given. e.g. `--standings d`
 will match division or `--standings wild` will match wildcard.
+
+You can also use the `-o/--filter` option to narrow down what is displayed. e.g. `--standings division --filter ale`
 
 
 ## 11. Examples
