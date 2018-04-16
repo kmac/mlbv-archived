@@ -431,7 +431,7 @@ This will show all chosen recaps, one-by-one until finished. A highlight reel.
 
 ### Fetch
 
-In these examples the game is save to a `.ts` file in the current directory.
+In these examples the game is save to a file (.ts or .mp4) in the current directory.
 
     mlbv --team tor --fetch
     mlbv --yesterday -t tor -f recap --fetch   # fetch yesterday's recap
@@ -450,11 +450,11 @@ In these examples the game is save to a `.ts` file in the current directory.
 
 ### Standings
 
-    mlbv --standings           # display division standings
-    mlbv --standings division  # display division standings
-    mlbv --standings div       # display division standings (shortened name)
-    mlbv --standings league    # display overall league standings
-    mlbv --standings all       # display all regular season standings categories
+    mlbv --standings             # display division standings
+    mlbv --standings division    # display division standings
+    mlbv --standings div -o ale  # display AL East division standings
+    mlbv --standings league      # display overall league standings
+    mlbv --standings all         # display all regular season standings categories
 
     mlbv --standings --date 2015-10-01  # display division standings for Oct 1, 2015
 

@@ -106,7 +106,7 @@ def apply_filter(game_rec, arg_filter):
 class GameDataRetriever:
     """Retrieves and parses game data from statsapi.mlb.com"""
 
-    def _get_games_by_date(self, date_str=None, overwrite_json=True):
+    def _get_games_by_date(self, date_str=None):
         if date_str is None:
             date_str = time.strftime("%Y-%m-%d")
 
