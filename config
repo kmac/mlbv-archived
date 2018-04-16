@@ -23,7 +23,7 @@
 # Available colours:
 #   black, red, green, orange, blue, purple, cyan, lightgrey, darkgrey,
 #   lightred, lightgreen, yellow, lightblue, pink, lightcyan
-#fav_colour=cyan
+#fav_colour=blue
 
 # Colour used to highlight games in 'critical' state
 #game_critical_colour=yellow
