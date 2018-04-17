@@ -71,6 +71,18 @@ def get_game_rec(game_data, team_to_play, game_number_str):
     return game_rec
 
 
+def _get_resolution():
+    """Workaround for Issue #12
+    If resolution is 'best' then change it to '720p_alt'
+    See https://github.com/streamlink/streamlink/issues/1048
+    """
+    resolution = config.CONFIG.parser.get('resolution', '720p_alt')
+    if 'best' in resolution:
+        resolution = resolution.replace('best', '720p_alt')
+        LOG.info("Workaround for issue #12: resolution 'best' is manually converted: %s", resolution)
+    return resolution
+
+
 def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, inning_ident, is_multi_highlight=False):
     if game_rec['doubleHeader'] != 'N':
         LOG.info('Selected game number %s of doubleheader', game_rec['gameNumber'])
@@ -91,7 +103,7 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
             stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
             if stream_url is not None:
                 offset = None
-                if config.SAVE_PLAYLIST_FILE :
+                if config.SAVE_PLAYLIST_FILE:
                     mlb_session.save_playlist_to_file(stream_url)
                 if inning_ident:
                     offset = _calculate_inning_offset(inning_ident, media_state, game_rec)
@@ -266,7 +278,7 @@ def streamlink_highlight(playback_url, fetch_filename, is_multi_highlight=False)
         streamlink_cmd.append("--loglevel")
         streamlink_cmd.append("debug")
     streamlink_cmd.append(playback_url)
-    streamlink_cmd.append(config.CONFIG.parser.get('resolution', 'best'))
+    streamlink_cmd.append(_get_resolution())
 
     LOG.info('Playing highlight via streamlink: ' + str(streamlink_cmd))
     subprocess.run(streamlink_cmd)
@@ -318,7 +330,7 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
         streamlink_cmd.append("--loglevel")
         streamlink_cmd.append("debug")
     streamlink_cmd.append(stream_url)
-    streamlink_cmd.append(config.CONFIG.parser.get('resolution', 'best'))
+    streamlink_cmd.append(_get_resolution())
 
     LOG.debug('Playing: %s', str(streamlink_cmd))
     subprocess.run(streamlink_cmd)

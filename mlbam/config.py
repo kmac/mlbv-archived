@@ -7,8 +7,8 @@ import sys
 
 HIGHLIGHT_FEEDTYPES = ('condensed', 'recap')
 
-# Note: 720p (best) is the 60fps stream
-BANDWIDTH_CHOICES = ('worst', '360p', '540p', '720p_alt', '720p', 'best')
+# Note: 720p_alt is the 60fps stream
+BANDWIDTH_CHOICES = ('worst', '224p', '288p', '360p', '504p', '540p', '720p', '720p_alt', 'best')
 
 CONFIG = None  # holds a Config instance
 
@@ -37,7 +37,7 @@ class Config:
             'use_short_feeds': 'true',
             'filter': '',
             'cdn': 'akamai',
-            'resolution': 'best',
+            'resolution': '720p_alt',
             'video_player': 'mpv',
             'streamlink_highlights': 'true',  # if false will send url direct to video_player (no resolution selection)
             'streamlink_passthrough_highlights': 'true',  # allows seeking
@@ -58,18 +58,24 @@ class Config:
     ua_pc = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36'
     ua_iphone = 'AppleCoreMedia/1.0.0.15B202 (iPhone; U; CPU OS 11_1_2 like Mac OS X; en_us)'
 
-    def __init__(self):
+    def __init__(self, args):
         script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         self.dir = self.__find_config_dir(script_name)
         self.parser = self.__init_configparser(script_name)
         global DEBUG
-        DEBUG = self.parser.getboolean('debug', DEBUG)
+        DEBUG = self.parser.getboolean('debug', DEBUG) or args.debug
         global VERBOSE
-        VERBOSE = self.parser.getboolean('verbose', VERBOSE)
+        VERBOSE = self.parser.getboolean('verbose', VERBOSE) or args.verbose
         global VERIFY_SSL
         VERIFY_SSL = self.parser.getboolean('verify_ssl', VERIFY_SSL)
         global UNICODE
         UNICODE = self.parser.getboolean('unicode', UNICODE)
+        if DEBUG:
+            # Turn on some extras
+            global SAVE_PLAYLIST_FILE
+            SAVE_PLAYLIST_FILE = True
+            global SAVE_JSON_FILE_BY_TIMESTAMP
+            SAVE_JSON_FILE_BY_TIMESTAMP = True
 
     @staticmethod
     def __find_config_dir(script_name):
@@ -148,5 +154,5 @@ class MLBConfig(Config):
     # ?? mf_svc_url = 'https://mf.svc.nhl.com/ws/media/mf/v2.4/stream'
     # ?? ua_nhl = 'NHL/11479 CFNetwork/887 Darwin/17.0.0'
 
-    def __init__(self):
-        Config.__init__(self)
+    def __init__(self, args):
+        Config.__init__(self, args)

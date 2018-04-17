@@ -154,8 +154,8 @@ Some properties you may want to set in the `config` file:
     - 1) are highlighted in the game data, and 
     - 2) are used for the default filter in the `-o/--filter` option (to show only the favourite team(s))
 * `scores`: a boolean specifying whether or not you want to see scores in the game information. Warning: spoilers!
-* `resolution`: the stream quality (passed in to streamlink). Use 'best' for full HD at 60 frames/sec.
-    - others options are: 'worst', '360p', '540p', '720p_alt', '720p', 'best'
+* `resolution`: the stream quality (passed in to streamlink). Use '720p_alt' for full HD at 60 frames/sec.
+    - options are: 'worst', '224p', '288p', '360p', '504p', '540p', '720p', '720p_alt', 'best'
 * `linescore`: to enable linescores by default (if scores are enabled)
 
 

@@ -38,10 +38,10 @@
 #use_short_feeds=true
 
 # Bandwidth/stream resolution. This is passed into streamlink. 
-# One of: 'worst', '360p', '540p', '720p_alt', '720p' 'best'
-#   Note: 720p (best) is the 60fps stream. The 720p_alt is a lower framerate. 
-#   Fallback streams can be specified by using a comma-separated list, e.g.: 720p,540p,best
-#resolution=best
+# One of: 'worst', '224p', '288p', '360p', '504p', '540p', '720p', '720p_alt', 'best'
+#   Note: 720p_alt is the 60fps stream; all others are 30fps.
+#   Fallback streams can be specified by using a comma-separated list, e.g.: 720p_alt,720p,540p
+#resolution=720p_alt
 
 # Video player. One of vlc or mpv is recommended here. You can also set options for the player here as well.
 # Example: video_player=mpv --cache 153600

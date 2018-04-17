@@ -294,7 +294,7 @@ class MLBSession(object):
         resp = self.session.get(stream_url, headers=headers)
         playlist = resp.text
         playlist_file = os.path.join(util.get_tempdir(), 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
-        LOG.debug('writing playlist to: {}'.format(playlist_file))
+        LOG.info('Writing playlist to: {}'.format(playlist_file))
         with open(playlist_file, 'w') as f:
             f.write(playlist)
         LOG.debug('save_playlist_to_file: {}'.format(playlist))

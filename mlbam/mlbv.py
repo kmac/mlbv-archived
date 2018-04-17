@@ -76,8 +76,10 @@ def main(argv=None):
                         help=("Feed type, either a live/archive game feed or highlight feed "
                               "(if available). Available feeds are shown in game list,"
                               "and have a short form and long form (see 'Feed identifiers' section below)"))
-    parser.add_argument("-r", "--resolution", choices=config.BANDWIDTH_CHOICES,
-                        help="Stream resolution for streamlink (overrides settting in config file)")
+    parser.add_argument("-r", "--resolution",
+                        help=("Stream resolution for streamlink (overrides settting in config file). "
+                              "Choices: {}. Can also be a comma-separated list of values (no spaces), "
+                              "e.g 720p_alt,720p,540p").format(config.BANDWIDTH_CHOICES))
     parser.add_argument("-i", "--inning",
                         help=("Start live/archive stream from inning. Format: {t|b}{inning_num}. "
                               "t|b: (optional) top or bottom, inning_num: inning number. "
@@ -130,7 +132,7 @@ def main(argv=None):
         return config.MLBConfig.generate_config(args.username, args.password)
 
     # get our config
-    config.CONFIG = config.MLBConfig()
+    config.CONFIG = config.MLBConfig(args)
 
     # append log files if DEBUG is set (from top of file)
     util.init_logging(os.path.join(config.CONFIG.dir,
