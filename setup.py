@@ -9,7 +9,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='mlbv',
-    version='0.2.0',
+    version='0.0.2',
     packages=['mlbam'],
     url='https://github.com/kmac/mlbv',
     description="Command-line interface to streaming MLB games with a valid MLB.tv subscription. Game schedule and scores.",
