@@ -127,10 +127,12 @@ but may require minor tweaks (bug reports are welcome).
 
 ## 1. Installation
 
-1. Clone this repository.
-2. Run `pip install .`
-3. Run `mlbv --init` to create a configuration directory and populate the `config` file
-   with defaults and the required MLB.tv username and password.
+This project is on the Python Package Index (Pypi) at [mlbv](https://pypi.org/project/mlbv), and can be
+installed using `pip`.
+
+1. Run `pip install mlbv`
+2. Run `mlbv --init` to create a configuration directory and populate the `config` file
+   with defaults and the required MLB.tv username and password. See the next section for more details.
 
 
 ## 2. Configuration
@@ -340,7 +342,7 @@ The filter option has the form:
     -o/--filter ?filter?  : where ?filter? is optional, and is either 
                             a 'filter name' or a comma-separated list of teams
 
-> Note: -o is used as the short form because -f is taken. Pneumonic: -o -> 'only'
+> Note: -o is used as the short form because -f is taken. mnemonic: -o -> 'only'
 
 > Note: Aside from the `--filter` command, other command arguments accept the same 'filter' string.
 >       For example `--linescore ?filter?` and `--recaps ?filter?`

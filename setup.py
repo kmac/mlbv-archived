@@ -9,21 +9,33 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='mlbv',
-    version='0.1',
+    version='0.2.0',
     packages=['mlbam'],
     url='https://github.com/kmac/mlbv',
     description="Command-line interface to streaming MLB games with a valid MLB.tv subscription. Game schedule and scores.",
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[
-        "Environment :: Console",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Intended Audience :: End Users/Desktop",
+        # How mature is this project? Common values are
+        #   3 - Alpha
+        #   4 - Beta
+        #   5 - Production/Stable
+        'Development Status :: 3 - Alpha',
+
+        'Programming Language :: Python :: 3',
+        'Environment :: Console',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Intended Audience :: End Users/Desktop',
     ],
     license="GPLv3",
     entry_points={
         "console_scripts": [
             "mlbv=mlbam.mlbv:main"
+        ]
+    },
+    package_data={
+        'mlbam': [
+            '../README.md'
         ]
     },
     install_requires=[
