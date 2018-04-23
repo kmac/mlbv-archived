@@ -1,0 +1,17 @@
+language: python
+python:
+- '3.5'
+- '3.6'
+- 3.6-dev
+- 3.7-dev
+install:
+- pip install
+script:
+- pytest
+deploy:
+  provider: pypi
+  user: kmac
+  password:
+    secure: Y+WiGboU/ZWeh66NMOX2ZAXFbqGldg9gmkEaPBlPF+UuUsR5S3q7WSuG611xNvC5C8huOSp+U//wBLcxjvIpreNdbM8nuo1/+xzGDruJA8uQo3a71UtZpcS/shOiE18b91rn4+lqsB4wEELg2vlgILDnuNthHsL25CAGBauHQQnpJqbLd4lqf/wtD+L7wA3WdNClsibAM4IDXRx7t7qZ0GCB2Nqod+eToKr3FyAUYXK6PDSxF0FSFNP8aiEd8eYE14D4TQnE0yYotE4792x5LV0/+8XcI+8sNpN9ay+OVEIbpJ3kuiMDkUw14USeK7buKZeLAYGJp41+nTt1X/ty/fMnwVxs15cqpczteQeOuFVTL2dh8K/JpUSluHmT68de0C0idpaJjQYuHyjWB4EoHzilhKNGdYL6czbgticEaOfIjGyOgZCwBzaKkuwOIA5hlEaNgZh8LphHJc6wTfzeBao0jG7rP+WdpnqFHm/pxtZjISRw7lQrt3fg1phCgaL6gnV7LWbXKj/QQ54cW3JKyN2X+Rg+pnLmZA0Ez202W8LYxQKu0AFzRiuV2q5Wa+eUxRgQgLiLEYSiG+CDZehsEyVPjKPvWK5DI+I938EuyKv1K/iLsczYS64+HzkoTsTyV1MCqBqjCQ6Ul7nf5JhD891nRM61g5jYsE5S5wxkHVU=
+  on:
+    tags: true

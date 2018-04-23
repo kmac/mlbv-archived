@@ -127,12 +127,18 @@ but may require minor tweaks (bug reports are welcome).
 
 ## 1. Installation
 
+### Via pip
+
 This project is on the Python Package Index (Pypi) at [mlbv](https://pypi.org/project/mlbv), and can be
 installed using `pip`.
 
 1. Run `pip install mlbv`
 2. Run `mlbv --init` to create a configuration directory and populate the `config` file
    with defaults and the required MLB.tv username and password. See the next section for more details.
+
+### Archlinux
+
+Install `mlbv` via the AUR.
 
 
 ## 2. Configuration
