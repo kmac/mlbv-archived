@@ -35,7 +35,8 @@ setup(
     },
     package_data={
         'mlbam': [
-            '../README.md'
+            '../README.md',
+            '../config'
         ]
     },
     install_requires=[
