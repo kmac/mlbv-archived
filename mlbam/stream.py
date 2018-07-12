@@ -326,6 +326,16 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
         streamlink_cmd.append(video_player)
         if config.CONFIG.parser.getboolean('streamlink_passthrough', False):
             streamlink_cmd.append("--player-passthrough=hls")
+
+    streamlink_hls_audio_select = config.CONFIG.parser['streamlink_hls_audio_select']
+    if streamlink_hls_audio_select:
+        streamlink_cmd.append("--hls-audio-select")
+        streamlink_cmd.append(streamlink_hls_audio_select)
+        if streamlink_hls_audio_select != '*':
+            LOG.info('Including streamlink arg: --hls-audio-select=%s', streamlink_hls_audio_select)
+    else:
+        LOG.debug('Disabled streamlink --hls-audio-select')
+
     if config.VERBOSE:
         streamlink_cmd.append("--loglevel")
         streamlink_cmd.append("debug")

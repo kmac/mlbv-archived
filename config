@@ -59,6 +59,14 @@
 # This shouldn't be required, and it bypasses any streamlink magic done to handle the HLS stream.
 #streamlink_passthrough=false
 
+# Audio selection
+# Control what audio streams are included in the output.
+# You can select all (*) or provide a comma-separated list of one or some combination of:
+#   English,Natural Sound,English Radio,Radio EspaÃ±ola
+# Note: the main 'English' feed seems to always be included. 
+# Set to blank to disable (only the main stream is included, this will save some disk space and/or bandwidth)
+#streamlink_hls_audio_select=*
+
 # Turn on extra debugging information
 #debug=false
 

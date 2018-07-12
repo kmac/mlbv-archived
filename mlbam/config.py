@@ -42,6 +42,7 @@ class Config:
             'streamlink_highlights': 'true',  # if false will send url direct to video_player (no resolution selection)
             'streamlink_passthrough_highlights': 'true',  # allows seeking
             'streamlink_passthrough': 'false',
+            'streamlink_hls_audio_select': '*',
             'stream_start_offset_secs': '240',
             'audio_player': 'mpv',
             'debug': 'false',
@@ -114,7 +115,6 @@ class Config:
         script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         # use the script name minus any extension for the config directory
         config_dir = None
-        searched_paths = list()
         config_dir = os.path.join(Config.config_dir_roots[1], script_name)
         if not os.path.exists(config_dir):
             print("Creating config directory: {}".format(config_dir))
