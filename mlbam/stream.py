@@ -119,11 +119,12 @@ def get_fetch_filename(date_str, game_rec, feedtype, fetch):
     if fetch:
         suffix = 'ts'
         if feedtype is None:
-            return '{}-{}-{}.{}'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], suffix)
+            fetch_filename = '{}-{}-{}.{}'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], suffix)
         else:
             if feedtype in ('recap', 'condensed', ):
                 suffix = 'mp4'
-            return '{}-{}-{}-{}.{}'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype, suffix)
+            fetch_filename = '{}-{}-{}-{}.{}'.format(date_str, game_rec['away']['abbrev'], game_rec['home']['abbrev'], feedtype, suffix)
+        return _uniquify_fetch_filename(fetch_filename, strategy='index')
     return None
 
 
@@ -284,6 +285,23 @@ def streamlink_highlight(playback_url, fetch_filename, is_multi_highlight=False)
     subprocess.run(streamlink_cmd)
 
 
+def _uniquify_fetch_filename(fetch_filename, strategy='date'):
+    if os.path.exists(fetch_filename):
+        # don't overwrite existing file - use a new name based on hour,minute
+        fetch_filename_orig = fetch_filename
+        if strategy == 'index':
+            index = 1
+            fsplit = os.path.splitext(fetch_filename_orig)
+            while os.path.exists(fetch_filename):
+                index += 1
+                fetch_filename = '{}-{}{}'.format(fsplit[0], index, fsplit[1])
+        else:
+            fsplit = os.path.splitext(fetch_filename)
+            fetch_filename = '{}-{}{}'.format(fsplit[0], datetime.strftime(datetime.today(), "%H%M"), fsplit[1])
+        LOG.info('File %s exists, using %s instead', fetch_filename_orig, fetch_filename)
+    return fetch_filename
+
+
 def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, offset=None):
     LOG.debug("Stream url: " + stream_url)
     # media_auth_cookie_str = access_token
@@ -312,12 +330,7 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
         LOG.debug("Using --hls-start-offset %s", offset)
 
     if fetch_filename is not None:
-        if os.path.exists(fetch_filename):
-            # don't overwrite existing file - use a new name based on hour,minute
-            fetch_filename_orig = fetch_filename
-            fsplit = os.path.splitext(fetch_filename)
-            fetch_filename = '{}-{}{}'.format(fsplit[0], datetime.strftime(datetime.today(), "%H%m"), fsplit[1])
-            LOG.info('File %s exists, using %s instead', fetch_filename_orig, fetch_filename)
+        fetch_filename = _uniquify_fetch_filename(fetch_filename)
         streamlink_cmd.append("--output")
         streamlink_cmd.append(fetch_filename)
     elif video_player is not None and video_player != '':
