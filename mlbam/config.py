@@ -53,7 +53,7 @@ class Config:
             'unicode': 'true',
         }
     }
-    config_dir_roots = ('.', os.path.join(os.environ['HOME'], '.config'), )
+    config_dir_roots = ('.', os.path.join(os.path.expanduser('~'), '.config'), )
     platform = 'IPHONE'
     playback_scenario = 'HTTP_CLOUD_TABLET_60'
     ua_pc = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36'
