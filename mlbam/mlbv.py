@@ -152,7 +152,7 @@ def main(argv=None):
         config.CONFIG.parser['username'] = args.username
     if args.password:
         config.CONFIG.parser['password'] = args.password
-    if args.inning_offset:
+    if args.inning_offset is not None:
         config.CONFIG.parser['stream_start_offset_secs'] = str(args.inning_offset)
     if args.team:
         team_to_play = args.team.lower()
