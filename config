@@ -28,8 +28,8 @@
 # Colour used to highlight games in 'critical' state
 #game_critical_colour=yellow
 
-# Show scores. Scores are hidden by default. If this is set to true then scores are shown.
-#scores=false
+# Show scores. Scores are shown by default. If this is set to false then scores are shown.
+#scores=true
 
 # Show linescores. Requires scores=true above.
 #linescore=false
