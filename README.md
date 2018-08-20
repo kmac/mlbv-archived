@@ -120,6 +120,8 @@ This project incorporates some code modified from the following projects:
     - [python-lxml](http://lxml.de/) module
 * [streamlink](https://streamlink.github.io/)
 * a video player. Either `vlc` or `mpv` is recommended.
+    - Note: player can be specified via config file. If player is not on the system path you may need to
+      setup the full path in the config file.
 
 This software is tested under linux. It should work under Windows or Mac with the pre-requisites installed,
 but may require minor tweaks (bug reports are welcome).
@@ -288,7 +290,7 @@ later time while the stream is being saved to file.
 Example:
 
     mlbv --team tor --fetch  # Fetch the live jays game to disk. 
-                             # Most video players let you view while downloading
+                             # Most video players allow you to view while downloading
 
 
 ## 7. Highlights: Recap or Condensed Games
