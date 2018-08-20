@@ -20,6 +20,7 @@ SAVE_JSON_FILE = True
 SAVE_JSON_FILE_BY_TIMESTAMP = False  # normally false; will save many .json files if set
 SAVE_PLAYLIST_FILE = False
 UNICODE = True
+DEFAULT_STREAM_START_OFFSET_SECS = 240
 
 LOG = logging.getLogger(__name__)
 
@@ -43,7 +44,7 @@ class Config:
             'streamlink_passthrough_highlights': 'true',  # allows seeking
             'streamlink_passthrough': 'false',
             'streamlink_hls_audio_select': '*',
-            'stream_start_offset_secs': '240',
+            'stream_start_offset_secs': str(DEFAULT_STREAM_START_OFFSET_SECS),
             'audio_player': 'mpv',
             'debug': 'false',
             'verbose': 'false',

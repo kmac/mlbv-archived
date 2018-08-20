@@ -224,8 +224,12 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         LOG.info("Live game: game start: %s, inning start: %s", game_rec['mlbdate'], inning_timestamp_str)
         now_timestamp = datetime.now(timezone.utc).timestamp()
         offset_secs = now_timestamp - inning_start_timestamp
-        # apply the offset if given:
-        offset_secs -= config.CONFIG.parser.getint('stream_start_offset_secs', 0)
+        # Issue #9: apply the offset if provided (assume provided if not default value):
+        stream_start_offset_secs = config.CONFIG.parser.getint('stream_start_offset_secs',
+                                                               config.DEFAULT_STREAM_START_OFFSET_SECS)
+        if stream_start_offset_secs != config.DEFAULT_STREAM_START_OFFSET_SECS:
+            LOG.info("Applying non-default stream start offset: %s seconds", stream_start_offset_secs)
+            offset_secs -= stream_start_offset_secs
         LOG.debug("now_timestamp: %s, inning_start_timestamp: %s, offset=%s", now_timestamp, inning_start_timestamp, offset_secs)
         logstr = "Calculated live game negative inning offset (from now): %s"
     else:
