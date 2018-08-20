@@ -82,13 +82,14 @@ def request_json(url, output_filename=None):
     response = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
     response.raise_for_status()
 
-    if output_filename is not None and config.SAVE_JSON_FILE:
+    # Note: this fails on windows in some cases https://github.com/kennethreitz/requests-html/issues/171
+    if output_filename is not None and config.DEBUG and config.SAVE_JSON_FILE:
         if config.SAVE_JSON_FILE_BY_TIMESTAMP:
             json_file = os.path.join(get_tempdir(),
                                      '{}-{}.json'.format(output_filename, time.strftime("%Y-%m-%d-%H%M")))
         else:
             json_file = os.path.join(get_tempdir(), '{}.json'.format(output_filename))
-        with open(json_file, 'w') as out:  # write date to json_file
+        with open(json_file, 'w', encoding='utf-8') as out:  # write date to json_file
             out.write(response.text)
 
     return response.json()
