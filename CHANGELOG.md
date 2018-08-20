@@ -1,3 +1,5 @@
+2018.08.19 v0.0.7 Fix Issues #18, #19
+
 2018.08.06 v0.0.6 Fix Issues #14, #16, #17
 
 2018.04.24 v0.0.5 Remove configparser from setup.py since it's in base python
