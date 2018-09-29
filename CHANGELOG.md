@@ -1,3 +1,8 @@
+2018.09.29 v0.0.8 Add support for streamlink_extra_args to add enhancement Issue #22
+- setting the following config options will stream the output via http on port 8080:
+    - video_player=
+    - streamlink_extra_args=--player-external-http,--player-external-http-port,8080
+
 2018.08.19 v0.0.7 Fix Issues #18, #19
 
 2018.08.06 v0.0.6 Fix Issues #14, #16, #17
