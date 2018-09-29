@@ -44,6 +44,7 @@ class Config:
             'streamlink_passthrough_highlights': 'true',  # allows seeking
             'streamlink_passthrough': 'false',
             'streamlink_hls_audio_select': '*',
+            'streamlink_extra_args': '',
             'stream_start_offset_secs': str(DEFAULT_STREAM_START_OFFSET_SECS),
             'audio_player': 'mpv',
             'debug': 'false',

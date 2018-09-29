@@ -46,6 +46,7 @@
 # Video player. One of vlc or mpv is recommended here. You can also set options for the player here as well.
 # Example: video_player=mpv --cache 153600
 #video_player=mpv
+video_player=
 
 # Audio player for audio-only feeds (not implemented yet):
 #audio_player=mpv
@@ -66,6 +67,17 @@
 # Note: the main 'English' feed seems to always be included. 
 # Set to blank to disable (only the main stream is included, this will save some disk space and/or bandwidth)
 #streamlink_hls_audio_select=*
+
+# Extra streamlink arguments
+# If set, these arguments are appended to the streamlink arguments before sent to the player.
+# This is a comma-separated list of arguments (individual arguments should be separated by a comma).
+# For example to use streamlink's external http, you can set the video_player to an empty
+# string, and then use the following streamlink_extra_args to have streamlink publish on port 8080. e.g:
+#video_player=
+#streamlink_extra_args=--player-external-http,--player-external-http-port,8080
+#
+# Default:
+#streamlink_extra_args=
 
 # Turn on extra debugging information
 #debug=false

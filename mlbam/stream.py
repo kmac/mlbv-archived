@@ -266,28 +266,36 @@ def play_highlight(playback_url, fetch_filename, is_multi_highlight=False):
 
 def streamlink_highlight(playback_url, fetch_filename, is_multi_highlight=False):
     video_player = config.CONFIG.parser['video_player']
-    # the --playe-no-close is required so it doesn't shut things down 
-    # prematurely after the stream is fully fetched
-    streamlink_cmd = ["streamlink", "--player-no-close", ]
-    if fetch_filename is not None:
+    streamlink_cmd = ["streamlink", ]
+
+    # Issue 22: support extra streamlink parameters, like --player-external-http
+    streamlink_extra_args = config.CONFIG.parser['streamlink_extra_args']
+    if streamlink_extra_args:
+        LOG.debug('Using streamlink_extra_args: %s', streamlink_extra_args)
+        streamlink_cmd.extend([s.strip() for s in streamlink_extra_args.split(',')])
+    else:
+        # the --playe-no-close is required so it doesn't shut things down
+        # prematurely after the stream is fully fetched
+        streamlink_cmd.append("--player-no-close")
+    if fetch_filename:
         streamlink_cmd.append("--output")
         streamlink_cmd.append(fetch_filename)
-    elif video_player is not None and video_player != '':
-        LOG.debug('Using video_player: {}'.format(video_player))
+    elif video_player:
+        LOG.debug('Using video_player: %s', video_player)
         if is_multi_highlight:
             if video_player == 'mpv':
                 video_player += " --keep-open=no"
         streamlink_cmd.append("--player")
         streamlink_cmd.append(video_player)
-    if config.CONFIG.parser.getboolean('streamlink_passthrough_highlights', True):
-        streamlink_cmd.append("--player-passthrough=hls")
+        if config.CONFIG.parser.getboolean('streamlink_passthrough_highlights', True):
+            streamlink_cmd.append("--player-passthrough=hls")
     if config.VERBOSE:
         streamlink_cmd.append("--loglevel")
         streamlink_cmd.append("debug")
     streamlink_cmd.append(playback_url)
     streamlink_cmd.append(_get_resolution())
 
-    LOG.info('Playing highlight via streamlink: ' + str(streamlink_cmd))
+    LOG.info('Playing highlight via streamlink: %s', str(streamlink_cmd))
     subprocess.run(streamlink_cmd)
 
 
@@ -317,16 +325,8 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
     video_player = config.CONFIG.parser['video_player']
     streamlink_cmd = ["streamlink",
                       "--http-no-ssl-verify",
-                      "--player-no-close",
                       "--http-header", user_agent_hdr,
                       "--http-cookie", "Authorization=" + mlb_session.access_token]
-
-    # include our cookies
-    # cookie_dict = mlb_session.get_cookie_dict()
-    # for cookie_name in cookie_dict:
-    #     streamlink_cmd.append("--http-cookie")
-    #     streamlink_cmd.append('{}={}'.format(cookie_name, cookie_dict[cookie_name]))
-
     if from_start:
         streamlink_cmd.append("--hls-live-restart")
         LOG.info("Starting from beginning [--hls-live-restart]")
@@ -335,11 +335,20 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
         streamlink_cmd.append(offset)
         LOG.debug("Using --hls-start-offset %s", offset)
 
-    if fetch_filename is not None:
+    # Issue 22: support extra streamlink parameters, like --player-external-http
+    streamlink_extra_args = config.CONFIG.parser['streamlink_extra_args']
+    if streamlink_extra_args:
+        LOG.debug('Using streamlink_extra_args: %s', streamlink_extra_args)
+        streamlink_cmd.extend([s.strip() for s in streamlink_extra_args.split(',')])
+    else:
+        # the --playe-no-close is required so it doesn't shut things down
+        # prematurely after the stream is fully fetched
+        streamlink_cmd.append("--player-no-close")
+    if fetch_filename:
         fetch_filename = _uniquify_fetch_filename(fetch_filename)
         streamlink_cmd.append("--output")
         streamlink_cmd.append(fetch_filename)
-    elif video_player is not None and video_player != '':
+    elif video_player:
         LOG.debug('Using video_player: %s', video_player)
         streamlink_cmd.append("--player")
         streamlink_cmd.append(video_player)
