@@ -325,8 +325,10 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
     video_player = config.CONFIG.parser['video_player']
     streamlink_cmd = ["streamlink",
                       "--http-no-ssl-verify",
+                      "--http-cookie", "Authorization=" + mlb_session.access_token,
                       "--http-header", user_agent_hdr,
-                      "--http-cookie", "Authorization=" + mlb_session.access_token]
+                      "--hls-timeout", "600",         # default: 60
+                      "--hls-segment-timeout", "60"]  # default: 10
     if from_start:
         streamlink_cmd.append("--hls-live-restart")
         LOG.info("Starting from beginning [--hls-live-restart]")
