@@ -5,8 +5,6 @@ Help: see https://github.com/dword4/nhlapi#standing
 """
 
 import logging
-import os
-import sys
 import time
 
 from datetime import datetime
@@ -59,10 +57,8 @@ def _is_fav(long_team_name):
     return False
 
 
-def _match(input_option, full_option, min_chars=2):
+def _match(input_option, full_option):
     num_chars = len(input_option)
-    # if num_chars < min_chars:
-    #     return input_option == full_option
     return input_option[:num_chars] == full_option[:num_chars]
 
 
@@ -73,20 +69,24 @@ def _add_to_header(header, text):
 
 
 def get_standings(standings_option='all', date_str=None, args_filter=None):
+    """Displays standings."""
     LOG.debug('Getting standings for %s, option=%s', date_str, standings_option)
     if date_str == time.strftime("%Y-%m-%d"):
         # strip out date string from url (issue #5)
         date_str = None
     if _match(standings_option, 'all') or _match(standings_option, 'division'):
         display_division_standings(date_str, args_filter, rank_tag='divisionRank', header_tags=('league', 'division'))
-        _match(standings_option, 'all') and print('')
+        if _match(standings_option, 'all'):
+            print('')
     if _match(standings_option, 'all') or _match(standings_option, 'wildcard'):
         _display_standings('wildCard', 'Wildcard', date_str, args_filter, rank_tag='wildCardRank', header_tags=('league', ))
-        _match(standings_option, 'all') and print('')
+        if _match(standings_option, 'all'):
+            print('')
     if _match(standings_option, 'all') or _match(standings_option, 'overall') \
             or _match(standings_option, 'league') or _match(standings_option, 'conference'):
         _display_standings('byLeague', 'League', date_str, args_filter, rank_tag='leagueRank', header_tags=('league', ))
-        _match(standings_option, 'all') and print('')
+        if _match(standings_option, 'all'):
+            print('')
 
     if _match(standings_option, 'playoff') or _match(standings_option, 'postseason'):
         _display_standings('postseason', 'Playoffs', date_str, args_filter)
@@ -135,15 +135,16 @@ def _get_team_str(teamrec, rank_tag):
         if config.CONFIG.parser['fav_colour'] != '':
             color_on = ANSI.fg(config.CONFIG.parser['fav_colour'])
             color_off = ANSI.reset()
-    return '{color_on}{rank:2} {clinch}{name:28} {win:3} {loss:3} {pct:5} {gb:4} {wgb:4} [{streak}]{color_off}'\
-                .format(color_on=color_on, rank=rank, clinch=clinch, name=teamrec['team']['name'],
-                        win=teamrec['leagueRecord']['wins'],
-                        loss=teamrec['leagueRecord']['losses'],
-                        pct=teamrec['leagueRecord']['pct'],
-                        gb=teamrec['gamesBack'],
-                        wgb=teamrec['wildCardGamesBack'],
-                        streak=teamrec['streak']['streakCode'],
-                        color_off=color_off)
+    name = clinch + teamrec['team']['name']
+    return '{color_on}{rank:2} {name:28} {win:3} {loss:3} {pct:5} {gb:4} {wgb:4} [{streak}]{color_off}'.format(
+        color_on=color_on, rank=rank, name=name,
+        win=teamrec['leagueRecord']['wins'],
+        loss=teamrec['leagueRecord']['losses'],
+        pct=teamrec['leagueRecord']['pct'],
+        gb=teamrec['gamesBack'],
+        wgb=teamrec['wildCardGamesBack'],
+        streak=teamrec['streak']['streakCode'],
+        color_off=color_off)
 
 
 def _get_standings_display_for_record(outl, standings_type, record, header_tags, rank_tag, border, needs_line_hr):
@@ -161,7 +162,7 @@ def _get_standings_display_for_record(outl, standings_type, record, header_tags,
         LOG.error('Unexpected: standingsType=%s, not %s', record['standingsType'], standings_type)
 
     for teamrec in record['teamRecords']:
-        outl.append( _get_team_str(teamrec, rank_tag))
+        outl.append(_get_team_str(teamrec, rank_tag))
 
 
 def _display_standings(standings_type, display_title, date_str, args_filter, rank_tag='divisionRank', header_tags=('league', 'division')):
