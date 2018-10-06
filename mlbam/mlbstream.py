@@ -81,8 +81,8 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
     else:
         # handle full game (live or archive)
         # this is the only feature requiring an authenticated session
-        import mlbam.session as session
-        mlb_session = session.MLBSession()
+        import mlbam.mlbsession as mlbsession
+        mlb_session = mlbsession.MLBSession()
 
         media_playback_id, media_state = select_feed_for_team(game_rec, team_to_play, feedtype)
         if media_playback_id is not None:
