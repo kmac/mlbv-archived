@@ -24,7 +24,7 @@ import mlbam.common.util as util
 import mlbam.mlbconfig as mlbconfig
 import mlbam.gamedata as gamedata
 import mlbam.standings as standings
-import mlbam.stream as stream
+import mlbam.mlbstream as mlbstream
 
 
 LOG = None  # initialized in init_logging
@@ -229,14 +229,14 @@ def main(argv=None):
                     game_num = 1
                     if game_rec['doubleHeader'] != 'N':
                         game_num = game_rec['gameNumber']
-                    stream_game_rec = stream.get_game_rec(game_data, game_rec['home']['abbrev'], game_num)
-                    stream.play_stream(stream_game_rec, game_rec['home']['abbrev'], 'recap', game_date,
-                                       args.fetch, None, None, is_multi_highlight=True)
+                    stream_game_rec = mlbstream.get_game_rec(game_data, game_rec['home']['abbrev'], game_num)
+                    mlbstream.play_stream(stream_game_rec, game_rec['home']['abbrev'], 'recap', game_date,
+                                          args.fetch, None, None, is_multi_highlight=True)
                 else:
                     LOG.info("No recap available for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
         return 0
 
-    game_rec = stream.get_game_rec(game_data, team_to_play, args.game)
+    game_rec = mlbstream.get_game_rec(game_data, team_to_play, args.game)
 
     if args.wait and not util.has_reached_time(game_rec['mlbdate']):
         LOG.info('Waiting for game to start. Local start time is %s', util.convert_time_to_local(game_rec['mlbdate']))
@@ -257,9 +257,9 @@ def main(argv=None):
             LOG.error('Unexpected error: no game data found after refresh on wait')
             return 0
 
-        game_rec = stream.get_game_rec(game_data, team_to_play, args.game)
+        game_rec = mlbstream.get_game_rec(game_data, team_to_play, args.game)
 
-    return stream.play_stream(game_rec, team_to_play, feedtype, args.date, args.fetch, args.from_start, args.inning)
+    return mlbstream.play_stream(game_rec, team_to_play, feedtype, args.date, args.fetch, args.from_start, args.inning)
 
 
 if __name__ == "__main__" or __name__ == "main":
