@@ -114,14 +114,14 @@ class GameDataRetriever:
         # hydrate = 'hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg'
         hydrate = 'hydrate=broadcasts(all),game(content(all)),linescore,team'
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
-        url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.api_url, date_str, hydrate)
+        url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.parser['api_url'], date_str, hydrate)
 
         json_data = util.request_json(url, 'gamedata')
 
         game_records = dict()  # we return this dictionary
 
         if json_data['dates'] is None or len(json_data['dates']) < 1:
-            LOG.debug("_get_games_by_date: no game data for {}".format(date_str))
+            LOG.debug("_get_games_by_date: no game data for %s", date_str)
             return None
 
         for game in json_data['dates'][0]['games']:

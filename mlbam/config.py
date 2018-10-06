@@ -1,3 +1,7 @@
+"""
+Configuration
+"""
+
 import configparser
 import inspect
 import logging
@@ -28,41 +32,15 @@ LOG = logging.getLogger(__name__)
 class Config:
     """Contains the configuration data for use within the application, including a configparser instance
     for pulling in configuration from the 'config' file."""
-    defaults = {  # is applied to initial config before reading from file - these are the defaults:
-        'mlbv': {
-            'username': '',
-            'password': '',
-            'favs': '',
-            'fav_colour': 'blue',
-            'scores': 'true',
-            'use_short_feeds': 'true',
-            'filter': '',
-            'cdn': 'akamai',
-            'resolution': '720p_alt',
-            'video_player': 'mpv',
-            'streamlink_highlights': 'true',  # if false will send url direct to video_player (no resolution selection)
-            'streamlink_passthrough_highlights': 'true',  # allows seeking
-            'streamlink_passthrough': 'false',
-            'streamlink_hls_audio_select': '*',
-            'streamlink_extra_args': '',
-            'stream_start_offset_secs': str(DEFAULT_STREAM_START_OFFSET_SECS),
-            'audio_player': 'mpv',
-            'debug': 'false',
-            'verbose': 'false',
-            'game_critical_colour': 'yellow',
-            'verify_ssl': 'true',
-            'save_json_file_by_timestamp': 'false',
-            'unicode': 'true',
-        }
-    }
     config_dir_roots = ('.', os.path.join(os.path.expanduser('~'), '.config'), )
     platform = 'IPHONE'
     playback_scenario = 'HTTP_CLOUD_TABLET_60'
     ua_pc = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36'
     ua_iphone = 'AppleCoreMedia/1.0.0.15B202 (iPhone; U; CPU OS 11_1_2 like Mac OS X; en_us)'
 
-    def __init__(self, args):
+    def __init__(self, defaults, args):
         script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        self.defaults = defaults
         self.dir = self.__find_config_dir(script_name)
         self.parser = self.__init_configparser(script_name)
         global DEBUG
@@ -87,10 +65,10 @@ class Config:
         searched_paths = list()
         for config_dir_base in Config.config_dir_roots:
             for config_dir_name in (script_name, '.' + script_name):
-                d = os.path.join(config_dir_base, config_dir_name)
-                searched_paths.append(d)
-                if os.path.exists(d) and os.path.isdir(d):
-                    config_dir = d
+                test_dir = os.path.join(config_dir_base, config_dir_name)
+                searched_paths.append(test_dir)
+                if os.path.exists(test_dir) and os.path.isdir(test_dir):
+                    config_dir = test_dir
                     break
             if config_dir is not None:
                 break
@@ -102,17 +80,17 @@ class Config:
     def __init_configparser(self, script_name):
         # now look for config file
         parser = configparser.ConfigParser()
-        parser.read_dict(Config.defaults)
+        parser.read_dict(self.defaults)
         ini_file = os.path.join(self.dir, 'config')
         if os.path.exists(ini_file):
-            LOG.debug("Reading config file: {}".format(ini_file))
-            with open(ini_file, 'r') as f:
-                config_string = '[{}]\n'.format(script_name) + f.read()
+            LOG.debug("Reading config file: %s", ini_file)
+            with open(ini_file, 'r') as openf:
+                config_string = '[{}]\n'.format(script_name) + openf.read()
                 parser.read_string(config_string)
         return parser[script_name]
 
     @staticmethod
-    def generate_config(username=None, password=None):
+    def generate_config(username=None, password=None, servicename="MLB.tv"):
         """Creates config file from template + user prompts."""
         script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         # use the script name minus any extension for the config directory
@@ -135,9 +113,9 @@ class Config:
             return False
 
         if username is None:
-            username = input('Enter MLB.tv username: ')
+            username = input('Enter {} username: '.format(servicename))
         if password is None:
-            password = input('Enter MLB.tv password: ')
+            password = input('Enter {} password: '.format(servicename))
 
         with open(template_config_path, 'r') as infile, open(config_file, 'w') as outfile:
             for line in infile:
@@ -149,12 +127,4 @@ class Config:
                     outfile.write(line)
         print("Finished creating config file: {}".format(config_file))
         print("You may want to edit it now to set up favourites, etc.")
-
-
-class MLBConfig(Config):
-    api_url = 'https://statsapi.mlb.com'
-    # ?? mf_svc_url = 'https://mf.svc.nhl.com/ws/media/mf/v2.4/stream'
-    # ?? ua_nhl = 'NHL/11479 CFNetwork/887 Darwin/17.0.0'
-
-    def __init__(self, args):
-        Config.__init__(self, args)
+        return True
