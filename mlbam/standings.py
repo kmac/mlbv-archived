@@ -9,11 +9,11 @@ import time
 
 from datetime import datetime
 
-import mlbam.displayutil as displayutil
-import mlbam.util as util
-import mlbam.config as config
+import mlbam.common.displayutil as displayutil
+import mlbam.common.config as config
+import mlbam.common.util as util
 
-from mlbam.displayutil import ANSI
+from mlbam.common.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)

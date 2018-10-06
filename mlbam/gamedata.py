@@ -10,11 +10,11 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil import parser
 
-import mlbam.config as config
-import mlbam.displayutil as displayutil
-import mlbam.util as util
+import mlbam.common.config as config
+import mlbam.common.util as util
+import mlbam.common.displayutil as displayutil
 
-from mlbam.displayutil import ANSI
+from mlbam.common.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)

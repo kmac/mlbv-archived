@@ -19,12 +19,12 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
-import mlbam.config as config
+import mlbam.common.config as config
+import mlbam.common.util as util
 import mlbam.mlbconfig as mlbconfig
 import mlbam.gamedata as gamedata
 import mlbam.standings as standings
 import mlbam.stream as stream
-import mlbam.util as util
 
 
 LOG = None  # initialized in init_logging

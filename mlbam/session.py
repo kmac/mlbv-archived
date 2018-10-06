@@ -20,8 +20,8 @@ import requests
 
 import dateutil.parser
 
-import mlbam.config as config
-import mlbam.util as util
+import mlbam.common.config as config
+import mlbam.common.util as util
 
 
 LOG = logging.getLogger(__name__)

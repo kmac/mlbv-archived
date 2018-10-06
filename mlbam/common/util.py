@@ -14,7 +14,7 @@ from datetime import datetime
 from datetime import timezone
 from dateutil import tz
 
-import mlbam.config as config
+import mlbam.common.config as config
 
 
 LOG = None

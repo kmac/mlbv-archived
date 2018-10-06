@@ -1,4 +1,4 @@
-import mlbam.config as config
+import mlbam.common.config as config
 
 
 LOG = None
