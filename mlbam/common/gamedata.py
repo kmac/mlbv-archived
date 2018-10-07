@@ -1,20 +1,11 @@
 """
-Models the game data retrieved via JSON.
+Common gamedata utilities
 """
 
 import logging
-import pprint
-import time
-
-from datetime import datetime
-from datetime import timedelta
-from dateutil import parser
 
 import mlbam.common.config as config
 import mlbam.common.util as util
-import mlbam.common.displayutil as displayutil
-
-from mlbam.common.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)
