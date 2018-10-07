@@ -11,6 +11,7 @@ from datetime import timedelta
 from dateutil import parser
 
 import mlbam.common.config as config
+import mlbam.common.gamedata as gamedata
 import mlbam.common.util as util
 import mlbam.common.displayutil as displayutil
 
@@ -49,58 +50,6 @@ FEEDTYPE_MAP = {
     # 'audio-away': 'aud-a',
     # 'audio-home': 'aud-h',
 }
-
-
-def get_feedtype_keystring():
-    reverse_list = list()
-    for longkey in FEEDTYPE_MAP:
-        reverse_list.append('{}:{}'.format(FEEDTYPE_MAP[longkey], longkey))
-    return ', '.join(reverse_list)
-
-
-def convert_feedtype_to_short(feedtype):
-    if feedtype in FEEDTYPE_MAP:
-        return FEEDTYPE_MAP[feedtype]
-    return feedtype
-
-
-def convert_to_long_feedtype(feed):
-    if feed in FEEDTYPE_MAP:
-        return feed
-    for feedtype in FEEDTYPE_MAP:
-        if FEEDTYPE_MAP[feedtype] == feed:
-            return feedtype
-    return feed
-
-
-def is_fav(game_rec):
-    if 'favourite' in game_rec:
-        return game_rec['favourite']
-    if config.CONFIG.parser['favs'] is None or config.CONFIG.parser['favs'] == '':
-        return False
-    for fav in util.get_csv_list(config.CONFIG.parser['favs']):
-        if fav in (game_rec['away']['abbrev'], game_rec['home']['abbrev']):
-            return True
-    return False
-
-
-def apply_filter(game_rec, arg_filter):
-    """Returns the game_rec if the game matches the filter, or if no filtering is active.
-    """
-    if arg_filter == 'favs':
-        arg_filter = config.CONFIG.parser['favs']
-    elif arg_filter in FILTERS:
-        arg_filter = FILTERS[arg_filter]
-    elif not arg_filter:
-        return game_rec
-
-    # apply the filter
-    for team in util.get_csv_list(arg_filter):
-        if team in (game_rec['away']['abbrev'], game_rec['home']['abbrev']):
-            return game_rec
-
-    # no match
-    return None
 
 
 class GameDataRetriever:
@@ -208,7 +157,7 @@ class GameDataRetriever:
                 else:
                     game_rec['linescore'][teamtype] = {'runs':  '0', 'hits':  '0', 'errors': '0'}
 
-            game_rec['favourite'] = is_fav(game_rec)
+            game_rec['favourite'] = gamedata.is_fav(game_rec)
 
             game_rec['feed'] = dict()
             if game_rec['abstractGameState'] == 'Preview':
@@ -280,14 +229,14 @@ class GameDatePresenter:
         for feed in sorted(game_rec['feed'].keys()):
             if feed not in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
                 if use_short_feeds:
-                    non_highlight_feeds.append(convert_feedtype_to_short(feed))
+                    non_highlight_feeds.append(gamedata.convert_feedtype_to_short(feed, FEEDTYPE_MAP))
                 else:
                     non_highlight_feeds.append(feed)
         highlight_feeds = list()
         for feed in game_rec['feed'].keys():
             if feed in config.HIGHLIGHT_FEEDTYPES and not feed.startswith('audio-'):
                 if use_short_feeds:
-                    highlight_feeds.append(convert_feedtype_to_short(feed))
+                    highlight_feeds.append(gamedata.convert_feedtype_to_short(feed, FEEDTYPE_MAP))
                 else:
                     highlight_feeds.append(feed)
         if len(highlight_feeds) > 0:
@@ -328,10 +277,10 @@ class GameDatePresenter:
 
         games_displayed_count = 0
         for game_pk in game_records:
-            if apply_filter(game_records[game_pk], filter) is not None:
+            if gamedata.apply_filter(game_records[game_pk], filter, FILTERS) is not None:
                 games_displayed_count += 1
                 outl.extend(self._display_game_details(game_pk, game_records[game_pk], show_linescore,
-                                                      games_displayed_count))
+                                                       games_displayed_count))
                 print_outl = True
 
         if print_outl:
@@ -343,13 +292,13 @@ class GameDatePresenter:
         border = displayutil.Border(use_unicode=config.UNICODE)
         color_on = ''
         color_off = ''
-        odd_even = games_displayed_count % 2
+        # odd_even = games_displayed_count % 2
         # if odd_even:
         #     color_on = ANSI.fg('yellow')
         # else:
         #     color_on = display'reset'.ANSI.fg('lightblue')
         color_off = ANSI.reset()
-        if is_fav(game_rec):
+        if gamedata.is_fav(game_rec):
             if config.CONFIG.parser['fav_colour'] != '':
                 color_on = ANSI.fg(config.CONFIG.parser['fav_colour'])
                 color_off = ANSI.reset()

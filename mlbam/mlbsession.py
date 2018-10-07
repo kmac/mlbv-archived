@@ -45,7 +45,7 @@ STREAM_URL_TEMPLATE = "https://edge.svcs.mlb.com/media/{media_id}/scenarios/brow
 
 class MLBSession(session.Session):
 
-    def __init__(self, user_agent, token_url_template, platform):
+    def __init__(self):
         session.Session.__init__(self, USER_AGENT, TOKEN_URL_TEMPLATE, PLATFORM)
 
     def login(self):

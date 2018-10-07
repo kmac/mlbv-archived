@@ -20,9 +20,10 @@ from datetime import datetime
 from datetime import timedelta
 
 import mlbam.common.config as config
+import mlbam.common.gamedata as gamedata
 import mlbam.common.util as util
 import mlbam.mlbconfig as mlbconfig
-import mlbam.gamedata as gamedata
+import mlbam.mlbgamedata as mlbgamedata
 import mlbam.standings as standings
 import mlbam.mlbstream as mlbstream
 
@@ -40,7 +41,7 @@ Filters:
 
 Feed Identifiers:
     You can use either the short form feed identifier or the long form:
-    {feedhelp}""".format(feedhelp=gamedata.get_feedtype_keystring())
+    {feedhelp}""".format(feedhelp=gamedata.get_feedtype_keystring(mlbgamedata.FEEDTYPE_MAP))
 
 
 def display_usage():
@@ -57,6 +58,8 @@ def display_usage():
         with open(readme_path, 'r') as infile:
             for line in infile:
                 print(line, end='')
+    return 0
+
 
 def main(argv=None):
     """Entry point for mlbv"""
@@ -72,7 +75,7 @@ def main(argv=None):
     parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
     parser.add_argument("-t", "--team",
-                        help="Play selected game feed for team, one of: {}".format(gamedata.TEAM_CODES))
+                        help="Play selected game feed for team, one of: {}".format(mlbgamedata.TEAM_CODES))
     parser.add_argument("-f", "--feed",
                         help=("Feed type, either a live/archive game feed or highlight feed "
                               "(if available). Available feeds are shown in game list,"
@@ -103,8 +106,8 @@ def main(argv=None):
                         help="Do not show scores (default on; overrides config file)")
     parser.add_argument("-l", "--linescore", nargs='?', const='all', metavar='filter',
                         help="Show linescores. Optional: specify a filter as per --filter option.")
-    parser.add_argument("--username", help=argparse.SUPPRESS) # help="MLB.tv username. Required for live/archived games.")
-    parser.add_argument("--password", help=argparse.SUPPRESS) # help="MLB.tv password. Required for live/archived games.")
+    parser.add_argument("--username", help=argparse.SUPPRESS)  # help="MLB.tv username. Required for live/archived games.")
+    parser.add_argument("--password", help=argparse.SUPPRESS)  # help="MLB.tv password. Required for live/archived games.")
     parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
     parser.add_argument("--wait", action="store_true",
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
@@ -119,8 +122,8 @@ def main(argv=None):
     parser.add_argument("--recaps", nargs='?', const='all', metavar='FILTER',
                         help=("Play recaps for given teams. "
                               "[FILTER] is an optional filter as per --filter option"))
-    parser.add_argument("-v", "--verbose", action="store_true", help=argparse.SUPPRESS) # help="Increase output verbosity")
-    parser.add_argument("-D", "--debug", action="store_true", help=argparse.SUPPRESS)   # help="Turn on debug output")
+    parser.add_argument("-v", "--verbose", action="store_true", help=argparse.SUPPRESS)  # help="Increase output verbosity")
+    parser.add_argument("-D", "--debug", action="store_true", help=argparse.SUPPRESS)    # help="Turn on debug output")
     args = parser.parse_args()
 
     if args.usage:
@@ -143,7 +146,7 @@ def main(argv=None):
     LOG = logging.getLogger(__name__)
 
     if args.list_filters:
-        print('List of built filters: ' + ', '.join(sorted(gamedata.FILTERS.keys())))
+        print('List of built filters: ' + ', '.join(sorted(mlbgamedata.FILTERS.keys())))
         return 0
     if args.debug:
         config.CONFIG.parser['debug'] = 'true'
@@ -157,11 +160,11 @@ def main(argv=None):
         config.CONFIG.parser['stream_start_offset_secs'] = str(args.inning_offset)
     if args.team:
         team_to_play = args.team.lower()
-        if team_to_play not in gamedata.TEAM_CODES:
+        if team_to_play not in mlbgamedata.TEAM_CODES:
             # Issue #4 all-star game has funky team codes
-            LOG.warn('Unexpected team code: {}'.format(team_to_play))
+            LOG.warning('Unexpected team code: %s', team_to_play)
     if args.feed:
-        feedtype = gamedata.convert_to_long_feedtype(args.feed.lower())
+        feedtype = gamedata.convert_to_long_feedtype(args.feed.lower(), mlbgamedata.FEEDTYPE_MAP)
     if args.resolution:
         config.CONFIG.parser['resolution'] = args.resolution
     if args.scores:
@@ -189,14 +192,14 @@ def main(argv=None):
         standings.get_standings(args.standings, args.date, args.filter)
         return 0
 
-    gamedata_parser = gamedata.GameDataRetriever()
+    gamedata_retriever = mlbgamedata.GameDataRetriever()
 
     # retrieve all games for the dates given
-    game_day_tuple_list = gamedata_parser.process_game_data(args.date, args.days)
+    game_day_tuple_list = gamedata_retriever.process_game_data(args.date, args.days)
 
     if team_to_play is None and not args.recaps:
         # nothing to play; display the games
-        presenter = gamedata.GameDatePresenter()
+        presenter = mlbgamedata.GameDatePresenter()
         displayed_count = 0
         for game_date, game_records in game_day_tuple_list:
             presenter.display_game_data(game_date, game_records, args.filter)
@@ -222,7 +225,7 @@ def main(argv=None):
             for team in args.recaps.split(','):
                 recap_teams.append(team.strip())
         for game_pk in game_data:
-            game_rec = gamedata.apply_filter(game_data[game_pk], args.filter)
+            game_rec = mlbgamedata.apply_filter(game_data[game_pk], args.filter)
             if game_rec and (game_rec['home']['abbrev'] in recap_teams or game_rec['away']['abbrev'] in recap_teams):
                 if 'recap' in game_rec['feed']:
                     LOG.info("Playing recap for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
@@ -250,7 +253,7 @@ def main(argv=None):
 
         # refresh the game data
         LOG.info('Game time. Refreshing game data after wait...')
-        game_day_tuple_list = gamedata_parser.process_game_data(args.date, 1)
+        game_day_tuple_list = gamedata_retriever.process_game_data(args.date, 1)
         if len(game_day_tuple_list) > 0:
             game_date, game_data = game_day_tuple_list[0]
         else:
