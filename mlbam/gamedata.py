@@ -138,8 +138,12 @@ class GameDataRetriever:
             game_rec['doubleHeader'] = str(game['doubleHeader'])
             game_rec['gameNumber'] = str(game['gameNumber'])
             game_rec['mlbdate'] = parser.parse(str(game['gameDate']))
-            game_rec['gamesInSeries'] = str(game['gamesInSeries'])
-            game_rec['seriesGameNumber'] = str(game['seriesGameNumber'])
+            if 'gamesInSeries' in game:
+                game_rec['gamesInSeries'] = str(game['gamesInSeries'])
+                game_rec['seriesGameNumber'] = str(game['seriesGameNumber'])
+            else:
+                game_rec['gamesInSeries'] = "0"
+                game_rec['seriesGameNumber'] = "0"
 
             game_rec['linescore'] = dict()
             if 'linescore' in game:
