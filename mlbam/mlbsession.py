@@ -19,14 +19,14 @@ LOG = logging.getLogger(__name__)
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.12; rv:56.0) Gecko/20100101 Firefox/56.0.4"
 PLATFORM = "macintosh"
-
 BAM_SDK_VERSION = "3.0"
 
 API_KEY_URL = "https://www.mlb.com/tv/g490865/"
+ACCESS_TOKEN_URL = "https://edge.bamgrid.com/token"
+TOKEN_URL_TEMPLATE = "https://media-entitlement.mlb.com/jwt?ipid={ipid}&fingerprint={fingerprint}==&os={platform}&appname=mlbtv_web"
+
 API_KEY_RE = re.compile(r'"apiKey":"([^"]+)"')
 CLIENT_API_KEY_RE = re.compile(r'"clientApiKey":"([^"]+)"')
-
-TOKEN_URL_TEMPLATE = "https://media-entitlement.mlb.com/jwt?ipid={ipid}&fingerprint={fingerprint}==&os={platform}&appname=mlbtv_web"
 
 GAME_CONTENT_URL_TEMPLATE = "http://statsapi.mlb.com/api/v1/game/{game_id}/content"
 
@@ -37,8 +37,6 @@ SCHEDULE_TEMPLATE = (
     "&gameType={game_type}&gamePk={game_id}&teamId={team_id}"
     "&hydrate=linescore,team,game(content(summary,media(epg)),tickets)"
 )
-
-ACCESS_TOKEN_URL = "https://edge.bamgrid.com/token"
 
 STREAM_URL_TEMPLATE = "https://edge.svcs.mlb.com/media/{media_id}/scenarios/browser"
 
@@ -97,7 +95,7 @@ class MLBSession(session.Session):
                 raise session.SessionException('update_api_keys: failed to update ' + key)
         self.save()
 
-    def _get_access_token(self):
+    def get_access_token(self):
         headers = {
             "Authorization": "Bearer %s" % (self.client_api_key),
             "User-agent": USER_AGENT,

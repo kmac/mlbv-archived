@@ -1,10 +1,10 @@
 """pytest test cases for the util module
 """
 
-from mlbam import util
+from mlbam.common import util
 
 
 def test_csv_list():
-    l1 = ['e1', 'e2', 'e3']
-    s1 = 'e1, e2, e3'
-    assert l1[1] == util.get_csv_list(s1)[1]
+    list1 = ['e1', 'e2', 'e3']
+    string1 = 'e1, e2, e3'
+    assert list1[1] == util.get_csv_list(string1)[1]

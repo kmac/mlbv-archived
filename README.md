@@ -225,6 +225,11 @@ league, division, favourites, or arbitrary teams.
 Watching a game is triggered by the `-t/--team TEAM` option. With this option the game stream (live or
 archived) is launched for the given team. 
 
+When passing `-t/--team TEAM` option, the stream is launched for the given team. By default the local feed
+for the given team is chosen - i.e., it will follow the home/away feed appropriate for the team so that you
+get the local team feed.  You can override the feed using the `-f/--feed` option. This works for either live
+games or for archived games (e.g. if you use the `--date` option to select an earlier date).
+
 Example:
 
     mlbv --team tor          # play the live Blue Jays game
@@ -377,6 +382,7 @@ Examples:
 
     --filter tor            # single team filter
     --filter tor,bos,wsh    # multiple team filter
+    -o tor,bos,wsh          # same as above using shorter `-o` form
 
 Note: Do not use spaces between commas unless you encapsulate the list in quotes.
 
@@ -441,7 +447,7 @@ This will show all chosen recaps, one-by-one until finished. A highlight reel.
 
 ### Fetch
 
-In these examples the game is save to a file (.ts or .mp4) in the current directory.
+In these examples the game is saved to a file (.ts or .mp4) in the current directory.
 
     mlbv --team tor --fetch
     mlbv --yesterday -t tor -f recap --fetch   # fetch yesterday's recap

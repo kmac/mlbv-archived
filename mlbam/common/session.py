@@ -30,22 +30,6 @@ class SessionException(Exception):
     pass
 
 
-#         initial_url = "https://secure.mlb.com/enterworkflow.do?flowId=registration.wizard&c_id=mlb"
-#         # res = self.session.get(initial_url)
-#         # if not res.status_code == 200:
-#         #     raise SessionException(res.content)
-#         data = {
-#             "uri": "/account/login_register.jsp",
-#             "registrationAction": "identify",
-#             "emailAddress": config.CONFIG.parser['username'],
-#             "password": config.CONFIG.parser['password'],
-#             "submitButton": ""
-#         }
-
-#             response = self.session.get(TOKEN_URL_TEMPLATE.format(ipid=self.ipid,
-#                                                                   fingerprint=self.fingerprint,
-#                                                                   platform=PLATFORM),
-
 class Session(object):
 
     def __init__(self, user_agent, token_url_template, platform):
@@ -162,17 +146,17 @@ class Session(object):
         if not self._state['access_token'] or not self.access_token_expiry or \
                 self.access_token_expiry < datetime.datetime.now(tz=datetime.timezone.utc):
             try:
-                self._state['access_token'], self.access_token_expiry = self._get_access_token()
+                self._state['access_token'], self.access_token_expiry = self.get_access_token()
             except requests.exceptions.HTTPError:
                 # Clear token and then try to get a new access_token
                 self.token = None
-                self._state['access_token'], self.access_token_expiry = self._get_access_token()
+                self._state['access_token'], self.access_token_expiry = self.get_access_token()
             self.save()
             LOG.debug("access_token: %s", self._state['access_token'])
         return self._state['access_token']
 
     @abc.abstractmethod
-    def _get_access_token(self):
+    def get_access_token(self):
         return None
 
     @abc.abstractmethod
@@ -192,7 +176,7 @@ class Session(object):
         resp = self.session.get(stream_url, headers=headers)
         playlist = resp.text
         playlist_file = os.path.join(util.get_tempdir(), 'playlist-{}.m3u8'.format(time.strftime("%Y-%m-%d")))
-        LOG.info('Writing playlist to: {}'.format(playlist_file))
-        with open(playlist_file, 'w') as f:
-            f.write(playlist)
-        LOG.debug('save_playlist_to_file: {}'.format(playlist))
+        LOG.info('Writing playlist to: %s', playlist_file)
+        with open(playlist_file, 'w') as outf:
+            outf.write(playlist)
+        LOG.debug('save_playlist_to_file: %s', playlist)

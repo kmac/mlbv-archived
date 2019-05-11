@@ -12,7 +12,7 @@ setup(
     version='0.0.8',
     packages=['mlbam'],
     url='https://github.com/kmac/mlbv',
-    description="Command-line interface to streaming MLB games (with MLB.tv subscription), game schedule and scores",
+    description="Command-line interface to streaming MLB games (requires MLB.tv subscription), game schedule and scores",
     long_description=long_description,
     long_description_content_type='text/markdown',
     classifiers=[
