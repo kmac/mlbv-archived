@@ -1,3 +1,5 @@
+2018.09.29 v0.0.9 Streaming is broken. Use https://github.com/tonycpsu/streamglob
+
 2018.09.29 v0.0.8 Add support for streamlink_extra_args to add enhancement Issue #22
 - setting the following config options will stream the output via http on port 8080:
     - video_player=

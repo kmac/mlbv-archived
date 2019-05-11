@@ -1,6 +1,24 @@
 mlbv - MLB stream viewer
 ========================
 
+## IMPORTANT PROJECT NOTICE
+
+MLB.tv changed their login process at the beginning of the 2019 season. mlbv is broken.
+
+In the meantime there is a newer project at [streamglob](https://github.com/tonycpsu/streamglob), which basically does the same thing as
+mlbv, but also supports NHL.tv as well as some other interesting streaming interfaces. So I haven't updated this project to support the
+MLB.tv changes, and I recommend anyone using mlbv to switch over to streamglob. I think it makes sense to direct energy into one common
+project rather than across different code bases.
+
+I still use mlbv to quickly check scores and schedules, and so may continue to update this project for all but the streaming aspects,
+possibly having the option to invoke streamglob directly to launch the stream.
+
+
+
+----
+
+
+
 `mlbv` is a command-line interface to the MLB.tv service. It's primary purpose is to allow you to view game
 streams on linux, including live streams, with a valid MLB tv subscription.  It also allows you to view game
 status, results and schedules, stream highlights (recap and condensed games), and filter results based on
