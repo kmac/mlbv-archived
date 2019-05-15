@@ -122,7 +122,6 @@ class MLBSession(session.Session):
         }
         authn_response = self.post(AUTHN_URL, json=authn_params).json()
         self._state["session_token"] = authn_response["sessionToken"]
-        print("session:", self._state["session_token"])
 
         # logger.debug("logged in: %s" %(self.ipid))
         self.save()
@@ -150,7 +149,6 @@ class MLBSession(session.Session):
             if script.text and "apiKey" in script.text:
                 self._state.api_key = self.API_KEY_RE.search(script.text).groups()[0]
             if script.text and "clientApiKey" in script.text:
-                print(script.text)
                 self._state["client_api_key"] = CLIENT_API_KEY_RE.search(script.text).groups()[0]
 
         LOG.debug("updating Okta api keys")
@@ -301,7 +299,6 @@ class MLBSession(session.Session):
 
         self._state["access_token_expiry"] = str(datetime.datetime.now(tz=pytz.UTC) + \
                                              datetime.timedelta(seconds=token_response["expires_in"]))
-        print(self._state["access_token_expiry"])
         self._state["access_token"] = token_response["access_token"]
         self.save()
 
@@ -332,7 +329,6 @@ class MLBSession(session.Session):
             "x-bamsdk-platform": PLATFORM,
             "origin": "https://www.mlb.com"
         }
-        print("headers:", headers)
         response = self.session.get(STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers)
         if response is not None and config.SAVE_JSON_FILE:
             output_filename = 'stream'
