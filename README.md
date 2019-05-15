@@ -1,19 +1,14 @@
 mlbv - MLB stream viewer
 ========================
 
-## IMPORTANT PROJECT NOTICE
+## UPDATE: MLBv is fixed!
 
-MLB.tv changed their login process at the beginning of the 2019 season. mlbv is broken.
+It currently *heavily* borrows from [streamglob](https://github.com/sdelafond/streamglob), and you should probably
+use that. The problem is that some dependencies used by streamglob are incompatible with Windows. MLBv works with
+Windows, so this is the place to be until streamglob sorts out Windows compatibility.
 
-In the meantime there is a newer project at [streamglob](https://github.com/tonycpsu/streamglob), which basically does the same thing as
-mlbv, but also supports NHL.tv as well as some other interesting streaming interfaces. So I haven't updated this project to support the
-MLB.tv changes, and I recommend anyone using mlbv to switch over to streamglob. I think it makes sense to direct energy into one common
-project rather than across different code bases.
-
-I still use mlbv to quickly check scores and schedules, and so may continue to update this project for all but the streaming aspects,
-possibly having the option to invoke streamglob directly to launch the stream.
-
-
+There is currently a ton of repeated, unused, and sloppy code which was taken from streamglob, so feel free to
+contribute.
 
 ----
 

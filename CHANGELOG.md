@@ -1,3 +1,5 @@
+2019.05.15 v0.0.12 Fixed mlbv
+
 2019.05.11 v0.0.11 Trying to make travis/setup.py happy
 
 2019.05.11 v0.0.9 Streaming is broken. Use https://github.com/tonycpsu/streamglob

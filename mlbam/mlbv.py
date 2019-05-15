@@ -239,8 +239,8 @@ def main(argv=None):
                     LOG.info("No recap available for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
         return 0
 
-    LOG.info('Sorry, MLB.tv stream support is broken. You should switch to https://github.com/tonycpsu/streamglob')
-    return -1
+    # LOG.info('Sorry, MLB.tv stream support is broken. You should switch to https://github.com/tonycpsu/streamglob')
+    # return -1
 
     game_rec = mlbstream.get_game_rec(game_data, team_to_play, args.game)
 
