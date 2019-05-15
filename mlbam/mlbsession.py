@@ -299,11 +299,11 @@ class MLBSession(session.Session):
         response.raise_for_status()
         token_response = response.json()
 
-        self._state["access_token_expiry"] = datetime.datetime.now(tz=pytz.UTC) + \
-                                             datetime.timedelta(seconds=token_response["expires_in"])
+        self._state["access_token_expiry"] = str(datetime.datetime.now(tz=pytz.UTC) + \
+                                             datetime.timedelta(seconds=token_response["expires_in"]))
         print(self._state["access_token_expiry"])
         self._state["access_token"] = token_response["access_token"]
-        # self.save()
+        self.save()
 
     def get_access_token(self):
 
