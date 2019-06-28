@@ -132,7 +132,7 @@ class Session(object):
     @property
     def access_token_expiry(self):
         if self._state['access_token_expiry'] is not None:
-            return dateutil.parser.parse(self._state['access_token_expiry'])
+            return dateutil.parser.parse(str(self._state['access_token_expiry']))
         return None
 
     @access_token_expiry.setter
