@@ -92,7 +92,7 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
                 if config.SAVE_PLAYLIST_FILE:
                     mlb_session.save_playlist_to_file(stream_url)
                 if inning_ident:
-                    offset = _calculate_inning_offset(inning_ident, media_state, game_rec)
+                    offset = _calculate_inning_offset(inning_ident, media_state, media_playback_id, game_rec)
                 stream.streamlink(stream_url, mlb_session,
                                   stream.get_fetch_filename(date_str, game_rec['home']['abbrev'],
                                                             game_rec['away']['abbrev'], feedtype, fetch),
@@ -107,7 +107,7 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
 def _lookup_inning_timestamp_via_playbyplay(game_pk, inning, inning_half='top', overwrite_json=True):
     LOG.info("Retrieving inning info to locate '%s %s' inning", inning_half, inning)
     # url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay'.format(gamepk=game_pk)
-    url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay?fields=allPlays,about,startTime,inning,halfInning'.format(gamepk=game_pk)
+    url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay?fields=allPlays,about,startTime,inning,halfInning,playEvents'.format(gamepk=game_pk)
     json_data = util.request_json(url, 'playbyplay')
 
     # json_data = util.request_json(live_url, 'live')
@@ -120,18 +120,19 @@ def _lookup_inning_timestamp_via_playbyplay(game_pk, inning, inning_half='top', 
         return None, None, None, None
 
     first_play = None
-    # the index 0 seems to be the time when the feed starts maybe? ignore it for now, it seems to fix the -i t1 option
     # e.g. http://statsapi.mlb.com/api/v1/game/567273/playByPlay?fields=allPlays,about,startTime,inning,halfInning
     # timestamps: http://statsapi.mlb.com/api/v1.1/game/567273/feed/live/timestamps
     # see also https://github.com/toddrob99/MLB-StatsAPI/blob/master/statsapi/endpoints.py
-    for play in json_data['allPlays'][1:]:
+    for play in json_data['allPlays']:
         if first_play is None:
-            first_play_timestamp_str = str(play['about']['startTime'])
+            # first_play_timestamp_str = str(play['about']['startTime'])
+            first_play_timestamp_str = str(play['playEvents'][0]['startTime'])
             first_play_timestamp = parser.parse(first_play_timestamp_str).timestamp()
             LOG.debug("First play: %s", first_play_timestamp_str)
             LOG.debug("First play data: %s", play)
         if str(play['about']['inning']) == inning and str(play['about']['halfInning']) == inning_half:
-            inning_start_timestamp_str = str(play['about']['startTime'])
+            inning_start_timestamp_str = str(play['playEvents'][0]['startTime'])
+            # inning_start_timestamp_str = str(play['about']['startTime'])
             inning_start_timestamp = parser.parse(inning_start_timestamp_str).timestamp()
             LOG.info("Found inning start: %s", inning_start_timestamp_str)
             LOG.debug("Inning start play data: %s", play)
@@ -145,7 +146,7 @@ def _lookup_inning_timestamp_via_live(game_pk, inning, inning_half='top', overwr
     # playbyplay_url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay'.format(gamepk=game_pk)
     # playbyplay_url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay?fields=allPlays,about,startTime,inning,halfInning'.format(gamepk=game_pk)
     url = 'https://statsapi.mlb.com/api/v1/game/{gamepk}/feed/live'.format(gamepk=game_pk)
-    json_data  = util.request_json(url, 'live')
+    json_data = util.request_json(url, 'live')
 
     # json_data = util.request_json(live_url, 'live')
     if 'liveData' in json_data and 'plays' in json_data['liveData'] and 'allPlays' in json_data['liveData']['plays']:
@@ -173,7 +174,52 @@ def _lookup_inning_timestamp_via_live(game_pk, inning, inning_half='top', overwr
     return first_play, first_play_timestamp_str, None, None
 
 
-def _calculate_inning_offset(inning_offset, media_state, game_rec):
+def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, inning_half='top', overwrite_json=True):
+    broadcast_start = None
+    url = (
+        'https://search-api-mlbtv.mlb.com/svc/search/v2/graphql/persisted/'
+        'query/core/Airings?variables={{%22partnerProgramIds%22%3A[%22{gamepk}%22]}}'
+        ).format(gamepk=game_rec['game_pk'])
+    json_data = util.request_json(url, 'airings')
+    for airing in json_data['data']['Airings']:
+        # there is a separate BROADCAST_START for each broadcast, so do lookup based on passed-in media id
+        LOG.info("airing['mediaId']: %s, media_playback_id: %s", str(airing['mediaId']), media_playback_id)
+        if str(airing['mediaId']) != media_playback_id:
+            continue
+        if 'milestones' not in airing:
+            LOG.warn("_lookup_inning_timestamp_via_airings: no milestone data for airing: %s", str(airing))
+            continue
+        for milestone in airing['milestones']:
+            if milestone['milestoneType'] == "BROADCAST_START":
+                for milestone_time in milestone['milestoneTime']:
+                    if str(milestone_time['type']) == 'absolute':
+                        broadcast_start_str = str(milestone_time['startDatetime'])
+                        broadcast_start = parser.parse(broadcast_start_str).timestamp()
+            elif milestone['milestoneType'] == "INNING_START":
+                milestone_inning = '1'
+                milestone_inning_half = 'top'
+                for keyword in milestone['keywords']:
+                    if str(keyword['type']) == 'inning':
+                        milestone_inning = str(keyword['value'])
+                    elif str(keyword['type']) == 'top':
+                        if str(keyword['value']) != 'true':
+                            milestone_inning_half = 'bot'
+                if milestone_inning == inning and milestone_inning_half == inning_half:
+                    # we found it
+                    for milestone_time in milestone['milestoneTime']:
+                        if str(milestone_time['type']) == 'absolute':
+                            inning_start_timestamp_str = milestone_time['startDatetime']
+                            # inning_start_timestamp_str = str(play['about']['startTime'])
+                            inning_start_timestamp = parser.parse(inning_start_timestamp_str).timestamp()
+                            LOG.info("Found inning start: %s", inning_start_timestamp_str)
+                            LOG.debug("Milestone data: %s", str(milestone))
+                            return broadcast_start, inning_start_timestamp, inning_start_timestamp_str
+
+    LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
+    return broadcast_start, None, None
+
+
+def _calculate_inning_offset(inning_offset, media_state, media_playback_id, game_rec):
     inning_half = 'top'
     if inning_offset.startswith('b'):
         inning_half = 'bottom'
@@ -181,8 +227,8 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         inning = inning_offset[-2:]  # double digits, extra innings
     else:
         inning = inning_offset[-1]  # single digit inning
-    first_play_timestamp, first_play_timestamp_str, inning_start_timestamp, inning_timestamp_str = \
-        _lookup_inning_timestamp_via_playbyplay(game_rec['game_pk'], inning, inning_half)
+    broadcast_start_timestamp, inning_start_timestamp, inning_timestamp_str = \
+        _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, inning_half)
     if inning_start_timestamp is None:
         LOG.error(("Inning '%s' not found in play-by-play data. "
                    "Proceeding without inning input", inning_offset))
@@ -216,14 +262,20 @@ def _calculate_inning_offset(inning_offset, media_state, game_rec):
         #     start      inning        endofstream
         #     | <--------> |                |
         #         offset
-        LOG.info("Archive game: game start: %s, inning start: %s", first_play_timestamp_str, inning_timestamp_str)
+        LOG.info("Archive game: game start: %s, inning start: %s", str(broadcast_start_timestamp), inning_timestamp_str)
         # first_play_timestamp = parser.parse(first_play_timestamp_str).timestamp()
-        game_start_timestamp = game_rec['mlbdate'].timestamp()
+
+        # url = 'http://statsapi.mlb.com/api/v1.1/game/{gamepk}/feed/live/timestamps'.format(gamepk=game_rec['game_pk'])
+        # json_timestamp_data = util.request_json(url, 'timestamps')
+        # LOG.debug("_lookup_inning_timestamp: %s: %s, %s, %s", url, json_timestamp_data[0], json_timestamp_data[1], json_timestamp_data[2])
+
+        # game_start_timestamp = game_rec['mlbdate'].timestamp()
+        # game_start_timestamp = datetime.strptime(json_timestamp_data[1], '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc).timestamp()
         # first_play_timestamp = datetime.strptime(first_play_timestamp_str, '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc).timestamp()
-        offset_secs = inning_start_timestamp - game_start_timestamp
-        offset_secs += config.CONFIG.parser.getint('stream_start_offset_secs', 240)
-        LOG.debug("inning_start_timestamp: %s, first_play_timestamp: %s, offset=%s",
-                  inning_start_timestamp, first_play_timestamp, offset_secs)
+        offset_secs = inning_start_timestamp - broadcast_start_timestamp
+        # offset_secs += config.CONFIG.parser.getint('stream_start_offset_secs', 240)
+        LOG.debug("inning_start_timestamp: %s, broadcast_start_timestamp: %s, offset=%s",
+                  inning_start_timestamp, broadcast_start_timestamp, offset_secs)
         logstr = "Calculated archive game inning offset (from start): %s"
 
     hours, remainder_secs = divmod(offset_secs, 3600)
