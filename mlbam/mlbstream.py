@@ -120,7 +120,11 @@ def _lookup_inning_timestamp_via_playbyplay(game_pk, inning, inning_half='top', 
         return None, None, None, None
 
     first_play = None
-    for play in json_data['allPlays']:
+    # the index 0 seems to be the time when the feed starts maybe? ignore it for now, it seems to fix the -i t1 option
+    # e.g. http://statsapi.mlb.com/api/v1/game/567273/playByPlay?fields=allPlays,about,startTime,inning,halfInning
+    # timestamps: http://statsapi.mlb.com/api/v1.1/game/567273/feed/live/timestamps
+    # see also https://github.com/toddrob99/MLB-StatsAPI/blob/master/statsapi/endpoints.py
+    for play in json_data['allPlays'][1:]:
         if first_play is None:
             first_play_timestamp_str = str(play['about']['startTime'])
             first_play_timestamp = parser.parse(first_play_timestamp_str).timestamp()
