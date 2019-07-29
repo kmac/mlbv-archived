@@ -1,10 +1,9 @@
-2019.07.28 v0.0.13 Fixed inning offset for both live and archived games
+2019.07.28 v0.0.12 Fixed mlbv
+Fixed inning offset for both live and archived games
 - Fixes Issue #7
     - If you have 'stream_start_offset_secs' set in your config file you may want to reset it to 0 now,
       since the inning times should now be calculated correctly. Alternatively, set it to something 
       like 10 if you want to come in a little early
-
-2019.05.15 v0.0.12 Fixed mlbv
 
 2019.05.11 v0.0.11 Trying to make travis/setup.py happy
 
