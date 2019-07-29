@@ -24,7 +24,7 @@ SAVE_JSON_FILE = True
 SAVE_JSON_FILE_BY_TIMESTAMP = False  # normally false; will save many .json files if set
 SAVE_PLAYLIST_FILE = False
 UNICODE = True
-DEFAULT_STREAM_START_OFFSET_SECS = 240
+DEFAULT_STREAM_START_OFFSET_SECS = 0
 
 LOG = logging.getLogger(__name__)
 

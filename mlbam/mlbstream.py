@@ -93,6 +93,8 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
                     mlb_session.save_playlist_to_file(stream_url)
                 if inning_ident:
                     offset = _calculate_inning_offset(inning_ident, media_state, media_playback_id, game_rec)
+                    if offset is None:
+                        return 0  # already logged
                 stream.streamlink(stream_url, mlb_session,
                                   stream.get_fetch_filename(date_str, game_rec['home']['abbrev'],
                                                             game_rec['away']['abbrev'], feedtype, fetch),
@@ -104,76 +106,6 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
     return 0
 
 
-def _lookup_inning_timestamp_via_playbyplay(game_pk, inning, inning_half='top', overwrite_json=True):
-    LOG.info("Retrieving inning info to locate '%s %s' inning", inning_half, inning)
-    # url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay'.format(gamepk=game_pk)
-    url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay?fields=allPlays,about,startTime,inning,halfInning,playEvents'.format(gamepk=game_pk)
-    json_data = util.request_json(url, 'playbyplay')
-
-    # json_data = util.request_json(live_url, 'live')
-    if 'allPlays' in json_data:
-        if json_data['allPlays'] is None or len(json_data['allPlays']) < 1:
-            LOG.debug("_lookup_inning_timestamp: no play data for %s", url)
-            return None, None, None, None
-    else:
-        LOG.debug("_lookup_inning_timestamp: no live data for %s", url)
-        return None, None, None, None
-
-    first_play = None
-    # e.g. http://statsapi.mlb.com/api/v1/game/567273/playByPlay?fields=allPlays,about,startTime,inning,halfInning
-    # timestamps: http://statsapi.mlb.com/api/v1.1/game/567273/feed/live/timestamps
-    # see also https://github.com/toddrob99/MLB-StatsAPI/blob/master/statsapi/endpoints.py
-    for play in json_data['allPlays']:
-        if first_play is None:
-            # first_play_timestamp_str = str(play['about']['startTime'])
-            first_play_timestamp_str = str(play['playEvents'][0]['startTime'])
-            first_play_timestamp = parser.parse(first_play_timestamp_str).timestamp()
-            LOG.debug("First play: %s", first_play_timestamp_str)
-            LOG.debug("First play data: %s", play)
-        if str(play['about']['inning']) == inning and str(play['about']['halfInning']) == inning_half:
-            inning_start_timestamp_str = str(play['playEvents'][0]['startTime'])
-            # inning_start_timestamp_str = str(play['about']['startTime'])
-            inning_start_timestamp = parser.parse(inning_start_timestamp_str).timestamp()
-            LOG.info("Found inning start: %s", inning_start_timestamp_str)
-            LOG.debug("Inning start play data: %s", play)
-            return first_play_timestamp, first_play_timestamp_str, inning_start_timestamp, inning_start_timestamp_str
-    LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
-    return first_play, first_play_timestamp_str, None, None
-
-
-def _lookup_inning_timestamp_via_live(game_pk, inning, inning_half='top', overwrite_json=True):
-    LOG.info("Retrieving inning info to locate '{} {}' inning".format(inning_half, inning))
-    # playbyplay_url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay'.format(gamepk=game_pk)
-    # playbyplay_url = 'http://statsapi.mlb.com/api/v1/game/{gamepk}/playByPlay?fields=allPlays,about,startTime,inning,halfInning'.format(gamepk=game_pk)
-    url = 'https://statsapi.mlb.com/api/v1/game/{gamepk}/feed/live'.format(gamepk=game_pk)
-    json_data = util.request_json(url, 'live')
-
-    # json_data = util.request_json(live_url, 'live')
-    if 'liveData' in json_data and 'plays' in json_data['liveData'] and 'allPlays' in json_data['liveData']['plays']:
-        if json_data['liveData']['plays']['allPlays'] is None or len(json_data['liveData']['plays']['allPlays']) < 1:
-            LOG.debug("_lookup_inning_timestamp: no play data for %s", url)
-            return None, None, None, None
-    else:
-        LOG.debug("_lookup_inning_timestamp: no live data for %s", url)
-        return None, None, None, None
-
-    first_play = None
-    for play in json_data['liveData']['plays']['allPlays']:
-        if first_play is None:
-            first_play_timestamp_str = str(play['about']['startTts'])
-            first_play_timestamp = datetime.strptime(first_play_timestamp_str, '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc).timestamp()
-            LOG.debug("First play: %s", first_play_timestamp_str)
-            LOG.debug("First play data: %s", play)
-        if str(play['about']['inning']) == inning and str(play['about']['halfInning']) == inning_half:
-            inning_start_timestamp_str = str(play['about']['startTts'])
-            inning_start_timestamp  = datetime.strptime(inning_start_timestamp_str, '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc).timestamp()
-            LOG.info("Found inning start: %s", inning_start_timestamp_str)
-            LOG.debug("Inning start play data: %s", play)
-            return first_play_timestamp, first_play_timestamp_str, inning_start_timestamp, inning_start_timestamp_str
-    LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
-    return first_play, first_play_timestamp_str, None, None
-
-
 def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, inning_half='top', overwrite_json=True):
     broadcast_start = None
     url = (
@@ -183,7 +115,7 @@ def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, in
     json_data = util.request_json(url, 'airings')
     for airing in json_data['data']['Airings']:
         # there is a separate BROADCAST_START for each broadcast, so do lookup based on passed-in media id
-        LOG.info("airing['mediaId']: %s, media_playback_id: %s", str(airing['mediaId']), media_playback_id)
+        LOG.debug("airing['mediaId']: %s, media_playback_id: %s", str(airing['mediaId']), media_playback_id)
         if str(airing['mediaId']) != media_playback_id:
             continue
         if 'milestones' not in airing:
@@ -203,7 +135,7 @@ def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, in
                         milestone_inning = str(keyword['value'])
                     elif str(keyword['type']) == 'top':
                         if str(keyword['value']) != 'true':
-                            milestone_inning_half = 'bot'
+                            milestone_inning_half = 'bottom'
                 if milestone_inning == inning and milestone_inning_half == inning_half:
                     # we found it
                     for milestone_time in milestone['milestoneTime']:
@@ -215,7 +147,7 @@ def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, in
                             LOG.debug("Milestone data: %s", str(milestone))
                             return broadcast_start, inning_start_timestamp, inning_start_timestamp_str
 
-    LOG.warn("Could not locate '{} {}' inning".format(inning_half, inning))
+    LOG.warn("Could not locate '%s %s' inning", inning_half, inning)
     return broadcast_start, None, None
 
 
@@ -230,14 +162,11 @@ def _calculate_inning_offset(inning_offset, media_state, media_playback_id, game
     broadcast_start_timestamp, inning_start_timestamp, inning_timestamp_str = \
         _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, inning_half)
     if inning_start_timestamp is None:
-        LOG.error(("Inning '%s' not found in play-by-play data. "
-                   "Proceeding without inning input", inning_offset))
+        LOG.error("Inning '%s' not found in airing data", inning_offset)
         return None
 
-    # inning_timestamp_str is of form: 2018-04-02T17:08:23.000Z
-    # inning_start_datetime = parser.parse(inning_timestamp_str)
-    # inning_start_datetime = datetime.strptime(inning_timestamp_str, '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc)
-    # inning_start_timestamp = inning_start_datetime.timestamp()
+    stream_start_offset_secs = config.CONFIG.parser.getint('stream_start_offset_secs',
+                                                           config.DEFAULT_STREAM_START_OFFSET_SECS)
 
     # now calculate the HH:MM:SS offset for livestream.
     # It is complicated by:
@@ -251,11 +180,9 @@ def _calculate_inning_offset(inning_offset, media_state, media_playback_id, game
         now_timestamp = datetime.now(timezone.utc).timestamp()
         offset_secs = now_timestamp - inning_start_timestamp
         # Issue #9: apply the offset if provided (assume provided if not default value):
-        stream_start_offset_secs = config.CONFIG.parser.getint('stream_start_offset_secs',
-                                                               config.DEFAULT_STREAM_START_OFFSET_SECS)
-        if stream_start_offset_secs != config.DEFAULT_STREAM_START_OFFSET_SECS:
-            LOG.info("Applying non-default stream start offset: %s seconds", stream_start_offset_secs)
-            offset_secs -= stream_start_offset_secs
+        if stream_start_offset_secs != 0:
+            LOG.info("Applying stream start offset: %s seconds", stream_start_offset_secs)
+            offset_secs += stream_start_offset_secs
         LOG.debug("now_timestamp: %s, inning_start_timestamp: %s, offset=%s", now_timestamp, inning_start_timestamp, offset_secs)
         logstr = "Calculated live game negative inning offset (from now): %s"
     else:
@@ -263,17 +190,11 @@ def _calculate_inning_offset(inning_offset, media_state, media_playback_id, game
         #     | <--------> |                |
         #         offset
         LOG.info("Archive game: game start: %s, inning start: %s", str(broadcast_start_timestamp), inning_timestamp_str)
-        # first_play_timestamp = parser.parse(first_play_timestamp_str).timestamp()
-
-        # url = 'http://statsapi.mlb.com/api/v1.1/game/{gamepk}/feed/live/timestamps'.format(gamepk=game_rec['game_pk'])
-        # json_timestamp_data = util.request_json(url, 'timestamps')
-        # LOG.debug("_lookup_inning_timestamp: %s: %s, %s, %s", url, json_timestamp_data[0], json_timestamp_data[1], json_timestamp_data[2])
-
-        # game_start_timestamp = game_rec['mlbdate'].timestamp()
-        # game_start_timestamp = datetime.strptime(json_timestamp_data[1], '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc).timestamp()
-        # first_play_timestamp = datetime.strptime(first_play_timestamp_str, '%Y%m%d_%H%M%S').replace(tzinfo=timezone.utc).timestamp()
         offset_secs = inning_start_timestamp - broadcast_start_timestamp
-        # offset_secs += config.CONFIG.parser.getint('stream_start_offset_secs', 240)
+        if stream_start_offset_secs != 0:
+            LOG.info("Applying stream start offset: %s seconds", stream_start_offset_secs)
+            offset_secs -= stream_start_offset_secs
+
         LOG.debug("inning_start_timestamp: %s, broadcast_start_timestamp: %s, offset=%s",
                   inning_start_timestamp, broadcast_start_timestamp, offset_secs)
         logstr = "Calculated archive game inning offset (from start): %s"

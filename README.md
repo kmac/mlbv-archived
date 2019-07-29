@@ -263,7 +263,7 @@ option to select an earlier date).
 ### Specifying Stream Start Location
 
 For an in-progress game, the stream will join the live game at the current time. Use either  `--from-start` or
-the `--inning` option to override this behaviour.
+the `--inning/-i` option to override this behaviour.
 
 For an archived game, the stream will start from the beginning.
 
@@ -273,10 +273,8 @@ For an archived game, the stream will start from the beginning.
 For both live and archived games you can start from the top or bottom of an inning:
 
     mlbv --team tor --inning t5  # start from top of 5th
+    mlbv -t tor -i t5            # same thing but with short switches
     mlbv --team tor --inning b5  # start from bottom of 5th
-
-NOTE: there's currently an issue (#7) with starting archived games from an inning. It's currently an estimated
-position.
 
 
 #### Start from Beginning (Live Game)
