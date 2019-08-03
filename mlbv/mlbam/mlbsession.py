@@ -14,9 +14,9 @@ import lxml.etree
 import pytz
 import requests
 
-import mlbam.common.config as config
-import mlbam.common.util as util
-import mlbam.common.session as session
+import mlbv.mlbam.common.config as config
+import mlbv.mlbam.common.util as util
+import mlbv.mlbam.common.session as session
 
 LOG = logging.getLogger(__name__)
 

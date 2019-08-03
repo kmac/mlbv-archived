@@ -10,12 +10,12 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil import parser
 
-import mlbam.common.config as config
-import mlbam.common.gamedata as gamedata
-import mlbam.common.util as util
-import mlbam.common.displayutil as displayutil
+import mlbv.mlbam.common.config as config
+import mlbv.mlbam.common.gamedata as gamedata
+import mlbv.mlbam.common.util as util
+import mlbv.mlbam.common.displayutil as displayutil
 
-from mlbam.common.displayutil import ANSI
+from mlbv.mlbam.common.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)

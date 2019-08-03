@@ -1,7 +1,7 @@
 """pytest test cases for the util module
 """
 
-from mlbam.common import util
+from mlbv.mlbam.common import util
 
 
 def test_csv_list():

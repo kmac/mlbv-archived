@@ -8,9 +8,9 @@ from datetime import datetime
 from datetime import timezone
 from dateutil import parser
 
-import mlbam.common.config as config
-import mlbam.common.stream as stream
-import mlbam.common.util as util
+import mlbv.mlbam.common.config as config
+import mlbv.mlbam.common.stream as stream
+import mlbv.mlbam.common.util as util
 
 
 LOG = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
     else:
         # handle full game (live or archive)
         # this is the only feature requiring an authenticated session
-        import mlbam.mlbsession as mlbsession
+        import mlbv.mlbam.mlbsession as mlbsession
         mlb_session = mlbsession.MLBSession()
 
         media_playback_id, media_state = select_feed_for_team(game_rec, team_to_play, feedtype)

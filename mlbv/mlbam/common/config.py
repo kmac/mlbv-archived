@@ -32,7 +32,7 @@ LOG = logging.getLogger(__name__)
 class Config:
     """Contains the configuration data for use within the application, including a configparser instance
     for pulling in configuration from the 'config' file."""
-    config_dir_roots = ('.', os.path.join(os.path.expanduser('~'), '.config'), )
+    config_dir_roots = ('.', os.path.join(os.path.expanduser('~'), '.config'))
     platform = 'IPHONE'
     playback_scenario = 'HTTP_CLOUD_TABLET_60'
     ua_pc = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.97 Safari/537.36'
@@ -67,7 +67,7 @@ class Config:
             for config_dir_name in (script_name, '.' + script_name):
                 test_dir = os.path.join(config_dir_base, config_dir_name)
                 searched_paths.append(test_dir)
-                if os.path.exists(test_dir) and os.path.isdir(test_dir):
+                if os.path.exists(test_dir) and os.path.isdir(test_dir) and os.path.exists(os.path.join(test_dir, 'config')):
                     config_dir = test_dir
                     break
             if config_dir is not None:
@@ -107,7 +107,7 @@ class Config:
         # copy the template config file
         print("Generating basic config file at: {}".format(config_dir))
         current_dir = os.path.dirname(inspect.getfile(inspect.currentframe()))
-        template_config_path = os.path.abspath(os.path.join(current_dir, '..', 'config'))
+        template_config_path = os.path.abspath(os.path.join(current_dir, '../../..', 'config.template'))
         if not os.path.exists(template_config_path):
             print("Could not find template config file [expected at: {}]".format(template_config_path))
             return False
@@ -128,3 +128,14 @@ class Config:
         print("Finished creating config file: {}".format(config_file))
         print("You may want to edit it now to set up favourites, etc.")
         return True
+
+    def __str__(self):
+        strs = list()
+        for (name, val) in (('dir', self.dir), ('DEBUG', DEBUG), ('VERBOSE', VERBOSE),
+                            ('DEFAULT_STREAM_START_OFFSET_SECS', DEFAULT_STREAM_START_OFFSET_SECS),
+                            ):
+            strs.append("{}={}".format(name, val))
+        for (name, val) in self.parser.items():
+            if name != 'password':
+                strs.append("{}={}".format(name, val))
+        return 'Config: ' + ', '.join(strs)

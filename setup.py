@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 from os import path
 
 here = path.abspath(path.dirname(__file__))
@@ -9,8 +9,8 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='mlbv',
-    version='0.0.13',
-    packages=['mlbam', 'mlbam.common'],
+    version='0.0.14',
+    packages=find_packages(),
     url='https://github.com/kmac/mlbv',
     description="Command-line interface to MLB game information, game schedule and scores",
     long_description=long_description,
@@ -30,13 +30,13 @@ setup(
     license="GPLv3",
     entry_points={
         "console_scripts": [
-            "mlbv=mlbam.mlbv:main"
+            "mlbv=mlbv.mlbam.mlbv:main"
         ]
     },
     package_data={
-        'mlbam': [
-            '../README.md',
-            '../config'
+        'mlbv': [
+            'README.md',
+            'config.template'
         ]
     },
     install_requires=[

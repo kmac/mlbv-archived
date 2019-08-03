@@ -1,6 +1,10 @@
 /.idea
 /.pytest_cache
 /venv
+/00*
+/fixlink.sh
+/fetch-endpoints.sh
+/mlbv.wrapper
 __pycache__
 *.json
 *.log

@@ -19,13 +19,13 @@ import time
 from datetime import datetime
 from datetime import timedelta
 
-import mlbam.common.config as config
-import mlbam.common.gamedata as gamedata
-import mlbam.common.util as util
-import mlbam.mlbconfig as mlbconfig
-import mlbam.mlbgamedata as mlbgamedata
-import mlbam.standings as standings
-import mlbam.mlbstream as mlbstream
+import mlbv.mlbam.common.config as config
+import mlbv.mlbam.common.gamedata as gamedata
+import mlbv.mlbam.common.util as util
+import mlbv.mlbam.mlbconfig as mlbconfig
+import mlbv.mlbam.mlbgamedata as mlbgamedata
+import mlbv.mlbam.standings as standings
+import mlbv.mlbam.mlbstream as mlbstream
 
 
 LOG = None  # initialized in init_logging
@@ -180,6 +180,11 @@ def main(argv=None):
         config.CONFIG.parser['favs'] = args.favs
     if args.filter:
         config.CONFIG.parser['filter'] = args.filter
+
+    if config.DEBUG:
+        LOG.info(str(config.CONFIG))
+    else:
+        LOG.debug(str(config.CONFIG))
 
     if args.yesterday:
         args.date = datetime.strftime(datetime.today() - timedelta(days=1), "%Y-%m-%d")

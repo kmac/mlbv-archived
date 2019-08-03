@@ -16,8 +16,8 @@ import http.cookiejar
 
 import dateutil.parser
 
-import mlbam.common.config as config
-import mlbam.common.util as util
+import mlbv.mlbam.common.config as config
+import mlbv.mlbam.common.util as util
 
 
 LOG = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ import logging
 import os
 import sys
 
-import mlbam.common.config
+import mlbv.mlbam.common.config as config
 
 LOG = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ DEFAULTS = {  # is applied to initial config before reading from file - these ar
         'streamlink_passthrough': 'false',
         'streamlink_hls_audio_select': '*',
         'streamlink_extra_args': '',
-        'stream_start_offset_secs': str(mlbam.common.config.DEFAULT_STREAM_START_OFFSET_SECS),
+        'stream_start_offset_secs': str(config.DEFAULT_STREAM_START_OFFSET_SECS),
         'audio_player': 'mpv',
         'debug': 'false',
         'verbose': 'false',
