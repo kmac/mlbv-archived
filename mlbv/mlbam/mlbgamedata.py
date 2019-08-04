@@ -185,7 +185,7 @@ class GameDataRetriever:
                                 stream = media['items'][0]
                                 game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
                                 for playback_item in stream['playbacks']:
-                                    if playback_item['name'] == config.CONFIG.playback_scenario:
+                                    if playback_item['name'] == config.CONFIG.parser['playback_scenario']:
                                         game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
                         elif media['title'] == 'Daily Recap':
                             feedtype = 'recap'
@@ -194,7 +194,7 @@ class GameDataRetriever:
                                 stream = media['items'][0]
                                 game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
                                 for playback_item in stream['playbacks']:
-                                    if playback_item['name'] == config.CONFIG.playback_scenario:
+                                    if playback_item['name'] == config.CONFIG.parser['playback_scenario']:
                                         game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
                         # elif media['title'] == 'Audio':
                         #     for stream in media['items']:

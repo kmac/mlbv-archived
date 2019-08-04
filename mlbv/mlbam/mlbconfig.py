@@ -22,6 +22,7 @@ DEFAULTS = {  # is applied to initial config before reading from file - these ar
         'resolution': '720p_alt',
         'video_player': 'mpv',
         'api_url': 'https://statsapi.mlb.com',
+        'playback_scenario': 'HTTP_CLOUD_WIRED_60',  # mp4Avc, hlsCloud, HTTP_CLOUD_WIRED, HTTP_CLOUD_WIRED_60, highBit
         'streamlink_highlights': 'true',  # if false will send url direct to video_player (no resolution selection)
         'streamlink_passthrough_highlights': 'true',  # allows seeking
         'streamlink_passthrough': 'false',
