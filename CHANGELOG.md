@@ -1,3 +1,6 @@
+2019.08.06 v0.0.14 Refactor packaging
+- Fix recap/condensed game URLs
+
 2019.07.28 v0.0.12 Fixed mlbv
 Fixed inning offset for both live and archived games
 - Fixes Issue #7

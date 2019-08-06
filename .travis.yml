@@ -1,5 +1,6 @@
 language: python
 python:
+  - 3.5
   - 3.6
   - 3.7
 install:
@@ -8,6 +9,8 @@ script:
   - pytest
 matrix:
   include:
+  - stage: test
+    python: 3.5
   - stage: test
     python: 3.6
   - stage: test
