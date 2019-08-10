@@ -76,7 +76,11 @@ def main(argv=None):
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
     parser.add_argument("-t", "--team",
                         help="Play selected game feed for team, one of: {}".format(mlbgamedata.TEAM_CODES))
-    parser.add_argument("--info", action="store_true", help="Show extended game information (text)")
+    parser.add_argument("--info", nargs='?', const='full', metavar='full|short', choices=('full', 'short'),
+                        help=("Show extended game information inline (articles/text). "
+                              "Default is 'full'. Use --info=short to show only summaries (exclude full articles). "
+                              "You can also set this option permanently in your config via: "
+                              "info_display_articles=true|false"))
     parser.add_argument("-f", "--feed",
                         help=("Feed type, either a live/archive game feed or highlight feed "
                               "(if available). Available feeds are shown in game list,"
@@ -145,6 +149,9 @@ def main(argv=None):
 
     global LOG
     LOG = logging.getLogger(__name__)
+
+    if args.info and args.info == 'short':
+        config.CONFIG.parser['info_display_articles'] = 'false'
 
     if args.list_filters:
         print('List of built filters: ' + ', '.join(sorted(mlbgamedata.FILTERS.keys())))
