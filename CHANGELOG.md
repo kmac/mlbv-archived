@@ -1,3 +1,5 @@
+2019.08.10 v0.0.15 Add --info option to display pregame/postgame text articles.
+
 2019.08.06 v0.0.14 Refactor packaging
 - Fix recap/condensed game URLs
 

@@ -233,6 +233,37 @@ league, division, favourites, or arbitrary teams.
 > shorten `--tomorrow` down to `--to` since there is also the `--team` option (which makes `--t` non-unique).
 
 
+### Show Extra Information (--info)
+
+The --info option will show extra textual information for either the game preview or the game summary (depending on which is available).
+The extra information is displayed inline, within the game info.
+
+- Pregame: shows probable starting pitchers (when available).
+- Postgame (when available): shows game summary, and full game recap article.
+
+The default for `--info` is actually equivalent to `--info=full`. 
+If you want to have a more brief set of extra information, use `--info=short` or just `--info short`.
+You can also permanently set the `full/short` default for this setting via the `config` file setting:
+`info_display_articles=true|false` (i.e. setting info_display_articles=false will cause `--info` to 
+behave like `--info=short`).
+
+NOTE: Since there may be a lot of text to present, this option tends to work best with the `-o/--filter` option,
+which filters the display out by a team or set of teams. See the 'Filters' section for more information'
+
+
+Examples:
+
+    mlbv --info --yes     # show yesterday's games with full article info
+    mlbv --info -o --yes  # show yesterday's games with full article info, filtered by favs
+    mlbv --info -o tor,bos --yes  # show yesterday's games with full article info, filtered for only tor,bos
+
+    mlbv --info=short --yes  # show yesterday's games with only summary info
+
+    mlbv --info        # show today's games with full info (probable pitchers, with details)
+    mlbv --info -o     # show today's games with full info (probable pitchers only), filtered by favs
+    mlbv --info short  # show today's games with summary info (probable pitchers only)
+
+
 ## 5. Watching a Live or Archived Game
 
 Watching a game is triggered by the `-t/--team TEAM` option. With this option the game stream (live or
