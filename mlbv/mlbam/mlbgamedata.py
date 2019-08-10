@@ -61,7 +61,7 @@ class GameDataRetriever:
 
         # https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2018-03-26&endDate=2018-03-26&hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg
         # hydrate = 'hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg'
-        hydrate = 'hydrate=broadcasts(all),game(content(all),editorial(preview,recap)),linescore,team'
+        hydrate = 'hydrate=broadcasts(all),game(content(all),editorial(preview,recap)),linescore,team,probablePitcher(note)'
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg),editorial(preview,recap),highlights(highlights(items))))'
 
         # "&hydrate=linescore,team,game(content(summary,media(epg),editorial(preview,recap),highlights(highlights(items))))"
@@ -165,12 +165,24 @@ class GameDataRetriever:
 
             game_rec['preview'] = list()
             try:
-                # TODO fix this game[] ref
-                game_rec['preview'].append('PREVIEW: ' + game['content']['editorial']['recap']['mlb']['subhead'])
-                game_rec['preview'].append('')
-                game_rec['preview'].append(game['content']['editorial']['recap']['mlb']['body'])
+                if 'probablePitcher' in game['teams']['away'] or 'probablePitcher' in game['teams']['home']:
+                    game_rec['preview'].append('Probable Pitchers')
+                    game_rec['preview'].append('-----------------')
+                    for teamtype in ('away', 'home'):
+                        if 'probablePitcher' in game['teams'][teamtype]:
+                            # if config.CONFIG.parser['info_display_articles'] and 'fullName' in game['teams'][teamtype]['probablePitcher']:
+                            if 'fullName' in game['teams'][teamtype]['probablePitcher']:
+                                pitcher_name = ' '.join(reversed(game['teams'][teamtype]['probablePitcher']['fullName'].split(','))).strip()
+                                if config.CONFIG.parser.getboolean('info_display_articles') and 'note' in game['teams'][teamtype]['probablePitcher']:
+                                    note = game['teams'][teamtype]['probablePitcher']['note']
+                                    game_rec['preview'].append('{}: {}: {}'.format(game['teams'][teamtype]['team']['teamName'],
+                                                                                   pitcher_name, note))
+                                else:
+                                    game_rec['preview'].append('{}: {}'.format(game['teams'][teamtype]['team']['teamName'], pitcher_name))
+                                if config.CONFIG.parser.getboolean('info_display_articles') and teamtype == 'away':
+                                    game_rec['preview'].append('')
+
             except:
-                # game_rec['preview'].append('No preview available')
                 game_rec['preview'] = None
 
             game_rec['summary'] = list()
@@ -178,7 +190,7 @@ class GameDataRetriever:
                 if 'headline' in game['content']['editorial']['recap']['mlb']:
                     game_rec['summary'].append('SUMMARY: ' + game['content']['editorial']['recap']['mlb']['headline'])
                 if 'subhead' in game['content']['editorial']['recap']['mlb']:
-                    game_rec['summary'].append('-------  ' + game['content']['editorial']['recap']['mlb']['subhead'])
+                    game_rec['summary'].append('         ' + game['content']['editorial']['recap']['mlb']['subhead'])
                 if config.CONFIG.parser.getboolean('info_display_articles', True):
                     if len(game_rec['summary']) > 0:
                         game_rec['summary'].append('')
@@ -189,7 +201,6 @@ class GameDataRetriever:
                     if 'body' in game['content']['editorial']['recap']['mlb']:
                         game_rec['summary'].append(game['content']['editorial']['recap']['mlb']['body'])
             except:
-                # game_rec['summary'].append('No summary available')
                 game_rec['summary'] = None
 
             game_rec['feed'] = dict()
@@ -459,19 +470,23 @@ class GameDatePresenter:
                                 feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
 
         if show_info:
-            found_info = False
+            # found_info = False
             for text_type in ('summary', 'preview'):
                 if text_type in game_rec and game_rec[text_type]:
-                    outl.append('')
+                    if text_type == 'summary':
+                        outl.append('')
                     for line in game_rec[text_type]:
-                        outl.append(util.strip_html_tags(line, True))
+                        outl.append('{coloron}{text}{coloroff}'.format(coloron=color_on,
+                                                                       text=util.strip_html_tags(line, True),
+                                                                       coloroff=color_off))
                     outl.append('')
-                    found_info = True
-                    break  # only show one
-            if not found_info:
-                # outl.append('')
-                outl.append('Summary not available')
-                # outl.append('')
+                    # found_info = True
+                    # only show one of summary or preview
+                    break
+            # if not found_info:
+            #     outl.append('{coloron}{text}{coloroff}'.format(coloron=color_on,
+            #                                                    text='Summary not available',
+            #                                                    coloroff=color_off))
         return outl
 
     def _format_linescore(self, game_rec):
@@ -521,37 +536,3 @@ class GameDatePresenter:
                                    linescore_json['teams'][team]['errors']):
                     outd[team] += inning_fmt.format(inning_val)
         return outd
-
-    # def display_game_text(self, text_type, game_date, game_records, filter):
-    #     # border = displayutil.Border(use_unicode=config.UNICODE)
-    #     if game_records is None:
-    #         # outl.append("No game data for {}".format(game_date))
-    #         LOG.info("No game data for {}".format(game_date))
-    #         # LOG.info("No game data to display")
-    #         return
-
-    #     outl = list()  # holds list of strings for output
-    #     print_outl = False
-
-    #     outl.append('Displaying ' + text_type)
-    #     # print header
-    #     # date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
-    #     games_displayed_count = 0
-    #     for game_pk in game_records:
-    #         if gamedata.apply_filter(game_records[game_pk], filter, FILTERS) is not None:
-    #             games_displayed_count += 1
-    #             outl.extend(self._display_game_text(text_type, game_pk, game_records[game_pk], show_linescore=False,
-    #                                                 games_displayed_count=games_displayed_count))
-    #             print_outl = True
-
-    #     if print_outl:
-    #         print('\n'.join(outl))
-
-    # def _display_game_text(self, text_type, game_pk, game_rec, show_linescore, games_displayed_count):
-    #     # show_scores = config.CONFIG.parser.getboolean('scores')
-    #     outl = list()
-    #     for line in game_rec[text_type]:
-    #         # outl.append(str(line))
-    #         outl.append(util.strip_html_tags(line, True))
-    #     return outl
-
