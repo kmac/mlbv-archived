@@ -61,7 +61,11 @@ class GameDataRetriever:
 
         # https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2018-03-26&endDate=2018-03-26&hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg
         # hydrate = 'hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg'
-        hydrate = 'hydrate=broadcasts(all),game(content(all)),linescore,team'
+        hydrate = 'hydrate=broadcasts(all),game(content(all),editorial(preview,recap)),linescore,team'
+        # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg),editorial(preview,recap),highlights(highlights(items))))'
+
+        # "&hydrate=linescore,team,game(content(summary,media(epg),editorial(preview,recap),highlights(highlights(items))))"
+
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
         url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.parser['api_url'], date_str, hydrate)
 
@@ -159,6 +163,35 @@ class GameDataRetriever:
 
             game_rec['favourite'] = gamedata.is_fav(game_rec)
 
+            game_rec['preview'] = list()
+            try:
+                # TODO fix this game[] ref
+                game_rec['preview'].append('PREVIEW: ' + game['content']['editorial']['recap']['mlb']['subhead'])
+                game_rec['preview'].append('')
+                game_rec['preview'].append(game['content']['editorial']['recap']['mlb']['body'])
+            except:
+                # game_rec['preview'].append('No preview available')
+                game_rec['preview'] = None
+
+            game_rec['summary'] = list()
+            try:
+                if 'headline' in game['content']['editorial']['recap']['mlb']:
+                    game_rec['summary'].append('SUMMARY: ' + game['content']['editorial']['recap']['mlb']['headline'])
+                if 'subhead' in game['content']['editorial']['recap']['mlb']:
+                    game_rec['summary'].append('-------  ' + game['content']['editorial']['recap']['mlb']['subhead'])
+                if config.CONFIG.parser.getboolean('info_display_articles', True):
+                    if len(game_rec['summary']) > 0:
+                        game_rec['summary'].append('')
+                    if 'seoTitle' in game['content']['editorial']['recap']['mlb']:
+                        # game_rec['summary'].append('TITLE: ' + game['content']['editorial']['recap']['mlb']['seoTitle'])
+                        game_rec['summary'].append(game['content']['editorial']['recap']['mlb']['seoTitle'])
+                        game_rec['summary'].append('-' * len(game['content']['editorial']['recap']['mlb']['seoTitle']))
+                    if 'body' in game['content']['editorial']['recap']['mlb']:
+                        game_rec['summary'].append(game['content']['editorial']['recap']['mlb']['body'])
+            except:
+                # game_rec['summary'].append('No summary available')
+                game_rec['summary'] = None
+
             game_rec['feed'] = dict()
             if game_rec['abstractGameState'] == 'Preview':
                 continue
@@ -243,9 +276,32 @@ class GameDatePresenter:
             return '{} {}'.format(','.join(non_highlight_feeds), ','.join(highlight_feeds))
         return '{}'.format(','.join(non_highlight_feeds))
 
-    def display_game_data(self, game_date, game_records, filter):
+    @staticmethod
+    def _get_header(border, game_date, show_scores, show_linescore):
+        header = list()
+        date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
+        if show_scores:
+            if show_linescore:
+                header.append("{:56}".format(date_hdr))
+                header.append('{c_on}{dash}{c_off}'
+                              .format(c_on=border.border_color, dash=border.thickdash*92, c_off=border.color_off))
+            else:
+                header.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
+                              .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
+                header.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
+                              .format(border.thickdash * 57, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
+                                      pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
+        else:
+            header.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
+            header.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
+                          .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
+                                  pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
+        return header
+
+    def display_game_data(self, game_date, game_records, filter, show_info):
         show_scores = config.CONFIG.parser.getboolean('scores')
-        show_linescore = config.CONFIG.parser.getboolean('linescore')
+        # might as well show linescore if show_info is given
+        show_linescore = config.CONFIG.parser.getboolean('linescore') or show_info
         border = displayutil.Border(use_unicode=config.UNICODE)
         if game_records is None:
             # outl.append("No game data for {}".format(game_date))
@@ -254,41 +310,30 @@ class GameDatePresenter:
             return
 
         outl = list()  # holds list of strings for output
-        print_outl = False
 
         # print header
-        date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
-        if show_scores:
-            if show_linescore:
-                outl.append("{:56}".format(date_hdr))
-                outl.append('{c_on}{dash}{c_off}'
-                            .format(c_on=border.border_color, dash=border.thickdash*91, c_off=border.color_off))
-            else:
-                outl.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
-                            .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
-                outl.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
-                            .format(border.thickdash * 57, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
-                                    pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
-        else:
-            outl.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
-            outl.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
-                        .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
-                                pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
+        header = self._get_header(border, game_date, show_scores, show_linescore)
+        outl.extend(header)
 
         games_displayed_count = 0
         for game_pk in game_records:
             if gamedata.apply_filter(game_records[game_pk], filter, FILTERS) is not None:
                 games_displayed_count += 1
-                outl.extend(self._display_game_details(game_pk, game_records[game_pk], show_linescore,
+                outl.extend(self._display_game_details(header, game_pk, game_records[game_pk],
+                                                       show_linescore,
+                                                       show_info,
                                                        games_displayed_count))
-                print_outl = True
 
-        if print_outl:
-            print('\n'.join(outl))
+        if games_displayed_count > 0:
+            for line in outl:
+                print(line)
 
-    def _display_game_details(self, game_pk, game_rec, show_linescore, games_displayed_count):
+    def _display_game_details(self, header, game_pk, game_rec, show_linescore, show_info, games_displayed_count):
         show_scores = config.CONFIG.parser.getboolean('scores')
         outl = list()
+        if show_info and games_displayed_count > 1:
+            outl.append('')
+            outl.extend(header)
         border = displayutil.Border(use_unicode=config.UNICODE)
         color_on = ''
         color_off = ''
@@ -355,9 +400,9 @@ class GameDatePresenter:
 
             # linescore
             if show_linescore:
-                if games_displayed_count > 1:
+                if games_displayed_count > 1 and not show_info:
                     outl.append('{coloron}{dash}{coloroff}'.format(coloron=ANSI.fg('darkgrey'),
-                                                                   dash=border.dash*91,
+                                                                   dash=border.dash*92,
                                                                    coloroff=ANSI.reset()))
                 linescore_dict = self._format_linescore(game_rec)
                 """
@@ -412,6 +457,21 @@ class GameDatePresenter:
                         .format(coloron=color_on, coloroff=color_off,
                                 ginfo=game_info_str, series=series_info, gstate=game_state,
                                 feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
+
+        if show_info:
+            found_info = False
+            for text_type in ('summary', 'preview'):
+                if text_type in game_rec and game_rec[text_type]:
+                    outl.append('')
+                    for line in game_rec[text_type]:
+                        outl.append(util.strip_html_tags(line, True))
+                    outl.append('')
+                    found_info = True
+                    break  # only show one
+            if not found_info:
+                # outl.append('')
+                outl.append('Summary not available')
+                # outl.append('')
         return outl
 
     def _format_linescore(self, game_rec):
@@ -432,22 +492,66 @@ class GameDatePresenter:
             current_inning = int(linescore_json['currentInning'])
         else:
             current_inning = 0
+        inning_fmt = '{:>3}'
+        # inning_fmt = '{:>2}'
+        # if current_inning > 9:
+        #     inning_fmt = '{:>3}'
         for inning in linescore_json['innings']:
-            outd['header'] += '{:>3}'.format(inning['num'])
+            outd['header'] += inning_fmt.format(inning['num'])
             for team in ('away', 'home'):
                 if 'runs' in inning[team]:
-                    outd[team] += '{:>3}'.format(inning[team]['runs'])
+                    outd[team] += inning_fmt.format(inning[team]['runs'])
                 else:
-                    outd[team] += '{:>3}'.format('')
+                    outd[team] += inning_fmt.format('')
         for inning_num in range(current_inning+1, 10):  # fill in remaining innings, if any
-            outd['header'] += '{:>3}'.format(inning_num)
-            outd['away'] += '{:>3}'.format('')
-            outd['home'] += '{:>3}'.format('')
-        outd['header'] += '{:>3}{:>3}{:>3}'.format('R', 'H', 'E')
+            # inning_fmt = '{:>2}'
+            outd['header'] += inning_fmt.format(inning_num)
+            outd['away'] += inning_fmt.format('')
+            outd['home'] += inning_fmt.format('')
+        # outd['header'] += '{:>3}{:>3}{:>3}'.format('R', 'H', 'E')
+        outd['header'] += ' '
+        for inning_hdr in ('R', 'H', 'E'):
+            outd['header'] += inning_fmt.format(inning_hdr)
         for team in ('away', 'home'):
             if 'teams' in linescore_json and team in linescore_json['teams'] \
                     and 'runs' in linescore_json['teams'][team]:
-                outd[team] += '{:>3}{:>3}{:>3}'.format(linescore_json['teams'][team]['runs'],
-                                                       linescore_json['teams'][team]['hits'],
-                                                       linescore_json['teams'][team]['errors'])
+                outd[team] += ' '
+                for inning_val in (linescore_json['teams'][team]['runs'],
+                                   linescore_json['teams'][team]['hits'],
+                                   linescore_json['teams'][team]['errors']):
+                    outd[team] += inning_fmt.format(inning_val)
         return outd
+
+    # def display_game_text(self, text_type, game_date, game_records, filter):
+    #     # border = displayutil.Border(use_unicode=config.UNICODE)
+    #     if game_records is None:
+    #         # outl.append("No game data for {}".format(game_date))
+    #         LOG.info("No game data for {}".format(game_date))
+    #         # LOG.info("No game data to display")
+    #         return
+
+    #     outl = list()  # holds list of strings for output
+    #     print_outl = False
+
+    #     outl.append('Displaying ' + text_type)
+    #     # print header
+    #     # date_hdr = '{:7}{} {}'.format('', game_date, datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d"), "%a"))
+    #     games_displayed_count = 0
+    #     for game_pk in game_records:
+    #         if gamedata.apply_filter(game_records[game_pk], filter, FILTERS) is not None:
+    #             games_displayed_count += 1
+    #             outl.extend(self._display_game_text(text_type, game_pk, game_records[game_pk], show_linescore=False,
+    #                                                 games_displayed_count=games_displayed_count))
+    #             print_outl = True
+
+    #     if print_outl:
+    #         print('\n'.join(outl))
+
+    # def _display_game_text(self, text_type, game_pk, game_rec, show_linescore, games_displayed_count):
+    #     # show_scores = config.CONFIG.parser.getboolean('scores')
+    #     outl = list()
+    #     for line in game_rec[text_type]:
+    #         # outl.append(str(line))
+    #         outl.append(util.strip_html_tags(line, True))
+    #     return outl
+

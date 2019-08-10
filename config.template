@@ -34,6 +34,13 @@
 # Show linescores. Requires scores=true above.
 #linescore=false
 
+# Show full article content in --info output
+# info_display_articles=true
+
+# Maximum article width in --info output
+# Note: if terminal width is less than this, the smaller value is used.
+# info_display_max_columns=110
+
 # Use shorter feed names in game listings
 #use_short_feeds=true
 

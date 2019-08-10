@@ -76,6 +76,7 @@ def main(argv=None):
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
     parser.add_argument("-t", "--team",
                         help="Play selected game feed for team, one of: {}".format(mlbgamedata.TEAM_CODES))
+    parser.add_argument("--info", action="store_true", help="Show extended game information (text)")
     parser.add_argument("-f", "--feed",
                         help=("Feed type, either a live/archive game feed or highlight feed "
                               "(if available). Available feeds are shown in game list,"
@@ -202,12 +203,12 @@ def main(argv=None):
     # retrieve all games for the dates given
     game_day_tuple_list = gamedata_retriever.process_game_data(args.date, args.days)
 
-    if team_to_play is None and not args.recaps:
+    if not team_to_play and not args.recaps:
         # nothing to play; display the games
         presenter = mlbgamedata.GameDatePresenter()
         displayed_count = 0
         for game_date, game_records in game_day_tuple_list:
-            presenter.display_game_data(game_date, game_records, args.filter)
+            presenter.display_game_data(game_date, game_records, args.filter, args.info)
             displayed_count += 1
             if displayed_count < len(game_day_tuple_list):
                 print('')
@@ -230,7 +231,7 @@ def main(argv=None):
             for team in args.recaps.split(','):
                 recap_teams.append(team.strip())
         for game_pk in game_data:
-            game_rec = mlbgamedata.apply_filter(game_data[game_pk], args.filter)
+            game_rec = gamedata.apply_filter(game_data[game_pk], args.filter)
             if game_rec and (game_rec['home']['abbrev'] in recap_teams or game_rec['away']['abbrev'] in recap_teams):
                 if 'recap' in game_rec['feed']:
                     LOG.info("Playing recap for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())

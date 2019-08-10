@@ -44,12 +44,12 @@ def is_fav(game_rec):
     return False
 
 
-def apply_filter(game_rec, arg_filter, filters):
+def apply_filter(game_rec, arg_filter, filters=None):
     """Returns the game_rec if the game matches the filter, or if no filtering is active.
     """
     if arg_filter == 'favs':
         arg_filter = config.CONFIG.parser['favs']
-    elif arg_filter in filters:
+    elif filters and arg_filter in filters:
         arg_filter = filters[arg_filter]
     elif not arg_filter:
         return game_rec

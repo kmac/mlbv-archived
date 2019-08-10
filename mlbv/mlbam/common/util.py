@@ -4,15 +4,18 @@ Utility functions
 
 import logging
 import os.path
+import shutil
 import sys
 import tempfile
 import time
 
 import requests
+import textwrap
 
 from datetime import datetime
 from datetime import timezone
 from dateutil import tz
+from html.parser import HTMLParser
 
 import mlbv.mlbam.common.config as config
 
@@ -126,3 +129,72 @@ def log_http(url, request_type=None, headers=None, method_name=None):
     LOG.debug(msg)
 
 
+class HTMLStripper(HTMLParser):
+    """Modified from https://stackoverflow.com/a/11063816
+    https://docs.python.org/3.7/library/html.parser.html?highlight=htmlparser
+    """
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.fed = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'a':
+            for attr in attrs:
+                self.fed.append(str(attr[1] + ' '))
+
+    def handle_data(self, d):
+        self.fed.append(d)
+
+    def get_data(self, wrap=True):
+        if wrap:
+            terminal_size = shutil.get_terminal_size((80, 40))
+            wrap_columns = terminal_size.columns
+            if wrap_columns > int(config.CONFIG.parser['info_display_max_columns']):
+                wrap_columns = int(config.CONFIG.parser['info_display_max_columns'])
+            return '\n'.join([textwrap.fill(x, wrap_columns) for x in ''.join(self.fed).split('\n')])
+        return ''.join(self.fed)
+
+
+def strip_html_tags(htmltext, wrap=True):
+    stripper = HTMLStripper()
+    stripper.feed(htmltext)
+    return stripper.get_data(wrap)
+
+
+# # https://stackoverflow.com/a/7778368
+# import html.parser
+# class HTMLTextExtractor(html.parser.HTMLParser):
+#     def __init__(self):
+#         super(HTMLTextExtractor, self).__init__()
+#         self.result = [ ]
+# 
+#     def handle_data(self, d):
+#         self.result.append(d)
+# 
+#     def get_text(self):
+#         return ''.join(self.result)
+# 
+# def html_to_text(html):
+#     """Converts HTML to plain text (stripping tags and converting entities).
+#     >>> html_to_text('<a href="#">Demo<!--...--> <em>(&not; \u0394&#x03b7;&#956;&#x03CE;)</em></a>')
+#     'Demo (\xac \u0394\u03b7\u03bc\u03ce)'
+# 
+#     "Plain text" doesn't mean result can safely be used as-is in HTML.
+#     >>> html_to_text('&lt;script&gt;alert("Hello");&lt;/script&gt;')
+#     '<script>alert("Hello");</script>'
+# 
+#     Always use html.escape to sanitize text before using in an HTML context!
+# 
+#     HTMLParser will do its best to make sense of invalid HTML.
+#     >>> html_to_text('x < y &lt z <!--b')
+#     'x < y < z '
+# 
+#     Unrecognized named entities are included as-is. '&apos;' is recognized,
+#     despite being XML only.
+#     >>> html_to_text('&nosuchentity; &apos; ')
+#     "&nosuchentity; ' "
+#     """
+#     s = HTMLTextExtractor()
+#     s.feed(html)
+#     return s.get_text()

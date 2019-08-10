@@ -17,6 +17,8 @@ DEFAULTS = {  # is applied to initial config before reading from file - these ar
         'fav_colour': 'blue',
         'scores': 'true',
         'use_short_feeds': 'true',
+        'info_display_articles': 'true',
+        'info_display_max_columns': '100',
         'filter': '',
         'cdn': 'akamai',
         'resolution': '720p_alt',
