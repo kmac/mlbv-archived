@@ -96,6 +96,7 @@ def main(argv=None):
                               "'b5' start at bottom 5th."))
     parser.add_argument("--inning-offset", type=int, metavar='SECS',
                         help="Override the inning offset time in seconds. Default=240 (4 minutes)")
+    # TODO remove --from-start, in favour of --inning
     parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
     parser.add_argument("--favs", help=argparse.SUPPRESS)
                         # help=("Favourite teams, a comma-separated list of favourite teams " "(normally specified in config file)"))
@@ -111,6 +112,8 @@ def main(argv=None):
                         help="Do not show scores (default on; overrides config file)")
     parser.add_argument("-l", "--linescore", nargs='?', const='all', metavar='filter',
                         help="Show linescores. Optional: specify a filter as per --filter option.")
+    parser.add_argument("--boxscore", nargs='?', const='all', metavar='filter',
+                        help="Show boxscores. Optional: specify a filter as per --filter option.")
     parser.add_argument("--username", help=argparse.SUPPRESS)  # help="MLB.tv username. Required for live/archived games.")
     parser.add_argument("--password", help=argparse.SUPPRESS)  # help="MLB.tv password. Required for live/archived games.")
     parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
@@ -182,8 +185,11 @@ def main(argv=None):
     if args.linescore:
         if args.linescore != 'all':
             config.CONFIG.parser['filter'] = args.linescore
-            # config.CONFIG.parser['favs'] = args.linescore
         config.CONFIG.parser['linescore'] = 'true'
+    if args.boxscore:
+        if args.boxscore != 'all':
+            config.CONFIG.parser['filter'] = args.boxscore
+        config.CONFIG.parser['boxscore'] = 'true'
     if args.favs:
         config.CONFIG.parser['favs'] = args.favs
     if args.filter:

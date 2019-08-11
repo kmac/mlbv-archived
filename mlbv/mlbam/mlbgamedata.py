@@ -263,6 +263,12 @@ class GameDataRetriever:
             game_date = datetime.strftime(datetime.strptime(game_date, "%Y-%m-%d") + timedelta(days=1), "%Y-%m-%d")
         return game_days_list
 
+    @staticmethod
+    def get_boxscore(game_pk):
+        url = '{0}/api/v1/game/{1}/boxscore'.format(config.CONFIG.parser['api_url'], game_pk)
+        json_data = util.request_json(url, 'boxscore')
+        return json_data
+
 
 class GameDatePresenter:
     """Formats game data for CLI output."""
@@ -312,7 +318,8 @@ class GameDatePresenter:
     def display_game_data(self, game_date, game_records, filter, show_info):
         show_scores = config.CONFIG.parser.getboolean('scores')
         # might as well show linescore if show_info is given
-        show_linescore = config.CONFIG.parser.getboolean('linescore') or show_info
+        show_linescore = show_scores and (config.CONFIG.parser.getboolean('linescore') or config.CONFIG.parser.getboolean('boxscore') or show_info)
+        show_boxscore = show_scores and config.CONFIG.parser.getboolean('boxscore')
         border = displayutil.Border(use_unicode=config.UNICODE)
         if game_records is None:
             # outl.append("No game data for {}".format(game_date))
@@ -332,19 +339,21 @@ class GameDatePresenter:
                 games_displayed_count += 1
                 outl.extend(self._display_game_details(header, game_pk, game_records[game_pk],
                                                        show_linescore,
+                                                       show_boxscore,
                                                        show_info,
                                                        games_displayed_count))
-
         if games_displayed_count > 0:
             for line in outl:
                 print(line)
 
-    def _display_game_details(self, header, game_pk, game_rec, show_linescore, show_info, games_displayed_count):
+    def _display_game_details(self, header, game_pk, game_rec, show_linescore, show_boxscore, show_info, games_displayed_count):
         show_scores = config.CONFIG.parser.getboolean('scores')
         outl = list()
-        if show_info and games_displayed_count > 1:
-            outl.append('')
-            outl.extend(header)
+        if games_displayed_count > 1:
+            if show_info or show_linescore or show_boxscore:
+                outl.append('')
+            if show_info:
+                outl.extend(header)
         border = displayutil.Border(use_unicode=config.UNICODE)
         color_on = ''
         color_off = ''
@@ -473,20 +482,20 @@ class GameDatePresenter:
             # found_info = False
             for text_type in ('summary', 'preview'):
                 if text_type in game_rec and game_rec[text_type]:
-                    if text_type == 'summary':
-                        outl.append('')
+                    # if text_type == 'summary':
+                    #     outl.append('')
+                    outl.append('')
                     for line in game_rec[text_type]:
                         outl.append('{coloron}{text}{coloroff}'.format(coloron=color_on,
                                                                        text=util.strip_html_tags(line, True),
                                                                        coloroff=color_off))
-                    outl.append('')
-                    # found_info = True
+                    # outl.append('')
                     # only show one of summary or preview
                     break
-            # if not found_info:
-            #     outl.append('{coloron}{text}{coloroff}'.format(coloron=color_on,
-            #                                                    text='Summary not available',
-            #                                                    coloroff=color_off))
+
+        if show_boxscore:
+            outl.extend(self._get_formatted_boxscore(game_rec, color_on, color_off))
+
         return outl
 
     def _format_linescore(self, game_rec):
@@ -536,3 +545,111 @@ class GameDatePresenter:
                                    linescore_json['teams'][team]['errors']):
                     outd[team] += inning_fmt.format(inning_val)
         return outd
+
+    def _get_formatted_boxscore(self, game_rec, color_on, color_off):
+        outl = list()
+        outl.append('')
+        # fetch boxscore
+        json_data = GameDataRetriever.get_boxscore(game_rec['game_pk'])
+        batfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ab:>3} {run:>3} {hit:>3} {hr:>3} {rbi:>3} {bb:>3} {so:>3} {lob:>3}   {avg:>5} {ops:>5}{coloroff}'
+        pitchfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ip:>3} {hit:>3} {run:>3} {er:>3} {bb:>3} {so:>3} {hr:>3}   {era:>5} {whip:>5}{coloroff}'
+        for teamtype in ('away', 'home'):
+            outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off,
+                                                           name=json_data['teams'][teamtype]['team']['name']))
+            outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off,
+                                                           name='-' * len(json_data['teams'][teamtype]['team']['name'])))
+            # batters
+            outl.append(batfmt.format(coloron=color_on, coloroff=color_off,
+                                      num='', name='BATTING', pos='',
+                                      ab='AB', run='R', hit='H', hr='HR', rbi='RBI', bb='BB', so='SO',
+                                      lob='LOB', avg='AVG', ops='OPS'))
+            index = 0
+            for batter in json_data['teams'][teamtype]['batters']:
+                index += 1
+                player_info = json_data['teams'][teamtype]['players']['ID' + str(batter)]
+                stats = player_info['stats']['batting']
+                season_stats = player_info['seasonStats']['batting']
+                if stats:
+                    outl.append(batfmt.format(coloron=color_on, coloroff=color_off, num=index,
+                                              name=player_info['person']['fullName'],
+                                              pos=player_info['position']['abbreviation'],
+                                              ab=stats['atBats'], run=stats['runs'], hit=stats['hits'],
+                                              hr=stats['homeRuns'],
+                                              rbi=stats['rbi'], bb=stats['baseOnBalls'], so=stats['strikeOuts'],
+                                              lob=stats['leftOnBase'],
+                                              avg=season_stats['avg'], ops=season_stats['ops']))
+            team_stats = json_data['teams'][teamtype]['teamStats']
+            if team_stats and 'batting' in team_stats:
+                team_batting = team_stats['batting']
+                outl.append(batfmt.format(coloron=color_on, coloroff=color_off, num='',
+                                          name='TOTALS',
+                                          pos='',
+                                          ab=team_batting['atBats'], run=team_batting['runs'], hit=team_batting['hits'],
+                                          hr=team_batting['homeRuns'],
+                                          rbi=team_batting['rbi'], bb=team_batting['baseOnBalls'], so=team_batting['strikeOuts'],
+                                          lob=team_batting['leftOnBase'],
+                                          avg=team_batting['avg'], ops=team_batting['ops']))
+            outl.append('')
+
+            # pitchers
+            outl.append(pitchfmt.format(coloron=color_on, coloroff=color_off, num='', name='PITCHING', pos='',
+                                        ip='IP', hit='H', run='R', er='ER', bb='BB', so='SO', hr='HR',
+                                        era='ERA', whip='WHIP'))
+            index = 0
+            for pitcher in json_data['teams'][teamtype]['pitchers']:
+                index += 1
+                player_info = json_data['teams'][teamtype]['players']['ID' + str(pitcher)]
+                stats = player_info['stats']['pitching']
+                season_stats = player_info['seasonStats']['pitching']
+                if stats:
+                    outl.append(pitchfmt.format(coloron=color_on, coloroff=color_off, num=index,
+                                                name=player_info['person']['fullName'],
+                                                pos=player_info['position']['abbreviation'],
+                                                ip=stats['inningsPitched'],
+                                                hit=stats['hits'],
+                                                run=stats['runs'],
+                                                er=stats['earnedRuns'],
+                                                bb=stats['baseOnBalls'],
+                                                so=stats['strikeOuts'],
+                                                hr=stats['homeRuns'],
+                                                era=season_stats['era'],
+                                                whip=season_stats['whip']))
+            if team_stats and 'pitching' in team_stats:
+                team_pitching = team_stats['pitching']
+                outl.append(pitchfmt.format(coloron=color_on, coloroff=color_off, num='',
+                                            name='TOTALS',
+                                            pos='',
+                                            ip=team_pitching['inningsPitched'],
+                                            hit=team_pitching['hits'],
+                                            run=team_pitching['runs'],
+                                            er=team_pitching['earnedRuns'],
+                                            bb=team_pitching['baseOnBalls'],
+                                            so=team_pitching['strikeOuts'],
+                                            hr=team_pitching['homeRuns'],
+                                            era=team_pitching['era'],
+                                            whip=team_pitching['whip']))
+            outl.append('')
+
+            # team game info
+            for info in json_data['teams'][teamtype]['info']:
+                if 'title' in info:
+                    outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name=info['title']))
+                    if 'fieldList' in info:
+                        for field in info['fieldList']:
+                            if 'label' in field and 'value' in field:
+                                outl.append('{coloron}{label}: {value}{coloroff}'.format(coloron=color_on, coloroff=color_off,
+                                                                                         label=field['label'], value=field['value']))
+                    outl.append('')
+
+        # info
+        if json_data['info']:
+            excluded_labels = ('Venue', )
+            title = 'Other Game info:'
+            outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name=title))
+            outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name='-' * len(title)))
+            for info in json_data['info']:
+                if 'label' in info and 'value' in info and info['label'] not in excluded_labels:
+                    outl.append('{coloron}{label}: {value}{coloroff}'.format(coloron=color_on, coloroff=color_off,
+                                                                             label=info['label'], value=info['value']))
+
+        return outl
