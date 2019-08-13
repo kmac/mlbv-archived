@@ -552,7 +552,7 @@ class GameDatePresenter:
         # fetch boxscore
         json_data = GameDataRetriever.get_boxscore(game_rec['game_pk'])
         batfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ab:>3} {run:>3} {hit:>3} {hr:>3} {rbi:>3} {bb:>3} {so:>3} {lob:>3}   {avg:>5} {ops:>5}{coloroff}'
-        pitchfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ip:>3} {hit:>3} {run:>3} {er:>3} {bb:>3} {so:>3} {hr:>3}   {era:>5} {whip:>5}{coloroff}'
+        pitchfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ip:>4} {hit:>3} {run:>3} {er:>3} {bb:>3} {so:>3} {hr:>3}   {era:>5} {whip:>5}{coloroff}'
         for teamtype in ('away', 'home'):
             outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off,
                                                            name=json_data['teams'][teamtype]['team']['name']))
@@ -643,13 +643,44 @@ class GameDatePresenter:
 
         # info
         if json_data['info']:
-            excluded_labels = ('Venue', )
-            title = 'Other Game info:'
-            outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name=title))
-            outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name='-' * len(title)))
+            # excluded_labels = ('Venue', )
+            excluded_labels = ()
+            # title = 'Other Game info:'
+            # outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name=title))
+            # outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off, name='-' * len(title)))
+            weather = { 'Weather': '', 'Wind': '' }
+            game_length = { 'First pitch': '', 'T': '' }
+            venue = { 'Att': '', 'Venue': '' }
             for info in json_data['info']:
                 if 'label' in info and 'value' in info and info['label'] not in excluded_labels:
-                    outl.append('{coloron}{label}: {value}{coloroff}'.format(coloron=color_on, coloroff=color_off,
-                                                                             label=info['label'], value=info['value']))
+                    if info['label'] == 'Weather':
+                        weather['Weather'] = info['value']
+                    elif info['label'] == 'Wind':
+                        weather['Wind'] = info['value']
+                    elif info['label'] == 'First pitch':
+                        game_length['First pitch'] = info['value']
+                    elif info['label'] == 'T':
+                        game_length['T'] = info['value']
+                    elif info['label'] == 'Att':
+                        venue['Att'] = info['value']
+                    elif info['label'] == 'Venue':
+                        venue['Venue'] = info['value']
+                    else:
+                        outl.append('{coloron}{label}: {value}{coloroff}'.format(coloron=color_on, coloroff=color_off,
+                                                                                 label=info['label'], value=info['value']))
+            if weather['Weather'] or weather['Wind']:
+                outl.append('{coloron}Weather: {weather}, Wind: {wind}{coloroff}'.format(coloron=color_on, coloroff=color_off,
+                                                                                         weather=weather['Weather'],
+                                                                                         wind=weather['Wind']))
+            if game_length['First pitch'] or game_length['T']:
+                outl.append('{coloron}First pitch: {fp}  Game length: {time}'\
+                            .format(coloron=color_on, coloroff=color_off,
+                                    fp=game_length['First pitch'],
+                                    time=game_length['T']))
+            if venue['Att'] or venue['Venue']:
+                outl.append('{coloron}Venue: {venue}  Att: {att}{coloroff}'\
+                            .format(coloron=color_on, coloroff=color_off,
+                                    venue=venue['Venue'],
+                                    att=venue['Att']))
 
         return outl

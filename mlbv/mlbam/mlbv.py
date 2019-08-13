@@ -25,6 +25,7 @@ import mlbv.mlbam.common.util as util
 import mlbv.mlbam.mlbconfig as mlbconfig
 import mlbv.mlbam.mlbgamedata as mlbgamedata
 import mlbv.mlbam.standings as standings
+import mlbv.mlbam.stats as stats
 import mlbv.mlbam.mlbstream as mlbstream
 
 
@@ -127,6 +128,10 @@ def main(argv=None):
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
+    parser.add_argument("--stats", nargs='?', const='team', metavar='[teamcode]',
+                        help=("Display stats. This option will display the selected stats category, then exit. "
+                              "Can be combined with -d/--date option to show stats for any given date.")
+                        )
     parser.add_argument("--recaps", nargs='?', const='all', metavar='FILTER',
                         help=("Play recaps for given teams. "
                               "[FILTER] is an optional filter as per --filter option"))
@@ -209,6 +214,10 @@ def main(argv=None):
 
     if args.standings:
         standings.get_standings(args.standings, args.date, args.filter)
+        return 0
+    if args.stats:
+        # def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=None):
+        stats.get_team_stats(args.stats, None, 'all', None)
         return 0
 
     gamedata_retriever = mlbgamedata.GameDataRetriever()
