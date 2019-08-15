@@ -102,6 +102,8 @@ def convert_time_to_local(d):
     from_zone = tz.tzutc()
     to_zone = tz.tzlocal()
     utc = d.replace(tzinfo=from_zone)
+    if config.CONFIG.parser['timeformat'] == '12H':
+        return utc.astimezone(to_zone).strftime('%I:%M %p')
     return utc.astimezone(to_zone).strftime('%H:%M')
 
 

@@ -34,6 +34,12 @@
 # Show linescores. Requires scores=true above.
 #linescore=false
 
+# Change the format of timestrings printed
+# One of "12H" "24H"
+# 	Note: "24H" is the default
+#   Uncomment the following line to enable timestamps to print in 12 hour format with AM/PM
+#timeformat=12H
+
 # Show full article content in --info output
 # info_display_articles=true
 

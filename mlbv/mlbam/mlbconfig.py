@@ -38,5 +38,6 @@ DEFAULTS = {  # is applied to initial config before reading from file - these ar
         'verify_ssl': 'true',
         'save_json_file_by_timestamp': 'false',
         'unicode': 'true',
+        'timeformat': '24H'
     }
 }
