@@ -84,7 +84,7 @@ PITCHING_STATS_ALL = (('gamesPlayed', 'GP', '{:>4}'), ('gamesStarted', 'GS', '{:
                       ('wins', 'W', '{:>3}'), ('losses', 'L', '{:>3}'), ('saves', 'S', '{:>3}'),
                       ('runs', 'R', '{:>4}'), ('hits', 'H', '{:>4}'), ('homeRuns', 'HR', '{:>4}'),
                       ('strikeOuts', 'SO', '{:>4}'), ('baseOnBalls', 'BB', '{:>4}'), ('earnedRuns', 'ER', '{:>4}'),
-                      ('era', 'ERA', '{:>4}'), ('avg', 'AVG', '{:>5}'), ('whip', 'WHIP', '{:>5}'))
+                      ('era', 'ERA', '{:>5}'), ('avg', 'AVG', '{:>5}'), ('whip', 'WHIP', '{:>5}'))
 PITCHING_STATS_JSON = [x[0] for x in PITCHING_STATS_ALL]
 PITCHING_STATS_HEADINGS = [x[1] for x in PITCHING_STATS_ALL]
 PITCHING_STATS_FMTS = [x[2] for x in PITCHING_STATS_ALL]
@@ -171,7 +171,7 @@ def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=Non
         for person_stat in person_stats['stats']:
             stats_type = person_stat['group']['displayName']
             if stats_type == 'hitting':
-                # the last split has the combined stats
+                # TODO: what are these splits for?
                 split_stats = person_stat['splits'][-1]['stat']
                 if split_stats['atBats'] > 0:
                     stats[player_name]['hitting'] = dict()
@@ -179,14 +179,16 @@ def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=Non
                         stats[player_name]['hitting'][stat_name] = str(split_stats[stat_name])
 
             elif stats_type == 'fielding':
-                # the last split has the combined stats
-                split_stats = person_stat['splits'][-1]['stat']
+                # note: the splits are per-position
                 stats[player_name]['fielding'] = dict()
-                for stat_name in FIELDING_STATS_JSON:
-                    stats[player_name]['fielding'][stat_name] = str(split_stats[stat_name])
+                for position_stats in person_stat['splits']:
+                    position = position_stats['stat']['position']['abbreviation']
+                    stats[player_name]['fielding'][position] = dict()
+                    for stat_name in FIELDING_STATS_JSON:
+                        stats[player_name]['fielding'][position][stat_name] = str(position_stats['stat'][stat_name])
 
             elif stats_type == 'pitching':
-                # the last split has the combined stats
+                # TODO: what are these splits for?
                 split_stats = person_stat['splits'][-1]['stat']
                 stats[player_name]['pitching'] = dict()
                 for stat_name in PITCHING_STATS_JSON:
@@ -196,6 +198,7 @@ def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=Non
     color_off = ''
 
     outl = list()
+    outl.append('... showing active roster only ...')
 
     outl.append('HITTING')
     hitting_stats_fmt = ' '.join(HITTING_STATS_FMTS)
@@ -219,32 +222,61 @@ def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=Non
     outl.append('FIELDING')
     fielding_stats_fmt = ' '.join(FIELDING_STATS_FMTS)
     fielding_stats_hdr = fielding_stats_fmt.format(*[hdr for hdr in FIELDING_STATS_HEADINGS])
-    fielding_fmt = '{coloron}{name:<26}{fielding_stats}{coloroff}'
-    outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off, name='--------', fielding_stats=fielding_stats_hdr))
+    fielding_fmt = '{coloron}{name:<26}{pos:>3}{fielding_stats}{coloroff}'
+    outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off, name='--------', pos='POS', fielding_stats=fielding_stats_hdr))
     for player_name in sorted(list(stats)):
+        player_name_disp = player_name
         if 'fielding' in stats[player_name] and stats[player_name]['position'] != 'P':
-            fielding_stats = fielding_stats_fmt.format(*[stats[player_name]['fielding'][statval] for statval in FIELDING_STATS_JSON])
-            outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off,
-                                            name=player_name, fielding_stats=fielding_stats))
+            iter_count = 0
+            for position in stats[player_name]['fielding']:
+                iter_count += 1
+                fielding_stats = fielding_stats_fmt.format(*[stats[player_name]['fielding'][position][statval] for statval in FIELDING_STATS_JSON])
+                if len(stats[player_name]['fielding']) > 1 and iter_count > 1:
+                    player_name_disp = ''
+                outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off,
+                                                name=player_name_disp, pos=position, fielding_stats=fielding_stats))
     outl.append('')
-    outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off, name='Pitchers:', fielding_stats=fielding_stats_hdr))
+    outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off, name='PITCHERS:', pos='POS', fielding_stats=fielding_stats_hdr))
     for player_name in sorted(list(stats)):
+        player_name_disp = player_name
         if 'fielding' in stats[player_name] and stats[player_name]['position'] == 'P':
-            fielding_stats = fielding_stats_fmt.format(*[stats[player_name]['fielding'][statval] for statval in FIELDING_STATS_JSON])
-            outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off,
-                                            name=player_name, fielding_stats=fielding_stats))
+            iter_count = 0
+            for position in stats[player_name]['fielding']:
+                iter_count += 1
+                fielding_stats = fielding_stats_fmt.format(
+                    *[stats[player_name]['fielding'][position][statval] for statval in FIELDING_STATS_JSON])
+                if len(stats[player_name]['fielding']) > 1 and iter_count > 1:
+                    player_name_disp = ''
+                outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off,
+                                                name=player_name_disp, pos=position, fielding_stats=fielding_stats))
 
     outl.append('')
     outl.append('PITCHING')
+    outl.append('--------')
     pitching_stats_fmt = ' '.join(PITCHING_STATS_FMTS)
     pitching_stats_hdr = pitching_stats_fmt.format(*[hdr for hdr in PITCHING_STATS_HEADINGS])
     pitching_fmt = '{coloron}{name:<26}{pitching_stats}{coloroff}'
-    outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off, name='--------', pitching_stats=pitching_stats_hdr))
+    # outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off, name='--------', pitching_stats=pitching_stats_hdr))
+    # outl.append('----- Starting -----')
+    # outl.append('STARTING')
+    outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off, name='STARTING:', pitching_stats=pitching_stats_hdr))
     for player_name in sorted(list(stats)):
-        if 'pitching' in stats[player_name] and stats[player_name]['position'] == 'P':
+        if 'pitching' in stats[player_name] and stats[player_name]['position'] == 'P' \
+                and int(stats[player_name]['pitching']['gamesStarted']) > 0:
             pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] for statval in PITCHING_STATS_JSON])
             outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off,
                                             name=player_name, pitching_stats=pitching_stats))
+    # outl.append('----- Relief -----')
+    # outl.append('BULLPEN')
+    outl.append('')
+    outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off, name='BULLPEN:', pitching_stats=pitching_stats_hdr))
+    for player_name in sorted(list(stats)):
+        if 'pitching' in stats[player_name] and stats[player_name]['position'] == 'P' \
+                and int(stats[player_name]['pitching']['gamesStarted']) < 1:
+            pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] for statval in PITCHING_STATS_JSON])
+            outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off,
+                                            name=player_name, pitching_stats=pitching_stats))
+    for player_name in sorted(list(stats)):
         if 'pitching' in stats[player_name] and stats[player_name]['position'] != 'P':
             pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] for statval in PITCHING_STATS_JSON])
             outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off,
