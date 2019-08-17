@@ -121,14 +121,14 @@ def main(argv=None):
     parser.add_argument("--wait", action="store_true",
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
                               "Useful when combined with the --fetch option."))
-    parser.add_argument("--standings", nargs='?', const='division', metavar='[category]',
+    parser.add_argument("--standings", nargs='?', const='division', metavar='category',
                         help=("Display standings. This option will display the selected standings category, then exit. "
                               "'[category]' is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
                               "The standings category can be shortened down to one character (all matching "
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
-    parser.add_argument("--stats", nargs='?', const='team', metavar='[teamcode]',
+    parser.add_argument("--stats", nargs='?', const='', metavar='team|league|rookie[:category][:rostertype]',
                         help=("Display stats. This option will display the selected stats category, then exit. "
                               "Can be combined with -d/--date option to show stats for any given date.")
                         )
@@ -217,7 +217,7 @@ def main(argv=None):
         return 0
     if args.stats:
         # def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=None):
-        stats.get_team_stats(args.stats, None, 'all', None)
+        stats.get_stats(args.stats, args.date, None)
         return 0
 
     gamedata_retriever = mlbgamedata.GameDataRetriever()
