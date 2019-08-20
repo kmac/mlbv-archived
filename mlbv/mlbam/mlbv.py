@@ -157,7 +157,7 @@ def main(argv=None):
     config.CONFIG = config.Config(mlbconfig.DEFAULTS, args)
 
     # append log files if DEBUG is set (from top of file)
-    util.init_logging(os.path.join(config.CONFIG.dir,
+    util.init_logging(os.path.join(util.get_tempdir(),
                                    os.path.splitext(os.path.basename(sys.argv[0]))[0] + '.log'), True)
 
     global LOG
