@@ -149,7 +149,7 @@ def _display_standings(standings_type, display_title, date_str, args_filter, ran
     url = STANDINGS_URL.format(standings_type=standings_type,
                                league_ids=mlbapidata.get_league_ids(args_filter),
                                season=season_str, date=url_date_str)
-    json_data = request.request_json(url, 'standings-{}'.format(season_str), cache_stale=request.CACHE_SHORT)
+    json_data = request.request_json(url, 'standings-{}-{}'.format(season_str, standings_type), cache_stale=request.CACHE_SHORT)
 
     border = displayutil.Border(use_unicode=config.UNICODE)
 
@@ -186,7 +186,7 @@ def display_division_standings(date_str, args_filter, rank_tag='divisionRank', h
     url = STANDINGS_URL.format(standings_type=standings_type,
                                league_ids=mlbapidata.get_league_ids(args_filter),
                                season=season_str, date=url_date_str)
-    json_data = request.request_json(url, 'standings-{}'.format(season_str), cache_stale=request.CACHE_SHORT)
+    json_data = request.request_json(url, 'standings-{}-{}'.format(season_str, standings_type), cache_stale=request.CACHE_SHORT)
 
     border = displayutil.Border(use_unicode=config.UNICODE)
 
