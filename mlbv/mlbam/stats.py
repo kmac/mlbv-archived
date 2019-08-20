@@ -326,8 +326,17 @@ def _display_team_stats(stats, category):
                 outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off,
                                                 name=player_name, pitching_stats=pitching_stats))
         for player_name in sorted(list(stats)):
-            if 'pitching' in stats[player_name] and stats[player_name]['position'] != 'P':
+            if 'pitching' in stats[player_name] and stats[player_name]['position'] != 'P' and stats[player_name]['pitching']:
                 pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] for statval in PITCHING_STATS_JSON])
+                # pitching_stats = list()
+                # # pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] 
+                # for statval in PITCHING_STATS_JSON:
+                #     if statval in stats[player_name]['pitching']:
+                #         pitching_stats.append(stats[player_name]['pitching'][statval])
+                #     else:
+                #         print('player: {}, stats: {}'.format(player_name, stats[player_name]))
+                #         pitching_stats.append('-')
+                # pitching_stats = pitching_stats_fmt.format(pitching_stats)
                 outl.append(pitching_fmt.format(coloron=color_on, coloroff=color_off,
                                                 name=player_name, pitching_stats=pitching_stats))
 
