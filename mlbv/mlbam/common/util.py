@@ -9,7 +9,6 @@ import sys
 import tempfile
 import time
 
-import requests
 import textwrap
 
 from datetime import datetime
@@ -67,35 +66,16 @@ def die(msg, exit_code=1):
 
 def get_tempdir():
     """Create a directory for ourselves in the system tempdir."""
-    script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    tempdir = os.path.join(tempfile.gettempdir(), script_name)
+    tempdir = config.CONFIG.parser.get('tempdir', None)
+    if tempdir:
+        if '<timestamp>' in tempdir:
+            tempdir = tempdir.replace('<timestamp>', time.strftime('%Y-%m-%d-%H%M'))
+    else:
+        script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+        tempdir = os.path.join(tempfile.gettempdir(), script_name)
     if not os.path.exists(tempdir):
         os.makedirs(tempdir)
     return tempdir
-
-
-def request_json(url, output_filename=None):
-    """Sends a request expecting a json-formatted response."""
-    LOG.debug('Getting url=%s ...', url)
-    headers = {
-        'User-Agent': config.CONFIG.ua_iphone,
-        'Connection': 'close'
-    }
-    log_http(url, 'get', headers, sys._getframe().f_code.co_name)
-    response = requests.get(url, headers=headers, verify=config.VERIFY_SSL)
-    response.raise_for_status()
-
-    # Note: this fails on windows in some cases https://github.com/kennethreitz/requests-html/issues/171
-    if output_filename is not None and config.DEBUG and config.SAVE_JSON_FILE:
-        if config.SAVE_JSON_FILE_BY_TIMESTAMP:
-            json_file = os.path.join(get_tempdir(),
-                                     '{}-{}.json'.format(output_filename, time.strftime("%Y-%m-%d-%H%M")))
-        else:
-            json_file = os.path.join(get_tempdir(), '{}.json'.format(output_filename))
-        with open(json_file, 'w', encoding='utf-8') as out:  # write date to json_file
-            out.write(response.text)
-
-    return response.json()
 
 
 def convert_time_to_local(d):

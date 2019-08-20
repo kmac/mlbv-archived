@@ -9,6 +9,7 @@ from datetime import timezone
 from dateutil import parser
 
 import mlbv.mlbam.common.config as config
+import mlbv.mlbam.common.request as request
 import mlbv.mlbam.common.stream as stream
 import mlbv.mlbam.common.util as util
 
@@ -112,7 +113,7 @@ def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, in
         'https://search-api-mlbtv.mlb.com/svc/search/v2/graphql/persisted/'
         'query/core/Airings?variables={{%22partnerProgramIds%22%3A[%22{gamepk}%22]}}'
         ).format(gamepk=game_rec['game_pk'])
-    json_data = util.request_json(url, 'airings')
+    json_data = request.request_json(url, 'airings', cache_stale=request.CACHE_SHORT)
     for airing in json_data['data']['Airings']:
         # there is a separate BROADCAST_START for each broadcast, so do lookup based on passed-in media id
         LOG.debug("airing['mediaId']: %s, media_playback_id: %s", str(airing['mediaId']), media_playback_id)

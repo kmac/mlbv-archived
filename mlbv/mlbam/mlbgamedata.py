@@ -11,18 +11,15 @@ from datetime import timedelta
 from dateutil import parser
 
 import mlbv.mlbam.common.config as config
-import mlbv.mlbam.common.gamedata as gamedata
-import mlbv.mlbam.common.util as util
 import mlbv.mlbam.common.displayutil as displayutil
+import mlbv.mlbam.common.gamedata as gamedata
+import mlbv.mlbam.common.request as request
+import mlbv.mlbam.common.util as util
 
 from mlbv.mlbam.common.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)
-
-
-TEAM_CODES = ('ari', 'atl', 'bal', 'bos', 'chc', 'cws', 'cin', 'cle', 'col', 'det', 'fla', 'hou', 'kan', 'laa', 'lad',
-              'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'wsh')
 
 FILTERS = {
     'favs': '',  # is filled out by config parser
@@ -69,7 +66,7 @@ class GameDataRetriever:
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg)),tickets)'
         url = '{0}/api/v1/schedule?sportId=1&startDate={1}&endDate={1}&{2}'.format(config.CONFIG.parser['api_url'], date_str, hydrate)
 
-        json_data = util.request_json(url, 'gamedata')
+        json_data = request.request_json(url, 'gamedata-{}'.format(date_str), cache_stale=request.CACHE_SHORT)
 
         game_records = dict()  # we return this dictionary
 
@@ -266,7 +263,7 @@ class GameDataRetriever:
     @staticmethod
     def get_boxscore(game_pk):
         url = '{0}/api/v1/game/{1}/boxscore'.format(config.CONFIG.parser['api_url'], game_pk)
-        json_data = util.request_json(url, 'boxscore')
+        json_data = request.request_json(url, 'boxscore-{}'.format(game_pk), cache_stale=request.CACHE_SHORT)
         return json_data
 
 

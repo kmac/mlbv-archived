@@ -21,7 +21,6 @@ DEBUG = False
 VERBOSE = False
 VERIFY_SSL = True
 SAVE_JSON_FILE = True
-SAVE_JSON_FILE_BY_TIMESTAMP = False  # normally false; will save many .json files if set
 SAVE_PLAYLIST_FILE = False
 UNICODE = True
 DEFAULT_STREAM_START_OFFSET_SECS = 0
@@ -56,8 +55,6 @@ class Config:
             # Turn on some extras
             global SAVE_PLAYLIST_FILE
             SAVE_PLAYLIST_FILE = True
-            global SAVE_JSON_FILE_BY_TIMESTAMP
-            SAVE_JSON_FILE_BY_TIMESTAMP = True
 
     @staticmethod
     def __find_config_dir(script_name):

@@ -22,6 +22,7 @@ from datetime import timedelta
 import mlbv.mlbam.common.config as config
 import mlbv.mlbam.common.gamedata as gamedata
 import mlbv.mlbam.common.util as util
+import mlbv.mlbam.mlbapidata as mlbapidata
 import mlbv.mlbam.mlbconfig as mlbconfig
 import mlbv.mlbam.mlbgamedata as mlbgamedata
 import mlbv.mlbam.standings as standings
@@ -30,6 +31,9 @@ import mlbv.mlbam.mlbstream as mlbstream
 
 
 LOG = None  # initialized in init_logging
+
+HELP_TEAM_CODES = ('ari', 'atl', 'bal', 'bos', 'chc', 'cws', 'cin', 'cle', 'col', 'det', 'fla', 'hou', 'kan', 'laa', 'lad',
+                   'mil', 'min', 'nym', 'nyy', 'oak', 'phi', 'pit', 'sd', 'sf', 'sea', 'stl', 'tb', 'tex', 'tor', 'wsh')
 
 
 HELP_HEADER = """MLB game tracker and stream viewer.
@@ -76,7 +80,7 @@ def main(argv=None):
     parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
     parser.add_argument("-t", "--team",
-                        help="Play selected game feed for team, one of: {}".format(mlbgamedata.TEAM_CODES))
+                        help="Play selected game feed for team, one of: {}".format(HELP_TEAM_CODES))
     parser.add_argument("--info", nargs='?', const='full', metavar='full|short', choices=('full', 'short'),
                         help=("Show extended game information inline (articles/text). "
                               "Default is 'full'. Use --info=short to show only summaries (exclude full articles). "
@@ -137,6 +141,7 @@ def main(argv=None):
                               "[FILTER] is an optional filter as per --filter option"))
     parser.add_argument("-v", "--verbose", action="store_true", help=argparse.SUPPRESS)  # help="Increase output verbosity")
     parser.add_argument("-D", "--debug", action="store_true", help=argparse.SUPPRESS)    # help="Turn on debug output")
+    parser.add_argument("--cache", help=argparse.SUPPRESS)    # normal, never, forever, ...
     args = parser.parse_args()
 
     if args.usage:
@@ -168,6 +173,8 @@ def main(argv=None):
         config.CONFIG.parser['debug'] = 'true'
     if args.verbose:
         config.CONFIG.parser['verbose'] = 'true'
+    if args.cache:
+        config.CONFIG.parser['cache'] = args.cache
     if args.username:
         config.CONFIG.parser['username'] = args.username
     if args.password:
@@ -176,7 +183,7 @@ def main(argv=None):
         config.CONFIG.parser['stream_start_offset_secs'] = str(args.inning_offset)
     if args.team:
         team_to_play = args.team.lower()
-        if team_to_play not in mlbgamedata.TEAM_CODES:
+        if team_to_play not in mlbapidata.get_team_abbrevs():
             # Issue #4 all-star game has funky team codes
             LOG.warning('Unexpected team code: %s', team_to_play)
     if args.feed:
@@ -217,7 +224,7 @@ def main(argv=None):
         return 0
     if args.stats:
         # def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=None):
-        stats.get_stats(args.stats, args.date, None)
+        stats.get_stats(args.stats, args.date)
         return 0
 
     gamedata_retriever = mlbgamedata.GameDataRetriever()
