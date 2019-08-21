@@ -43,6 +43,9 @@
 # Show full article content in --info output
 # info_display_articles=true
 
+# The number of entries returned for each league stat item:
+# stats_limit=10
+
 # Maximum article width in --info output
 # Note: if terminal width is less than this, the smaller value is used.
 # info_display_max_columns=110

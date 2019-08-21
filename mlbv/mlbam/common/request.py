@@ -42,6 +42,15 @@ def _get_cache_stale_secs(cache_stale=None):
     return cache_stale
 
 
+def _get_cachedir():
+    cachedir = os.path.join(util.get_tempdir(), 'cache')
+    if not os.path.exists(cachedir):
+        LOG.debug('Creating cache directory: ' + cachedir)
+    if not os.path.exists(cachedir):
+        os.makedirs(cachedir)
+    return cachedir
+
+
 def request_json(url, output_filename=None, cache_stale=None):
     """Sends a request expecting a json-formatted response.
     If output_filename is given, then the output is saved to file.
@@ -55,7 +64,7 @@ def request_json(url, output_filename=None, cache_stale=None):
     if output_filename and cache_stale:
         if output_filename in CACHE:
             return CACHE[output_filename]
-        json_file = os.path.join(util.get_tempdir(), '{}.json'.format(output_filename))
+        json_file = os.path.join(_get_cachedir(), '{}.json'.format(output_filename))
         if os.path.exists(json_file) and (int(time.time()) - os.path.getmtime(json_file) < cache_stale):
             with open(json_file) as jfh:
                 CACHE[output_filename] = json.load(jfh)
@@ -74,7 +83,7 @@ def request_json(url, output_filename=None, cache_stale=None):
 
     # Note: this fails on windows in some cases https://github.com/kennethreitz/requests-html/issues/171
     if output_filename is not None or (config.DEBUG and config.SAVE_JSON_FILE):
-        json_file = os.path.join(util.get_tempdir(), '{}.json'.format(output_filename))
+        json_file = os.path.join(_get_cachedir(), '{}.json'.format(output_filename))
         with open(json_file, 'w', encoding='utf-8') as out:  # write date to json_file
             out.write(response.text)
     if cache_stale:

@@ -80,6 +80,84 @@ PITCHING_STATS_JSON = [x[0] for x in PITCHING_STATS]
 PITCHING_STATS_HEADINGS = [x[1] for x in PITCHING_STATS]
 PITCHING_STATS_FMTS = [x[2] for x in PITCHING_STATS]
 
+LEAGUE_STATS = {
+    'hitting': (
+        ('battingAverage', 'Average', 'AVG'),
+        ('hits', 'Hits', 'H'),
+        ('homeRuns', 'Home Runs', 'HR'),
+        ('runsBattedIn', 'Runs Batted In', 'RBI'),
+        ('runs', 'Runs', 'R'),
+        ('onBasePlusSlugging', 'On-Base Plus Slugging', 'OPS'),
+        ('onBasePercentage', 'On-Base Percentage', 'OBP'),
+        ('sluggingPercentage', 'Slugging Percentage', 'SLG'),
+        ('strikeouts', 'Strike Outs', 'K'),
+        ('walks', 'Walks', 'BB'),
+        ('stolenBases', 'Stolen Bases', 'SB'),
+        # ('flyouts', 'Flyouts', 'FLY'),
+        ('extraBaseHits', 'Extra Base Hits', 'EBH'),
+        ('doubles', 'Doubles', 'DB'),
+        ('triples', 'Triples', 'TR'),
+        ('atBats', 'At Bats', 'AB'),
+        ('groundIntoDoublePlays', 'Ground Into Double Plays', 'GIDP'),
+    ),
+    'fielding': (
+        ('errors', 'Errors', 'E'),
+        ('throwingErrors', 'Throwing Errors', 'TE'),
+        ('assists', 'Assists', 'A'),
+        # Boring: too many at 100%: ('fieldingPercentage', 'Fielding Percentage', 'FP'),
+        ('doublePlays', 'Double Plays', 'DP'),
+        # ('outfieldAssists', 'Outfield Assists', 'OA'),
+        ('putOuts', 'Putouts', 'PO'),
+        ('rangeFactorPerGame', 'Range Factor Per Game', 'RF/G'),
+        ('rangeFactorPer9Inn', 'Range Factor Per 9 Innings', 'RF/9'),
+    ),
+    'pitching': (
+        ('earnedRunAverage', 'Earned Run Average', 'ERA'),
+        ('walksAndHitsPerInningPitched', 'Walks & Hits / Inning Pitched', 'WHIP'),
+        ('strikeouts', 'Strikeouts', 'K'),
+        ('walks', 'Walks', 'BB'),
+        ('wins', 'Wins', 'W'),
+        ('winPercentage', 'Win Percentage', 'W%'),
+        ('losses', 'Losses', 'L'),
+        ('saves', 'Saves', 'SV'),
+        ('holds', 'Holds', 'HOLD'),
+        ('hitsPer9Inn', 'Hits Per 9 Innings', 'H/9'),
+        ('strikeoutsPer9Inn', 'Strikeouts Per 9 Innings', 'K/9'),
+        ('walksPer9Inn', 'Walks Per 9 Innings', 'BB/9'),
+        ('strikeoutWalkRatio', 'Strikeout/Walk Ratio', 'K/BB'),
+        ('wildPitch', 'Wild Pitch', 'WP'),
+        ('hitBatsman', 'Hit Batsman', 'HB'),
+        # ('gamesPlayed', 'Games Played', 'GP'),
+        ('inningsPitched', 'Innings Pitched', 'IP'),
+        ('totalBattersFaced', 'Total Batters Faced', 'TBat'),
+        ('numberOfPitches', 'Number of Pitches', 'NumP'),
+        ('pitchesPerInning', 'Pitches Per Inning', 'P/I'),
+        # ('gamesStarted', 'Games Started', 'GS'),
+        # ('shutouts', 'Shutouts', 'SO'),
+        # ('passedBalls', 'Passed Balls', 'PB'),
+        # ('airOuts', 'Air Outs', 'AO'),
+        # ('balk', 'Balk', 'BALK'),
+        # ('blownSaves', 'Blown Saves', 'BSV'),
+        # ('chances', 'Chances', 'CH'),
+        # ('completeGames', 'Complete Games', 'CG'),
+        # ('earnedRun', 'Earned Run', 'ER'),
+        # ('innings', 'Innings', 'I'),
+        # ('pickoffs', 'Pickoffs', 'PICK'),
+        # ('saveOpportunities', 'Save Opportunities', 'SvO'),
+    )
+}
+
+LEAGUE_LEADER_TYPES_URL = 'http://statsapi.mlb.com/api/v1/leagueLeaderTypes'
+LEAGUE_LEADER_TYPES_URL = ('http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories={leaderCategories}'
+                           '&season={season}&sportId=1{leagueIdOptional}&statGroup={statGroup}&playerPool={playerPool}'
+                           '&limit={limit}&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName')
+
+# statGroup=pitching, hitting, fielding, ...
+# Available playerPool values: ['all','qualified','rookies'] (default is qualified)
+
+# http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10
+# http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName
+
 
 def _match(input_option, full_option):
     num_chars = len(input_option)
@@ -109,21 +187,17 @@ def _get_person_stats(person_ids, season):
 
 def _parse_stats_target(stats_target):
     category = 'all'
-    roster_type = 'active'
+    qualifier = None
     split_target = stats_target.split(':')
     target = split_target[0]
     if len(split_target) > 1 and split_target[1]:
         category = split_target[1]
     if len(split_target) > 2 and split_target[2]:
-        roster_type = split_target[2]
-        if roster_type not in ROSTER_TYPES:
-            LOG.error('Invalid roster type: %s', roster_type)
-            return None, None, None
-        roster_type = ROSTER_TYPES[roster_type]
-    return target, category, roster_type
+        qualifier = split_target[2]
+    return target, category, qualifier
 
 
-def get_stats(target_input, date_str=None):
+def get_stats(target_input, date_str=None, args_filter=None):
     """Displays team stats
 
     stats=team, filter by -o
@@ -146,29 +220,111 @@ def get_stats(target_input, date_str=None):
 
     season = date_str.split('-')[0]
 
-    target, category, roster_type = _parse_stats_target(target_input)
+    target, category, qualifier = _parse_stats_target(target_input)
 
     if target == 'league':
-        handle_league_stats()
-    elif target == 'rookie':
-        handle_rookie_stats()
+        limit = config.CONFIG.parser.get('stats_limit', 10)
+        handle_league_stats(category, qualifier, season, limit, args_filter)
     else:
         # fall-through: must be given a team abbrev:
         team_abbrev = target
-        team_id = mlbapidata.get_team_id(team_abbrev, season)
-        handle_team_stats(team_abbrev, category, roster_type, season, team_id)
+        handle_team_stats(team_abbrev, category, qualifier, season)
 
 
-def handle_league_stats():
-    LOG.error('Not implemented yet.')
+# def handle_league_stats(category, qualifier, season, league_id='103,104'):
+def handle_league_stats(category, qualifier, season, limit, args_filter):
+    """Handler for gather/display overal league stats.
+
+    League Format:  league:[category]:[qualifier]
+        [category]: one of: hitting, fielding, pitching, all [default: all]
+        [qualifier]: all, qualified, rookie [default: all]
+
+    Examples: league:hitting:qualified
+              league:hitting:rookie
+              league:hitting:all
+              league:pitching
+    """
+    if not qualifier:
+        qualifier = 'qualified'
+    if category == 'batting':
+        category = 'hitting'
+    if category == 'all':
+        categories = ['hitting', 'fielding', 'pitching']
+    else:
+        categories = [category, ]
+
+    league_id = ''
+    if args_filter and args_filter in mlbapidata.LEAGUE_FILTERS:
+        league_id = mlbapidata.LEAGUE_ID_MAP[args_filter]
+
+    for category in categories:
+        stats = _get_league_stats(category, qualifier, season, league_id, limit)
+        _display_league_stats(stats, category, season)
 
 
-def handle_rookie_stats():
-    LOG.error('Not implemented yet.')
+def _get_league_stats(category, qualifier, season, league_id, limit):
+    stats = dict()
+    player_pool = qualifier
+    for leader_category, title, heading in LEAGUE_STATS[category]:
+        stats[leader_category] = list()
+        if league_id:
+            league_id_optional = '&leagueId={}'.format(league_id)
+            league_stats = 'leaguestats-{}-{}-{}-{}-{}'.format(category, leader_category, qualifier, season, league_id)
+        else:
+            league_id_optional = ''
+            league_stats = 'leaguestats-{}-{}-{}-{}'.format(category, leader_category, qualifier, season)
+        json_data = request.request_json(LEAGUE_LEADER_TYPES_URL.format(leaderCategories=leader_category, season=season,
+                                                                        leagueIdOptional=league_id_optional, statGroup=category,
+                                                                        playerPool=player_pool, limit=limit),
+                                         league_stats, request.CACHE_SHORT)
+        # Fill out/normalize the stats for each leader. This format is common across all the leader stats
+        for league_leaders in json_data['leagueLeaders']:
+            if 'leaders' not in league_leaders:
+                continue
+            for leader_info in league_leaders['leaders']:
+                stats[leader_category].append({'rank': leader_info['rank'],
+                                               'value': leader_info['value'],
+                                               'team': leader_info['team']['name'],
+                                               'league': leader_info['league']['name'],
+                                               'name': leader_info['person']['fullName']})
+    return stats
 
 
-def handle_team_stats(team_abbrev, category, roster_type, season, team_id):
+def _display_league_stats(stats, category, season):
+    outl = list()
+    # color_on = '' # color_off = ''
+    top_header = '{} - {}'.format(season, category.upper())
+    outl.append(top_header)
+    outl.append('-' * len(top_header))
+    outl.append('')
+    stats_fmt = '{rank:<3} {name:<30} {value:>6} {team:>26} {league:>4}'
+    for leader_category, title, heading in LEAGUE_STATS[category]:
+        if stats[leader_category]:
+            # header:
+            outl.append(stats_fmt.format(rank='', name=title.upper(), value=heading, team='TEAM', league='LG'))
+            # individual stats:
+            for stat in stats[leader_category]:
+                outl.append(stats_fmt.format(rank=stat['rank'], name=stat['name'], value=stat['value'],
+                                             team=stat['team'], league=stat['league']))
+            outl.append('')
+    print('\n'.join(outl))
+
+
+def handle_team_stats(team_abbrev, category, roster_type, season):
     """Fetches and displays team stats."""
+
+    if not roster_type:
+        roster_type = 'active'
+    if roster_type not in ROSTER_TYPES:
+        LOG.error('Invalid roster type: %s', roster_type)
+        return None, None, None
+    roster_type = ROSTER_TYPES[roster_type]
+
+    if not category:
+        category = 'all'
+
+    team_id = mlbapidata.get_team_id(team_abbrev, season)
+
     roster = _get_roster(team_id, roster_type, season)
     person_ids = ','.join(list(roster))
 
@@ -341,25 +497,3 @@ def _display_team_stats(stats, category):
                                                 name=player_name, pitching_stats=pitching_stats))
 
     print('\n'.join(outl))
-
-
-# if _match(stats_option, 'all') or _match(stats_option, 'hitting'):
-#     display_team_stats_hitting(date_str, args_filter, rank_tag='divisionRank', header_tags=('league', 'division'))
-#     if _match(stats_option, 'all'):
-#         print('')
-# if _match(stats_option, 'all') or _match(stats_option, 'wildcard'):
-#     _display_standings('wildCard', 'Wildcard', date_str, args_filter, rank_tag='wildCardRank', header_tags=('league', ))
-#     if _match(stats_option, 'all'):
-#         print('')
-# if _match(stats_option, 'all') or _match(stats_option, 'overall') \
-#         or _match(stats_option, 'league') or _match(stats_option, 'conference'):
-#     _display_standings('byLeague', 'League', date_str, args_filter, rank_tag='leagueRank', header_tags=('league', ))
-#     if _match(stats_option, 'all'):
-#         print('')
-
-# if _match(stats_option, 'playoff') or _match(stats_option, 'postseason'):
-#     _display_standings('postseason', 'Playoffs', date_str, args_filter)
-# if _match(stats_option, 'preseason'):
-#     _display_standings('preseason', 'Preseason', date_str, args_filter)
-
-

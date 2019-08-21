@@ -132,7 +132,7 @@ def main(argv=None):
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
-    parser.add_argument("--stats", nargs='?', const='', metavar='team|league|rookie[:category][:rostertype]',
+    parser.add_argument("--stats", nargs='?', const='', metavar='league|team[:category][:qualifier]',
                         help=("Display stats. This option will display the selected stats category, then exit. "
                               "Can be combined with -d/--date option to show stats for any given date.")
                         )
@@ -224,7 +224,7 @@ def main(argv=None):
         return 0
     if args.stats:
         # def get_team_stats(team_code, team_code_id_map, stats_option='all', date_str=None):
-        stats.get_stats(args.stats, args.date)
+        stats.get_stats(args.stats, args.date, args.filter)
         return 0
 
     gamedata_retriever = mlbgamedata.GameDataRetriever()
