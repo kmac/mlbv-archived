@@ -234,7 +234,6 @@ def get_stats(target_input, date_str=None, args_filter=None):
         handle_team_stats(team_abbrev, category, qualifier, season)
 
 
-# def handle_league_stats(category, qualifier, season, league_id='103,104'):
 def handle_league_stats(category, qualifier, season, limit, args_filter):
     """Handler for gather/display overal league stats.
 
@@ -297,11 +296,18 @@ def _get_league_stats(category, qualifier, season, league_id, limit):
             if 'leaders' not in league_leaders:
                 continue
             for leader_info in league_leaders['leaders']:
-                stats[leader_category].append({'rank': leader_info['rank'],
-                                               'value': leader_info['value'],
-                                               'team': leader_info['team']['name'],
-                                               'league': leader_info['league']['name'],
-                                               'name': leader_info['person']['fullName']})
+                entry = {'rank': '', 'value': '', 'team': '', 'league': '', 'name': ''}
+                if 'rank' in leader_info:
+                    entry['rank'] = leader_info['rank']
+                if 'value' in leader_info:
+                    entry['value'] = leader_info['value']
+                if 'team' in leader_info:
+                    entry['team'] = leader_info['team']['name']
+                if 'league' in leader_info:
+                    entry['league'] = leader_info['league']['name']
+                if 'person' in leader_info:
+                    entry['name'] = leader_info['person']['fullName']
+                stats[leader_category].append(entry)
     return stats
 
 
