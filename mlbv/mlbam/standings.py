@@ -31,11 +31,6 @@ STANDINGS_TYPES = ('regularSeason', 'wildCard', 'divisionLeaders', 'wildCardWith
 STANDINGS_OPTIONS = ('all', 'division', 'conference', 'wildcard', 'league', 'postseason', 'preseason')
 
 
-def _match(input_option, full_option):
-    num_chars = len(input_option)
-    return input_option[:num_chars] == full_option[:num_chars]
-
-
 def _add_to_header(header, text):
     if header:
         return header + ' - ' + text
@@ -48,23 +43,23 @@ def get_standings(standings_option='all', date_str=None, args_filter=None):
     if date_str == time.strftime("%Y-%m-%d"):
         # strip out date string from url (issue #5)
         date_str = None
-    if _match(standings_option, 'all') or _match(standings_option, 'division'):
+    if util.substring_match(standings_option, 'all') or util.substring_match(standings_option, 'division'):
         display_division_standings(date_str, args_filter, rank_tag='divisionRank', header_tags=('league', 'division'))
-        if _match(standings_option, 'all'):
+        if util.substring_match(standings_option, 'all'):
             print('')
-    if _match(standings_option, 'all') or _match(standings_option, 'wildcard'):
+    if util.substring_match(standings_option, 'all') or util.substring_match(standings_option, 'wildcard'):
         _display_standings('wildCard', 'Wildcard', date_str, args_filter, rank_tag='wildCardRank', header_tags=('league', ))
-        if _match(standings_option, 'all'):
+        if util.substring_match(standings_option, 'all'):
             print('')
-    if _match(standings_option, 'all') or _match(standings_option, 'overall') \
-            or _match(standings_option, 'league') or _match(standings_option, 'conference'):
+    if util.substring_match(standings_option, 'all') or util.substring_match(standings_option, 'overall') \
+            or util.substring_match(standings_option, 'league') or util.substring_match(standings_option, 'conference'):
         _display_standings('byLeague', 'League', date_str, args_filter, rank_tag='leagueRank', header_tags=('league', ))
-        if _match(standings_option, 'all'):
+        if util.substring_match(standings_option, 'all'):
             print('')
 
-    if _match(standings_option, 'playoff') or _match(standings_option, 'postseason'):
+    if util.substring_match(standings_option, 'playoff') or util.substring_match(standings_option, 'postseason'):
         _display_standings('postseason', 'Playoffs', date_str, args_filter)
-    if _match(standings_option, 'preseason'):
+    if util.substring_match(standings_option, 'preseason'):
         _display_standings('preseason', 'Preseason', date_str, args_filter)
 
 

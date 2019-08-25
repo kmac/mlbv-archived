@@ -97,6 +97,35 @@ def get_csv_list(csv_string):
     return [l.strip() for l in csv_string.split(',')]
 
 
+def substring_match(input_option, full_option):
+    """Tests if the full_option string matches the input_option string.
+    Where input_option can be a substring of the full_option, it is considered a match.
+    full_option can also be a list.
+    """
+    if isinstance(full_option, (list, tuple)):
+        for fullopt in full_option:
+            if substring_match(input_option, fullopt):
+                return True
+        return None
+    num_chars = len(input_option)
+    return input_option[:num_chars] == full_option[:num_chars]
+
+
+def expand_substring_match(input_option, full_option):
+    """Tests if the full_option string matches the input_option string.
+    Where input_option can be a substring of the full_option, it is considered a match.
+    Returns the expanded full_option value, or None
+    """
+    if isinstance(full_option, (list, tuple)):
+        for fullopt in full_option:
+            if substring_match(input_option, fullopt):
+                return fullopt
+        return None
+    if substring_match(input_option, full_option):
+        return full_option
+    return None
+
+
 def log_http(url, request_type=None, headers=None, method_name=None):
     """Helper function to log http requests."""
     msg = ''

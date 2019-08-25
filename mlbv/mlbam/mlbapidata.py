@@ -30,7 +30,7 @@ TEAMS_URL = 'http://statsapi.mlb.com/api/v1/teams?season={season}&leagueIds=103,
 
 TEAM_DICT = dict()  # indexed by season
 
-LEAGUE_FILTERS = ('al', 'nl')
+LEAGUE_FILTERS = ('al', 'american', 'nl', 'national')
 DIVISION_FILTERS = ('ale', 'alc', 'alw', 'nle', 'nlc', 'nlw')
 
 

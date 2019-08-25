@@ -132,7 +132,7 @@ def main(argv=None):
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
-    parser.add_argument("--stats", nargs='?', const='', metavar='league|team[:category][:qualifier]',
+    parser.add_argument("--stats", nargs='?', const='league', metavar='league|<team>[:category][:qualifier]',
                         help=("Display stats. This option will display the selected stats category, then exit. "
                               "Can be combined with -d/--date option to show stats for any given date.")
                         )

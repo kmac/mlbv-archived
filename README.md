@@ -454,6 +454,102 @@ will match division or `--standings wild` will match wildcard.
 You can also use the `-o/--filter` option to narrow down what is displayed. e.g. `--standings division --filter ale`
 
 
+## 10. Statistics
+
+You can display statistics via the `--stats` option. This option displays the given statistics category then exits.
+
+There are two main stats categories:
+- league
+- team
+
+The stats category and further options are selected via arguments to `--stats`:
+
+    league|<team>[:category][:qualifier]
+
+Where the category and qualifier are used to narrow down the statistics returned.  The category is one of 'hitting', 'fielding', or
+'pitching', while the qualifier differs for league and team stats. These are outlined further in their respective sections below.
+
+By default, the league standings are displayed for today's date. 
+You can also add the `-d/--date yyyy-mm-dd` option to show standings for any given date.
+
+
+### Categories
+
+Statistics are broken out into three main categories:
+
+- hitting
+- fielding
+- pitching
+
+By default, all three categories are shown. You can specify any of the above to limit the output to one of the main categories.
+
+> You don't have to specify the full statistics category, it will match any substring given. e.g. `--stats league:h`
+> is the same as `league:hitting`.
+
+
+### League Statistics
+
+The league stats show the leaders over the three main categories, for various statistic measurements.
+
+The league `--stats` format is:
+
+    league:[category]:[qualifier]
+        [category]: one of: hitting, fielding, pitching, all [default: all]
+        [qualifier]: all, qualified, rookies [default: qualified]
+
+Filters:
+
+League stats can be filtered by league. Valid filters are `al`, `american`, or `nl`, `national`. These are specified via the standard `-o/--filter` option.
+
+Examples:
+
+    mlbv --stats league                    # league stats for all categories, qualified players
+    mlbv --stats league:hitting:qualified  # hitting stats, include qualified players (default)
+    mlbv --stats league:hitting:rookies    # hitting stats, only rookies
+    mlbv --stats league::rookies           # rookie leaders, all categories
+    mlbv --stats league:hitting:all        # hitting stats, all players
+    mlbv --stats league:fielding
+    mlbv --stats league:pitching
+    mlbv --stats league:pitching -o al     # filter by american league
+    mlbv --stats league -o nl              # filter by american league
+
+
+You can also include --date:
+
+    mlbv --stats league --date 2010-08-01  # league stats on 2010-08-01
+
+
+### Team Statistics
+
+The second form of statistics are for a given team. Here you use the team abbreviation plus the optional category:qualifier.
+The team form is
+
+    <team>:[category]:[qualifier]
+        <team>: the team abbreviation
+        [category]: one of: hitting, fielding, pitching, all [default: all]
+        [qualifier]: the roster type: active, full, 40man
+
+    Examples: tor:hitting:active  # active roster only (default)
+              tor:hitting:full    # full season roster
+              tor:hitting:40man   # 40-man roster
+              nyy:pitching        # Yankees pitching
+              bos:fielding        # Red Sox fielding
+
+
+> You don't have to specify the full statistics category, it will match any substring given. e.g. `--stats <team>:h`
+> is the same as `<team>:hitting`.
+
+Examples:
+
+    mlbv --stats tor                       # Blue Jays stats for all categories, qualified players
+    mlbv --stats tor:pitching              # Blue Jays pitching stats
+    mlbv --stats tor::full                 # Blue Jays stats, all categories, full season roster
+
+You can also include --date:
+
+    mlbv --stats league --date 2010-08-01  # league stats on 2010-08-01
+
+
 ## 11. Examples
 
 Note: the common options have both short and long options. Both are shown in these examples.

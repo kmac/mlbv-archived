@@ -154,6 +154,7 @@ LEAGUE_LEADER_TYPES_URL = ('http://statsapi.mlb.com/api/v1/stats/leaders?leaderC
 
 # statGroup=pitching, hitting, fielding, ...
 # Available playerPool values: ['all','qualified','rookies'] (default is qualified)
+LEAGUE_PLAYER_POOL_TYPES = ('all', 'qualified', 'rookies')
 
 # http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10
 # http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName
@@ -166,7 +167,8 @@ def _match(input_option, full_option):
 
 def _get_roster(team_id, roster_type, season):
     json_data = request.request_json(ROSTER_URL.format(teamId=team_id, rosterType=roster_type, season=season),
-                                     'roster-{}'.format(team_id), cache_stale=request.CACHE_DAY)
+                                     'roster-{}-{}-{}'.format(team_id, roster_type, season),
+                                     cache_stale=request.CACHE_DAY)
     roster = dict()
     for person in json_data['roster']:
         person_id = str(person['person']['id'])
@@ -179,9 +181,10 @@ def _get_roster(team_id, roster_type, season):
     return roster
 
 
-def _get_person_stats(person_ids, season):
+def _get_person_stats(person_ids, roster_type, season):
     json_data = request.request_json(MULTI_PERSON_STATS_URL.format(personIds=person_ids, season=season),
-                                     'person-stats-{}'.format(str(person_ids)), request.CACHE_SHORT)
+                                     'person-stats-{}-{}-{}'.format(str(person_ids), roster_type, season),
+                                     request.CACHE_SHORT)
     return json_data
 
 
@@ -237,29 +240,41 @@ def handle_league_stats(category, qualifier, season, limit, args_filter):
 
     League Format:  league:[category]:[qualifier]
         [category]: one of: hitting, fielding, pitching, all [default: all]
-        [qualifier]: all, qualified, rookie [default: all]
+        [qualifier]: all, qualified, rookies [default: qualified]
 
     Examples: league:hitting:qualified
-              league:hitting:rookie
+              league:hitting:rookies
               league:hitting:all
               league:pitching
     """
+    if util.substring_match(category, 'all'):
+        categories = ['hitting', 'fielding', 'pitching']
+    elif util.substring_match(category, ('hitting', 'batting')):
+        categories = ['hitting', ]
+    elif util.substring_match(category, 'fielding'):
+        categories = ['fielding', ]
+    elif util.substring_match(category, 'pitching'):
+        categories = ['pitching', ]
+    else:
+        LOG.error('Invalid category: %s', category)
+        return
+
     if not qualifier:
         qualifier = 'qualified'
-    if category == 'batting':
-        category = 'hitting'
-    if category == 'all':
-        categories = ['hitting', 'fielding', 'pitching']
     else:
-        categories = [category, ]
+        expanded_qualifier = util.expand_substring_match(qualifier, LEAGUE_PLAYER_POOL_TYPES)
+        if not expanded_qualifier:
+            LOG.error('Invalid qualifier: %s', qualifier)
+            return
+        qualifier = expanded_qualifier
 
     league_id = ''
     if args_filter and args_filter in mlbapidata.LEAGUE_FILTERS:
         league_id = mlbapidata.LEAGUE_ID_MAP[args_filter]
 
-    for category in categories:
-        stats = _get_league_stats(category, qualifier, season, league_id, limit)
-        _display_league_stats(stats, category, season)
+    for catg in categories:
+        stats = _get_league_stats(catg, qualifier, season, league_id, limit)
+        _display_league_stats(stats, catg, season)
 
 
 def _get_league_stats(category, qualifier, season, league_id, limit):
@@ -311,13 +326,33 @@ def _display_league_stats(stats, category, season):
 
 
 def handle_team_stats(team_abbrev, category, roster_type, season):
-    """Fetches and displays team stats."""
+    """Fetches and displays team stats.
+
+    Team Format:  <team>:[category]:[qualifier]
+        <team>: the team abbreviation
+        [category]: one of: hitting, fielding, pitching, all [default: all]
+        [qualifier]: the roster type: active, full, 40man
+
+    Examples: tor:hitting:active  # active roster only (default)
+              tor:hitting:full    # full season roster
+              tor:hitting:40man   # 40-man roster
+              tor:pitching
+              tor:fielding
+    """
 
     if not roster_type:
         roster_type = 'active'
-    if roster_type not in ROSTER_TYPES:
-        LOG.error('Invalid roster type: %s', roster_type)
-        return None, None, None
+    else:
+        found = False
+        for rt in ROSTER_TYPES:
+            if util.substring_match(roster_type, rt):
+                found = True
+                roster_type = rt
+                break
+        if not found:
+            LOG.error('Invalid roster type: %s', roster_type)
+            return None, None, None
+
     roster_type = ROSTER_TYPES[roster_type]
 
     if not category:
@@ -329,7 +364,7 @@ def handle_team_stats(team_abbrev, category, roster_type, season):
     person_ids = ','.join(list(roster))
 
     # Data
-    person_stats_json = _get_person_stats(person_ids, season)
+    person_stats_json = _get_person_stats(person_ids, roster_type, season)
     stats = _get_team_person_stats(person_stats_json, team_id, category)
     _display_team_stats(stats, category)
 
@@ -353,7 +388,9 @@ def _get_team_person_stats(person_stats_json, team_id, category):
 
             stats_type = person_stat['group']['displayName']
 
-            if stats_type == 'hitting' and category in ('all', 'hitting'):
+            if stats_type == 'hitting' and (util.substring_match(category, 'all')
+                                            or util.substring_match(category, 'batting')
+                                            or util.substring_match(category, 'hitting')):
                 for splits in person_stat['splits']:
                     if 'team' in splits and splits['team']['id'] == team_id:
                         split_stats = splits['stat']
@@ -365,7 +402,7 @@ def _get_team_person_stats(person_stats_json, team_id, category):
                                 else:
                                     stats[player_name]['hitting'][stat_name] = '-'
 
-            elif stats_type == 'fielding' and category in ('all', 'fielding'):
+            elif stats_type == 'fielding' and (util.substring_match(category, 'all') or util.substring_match(category, 'fielding')):
                 # note: the splits are per-position
                 stats[player_name]['fielding'] = dict()
                 for splits in person_stat['splits']:
@@ -378,7 +415,7 @@ def _get_team_person_stats(person_stats_json, team_id, category):
                             else:
                                 stats[player_name]['fielding'][position][stat_name] = '-'
 
-            elif stats_type == 'pitching' and category in ('all', 'pitching'):
+            elif stats_type == 'pitching' and (util.substring_match(category, 'all') or util.substring_match(category, 'pitching')):
                 stats[player_name]['pitching'] = dict()
                 for splits in person_stat['splits']:
                     if 'team' in splits and splits['team']['id'] == team_id:
@@ -397,7 +434,7 @@ def _display_team_stats(stats, category):
 
     outl = list()
 
-    if category in ('all', 'hitting'):
+    if util.substring_match(category, 'all') or util.substring_match(category, 'batting') or util.substring_match(category, 'hitting'):
         outl.append('HITTING')
         hitting_stats_fmt = ' '.join(HITTING_STATS_FMTS)
         hitting_stats_hdr = hitting_stats_fmt.format(*[hdr for hdr in HITTING_STATS_HEADINGS])
@@ -415,10 +452,10 @@ def _display_team_stats(stats, category):
                 hitting_stats = hitting_stats_fmt.format(*[stats[player_name]['hitting'][statval] for statval in HITTING_STATS_JSON])
                 outl.append(hitting_fmt.format(coloron=color_on, coloroff=color_off,
                                                name=player_name, hitting_stats=hitting_stats))
-        if category in 'all':
+        if category == 'all':
             outl.append('')
 
-    if category in ('all', 'fielding'):
+    if util.substring_match(category, 'all') or util.substring_match(category, 'fielding'):
         outl.append('FIELDING')
         fielding_stats_fmt = ' '.join(FIELDING_STATS_FMTS)
         fielding_stats_hdr = fielding_stats_fmt.format(*[hdr for hdr in FIELDING_STATS_HEADINGS])
@@ -452,10 +489,10 @@ def _display_team_stats(stats, category):
                         player_name_disp = ''
                     outl.append(fielding_fmt.format(coloron=color_on, coloroff=color_off,
                                                     name=player_name_disp, pos=position, fielding_stats=fielding_stats))
-        if category in 'all':
+        if category == 'all':
             outl.append('')
 
-    if category in ('all', 'pitching'):
+    if util.substring_match(category, 'all') or util.substring_match(category, 'pitching'):
         outl.append('PITCHING')
         outl.append('--------')
         pitching_stats_fmt = ' '.join(PITCHING_STATS_FMTS)
