@@ -514,9 +514,14 @@ Examples:
     mlbv --stats league -o nl              # filter by american league
 
 
-You can also include --date:
+You can also include --date, to specify the season (league stats are per-season):
 
-    mlbv --stats league --date 2010-08-01  # league stats on 2010-08-01
+    mlbv --stats league --date 2010  # league stats for 2010
+
+By default, 10 entries are given for each individual displayed statistic. You can override this via a config setting: `stats_limit`. For
+example, you could add this to your config file to only show 5 entries per individual statistic:
+
+    stats_limit=5
 
 
 ### Team Statistics
@@ -545,9 +550,9 @@ Examples:
     mlbv --stats tor:pitching              # Blue Jays pitching stats
     mlbv --stats tor::full                 # Blue Jays stats, all categories, full season roster
 
-You can also include --date:
+You can also include --date, narrowed down to a particular day (unlike league stats which are only specified for an entire season):
 
-    mlbv --stats league --date 2010-08-01  # league stats on 2010-08-01
+    mlbv --stats tor --date 2010-08-01  # Blue Jays team stats on 2010-08-01
 
 
 ## 11. Examples

@@ -126,15 +126,19 @@ def main(argv=None):
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
                               "Useful when combined with the --fetch option."))
     parser.add_argument("--standings", nargs='?', const='division', metavar='category',
-                        help=("Display standings. This option will display the selected standings category, then exit. "
+                        help=("Display the selected standings category, then exit. "
                               "'[category]' is one of: '" + ', '.join(standings.STANDINGS_OPTIONS) + "' [default: %(default)s]. "
                               "The standings category can be shortened down to one character (all matching "
                               "categories will be included), e.g. 'div'. "
                               "Can be combined with -d/--date option to show standings for any given date.")
                         )
-    parser.add_argument("--stats", nargs='?', const='league', metavar='league|<team>[:category][:qualifier]',
-                        help=("Display stats. This option will display the selected stats category, then exit. "
-                              "Can be combined with -d/--date option to show stats for any given date.")
+    parser.add_argument("--stats", nargs='?', const='league', metavar='league:<category>:<qualifier> or <team>:<category>:<qualifier>',
+                        help=("Display league or team statisics, then exit. "
+                              "<category> is one of: all, hitting, fielding, pitching [default: all]. "
+                              "League: <qualifier> is one of: qualified, rookies, all [default: qualified]. "
+                              "Team: <team> is team abbreviation, <qualifier> is one of: active, full, 40man [default: active]. "
+                              "Can be combined with -d/--date option to show stats for season (league) "
+                              "or any given date (team).")
                         )
     parser.add_argument("--recaps", nargs='?', const='all', metavar='FILTER',
                         help=("Play recaps for given teams. "

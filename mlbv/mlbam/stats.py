@@ -17,6 +17,8 @@ from mlbv.mlbam.common.displayutil import ANSI
 
 LOG = logging.getLogger(__name__)
 
+DEFAULT_LEAGUE_STATS_LIMIT = 10
+
 # http://statsapi-default-elb-prod-876255662.us-east-1.elb.amazonaws.com/docs/
 
 # STATS_GROUPS=('hitting', 'fielding', 'pitching')
@@ -26,7 +28,7 @@ PERSON_STATS_URL = 'http://statsapi.mlb.com/api/v1/people/{personId}?hydrate=sta
 # http://statsapi.mlb.com/api/v1/people/{personId}?hydrate=stats(group=[hitting,fielding],type=season)
 
 MULTI_PERSON_STATS_URL = ('http://statsapi.mlb.com/api/v1/people?personIds={personIds},'
-                          '&hydrate=stats(group=[hitting,fielding,pitching],type=season,season={season})')
+                          '&hydrate=stats(group={groups},type=season,season={season})')
 # http://statsapi.mlb.com/api/v1/people?personIds=545361,592273,&hydrate=stats(group=[hitting,fielding,pitching],type=season,season=2019)
 # http://statsapi.mlb.com/api/v1/people?personIds=545361,592273,571704&hydrate=stats(group=[hitting,fielding,pitching],type=season,season=2018)
 
@@ -80,12 +82,26 @@ PITCHING_STATS_JSON = [x[0] for x in PITCHING_STATS]
 PITCHING_STATS_HEADINGS = [x[1] for x in PITCHING_STATS]
 PITCHING_STATS_FMTS = [x[2] for x in PITCHING_STATS]
 
+
+LEAGUE_LEADER_TYPES_URL = 'http://statsapi.mlb.com/api/v1/leagueLeaderTypes'
+LEAGUE_LEADER_TYPES_URL = ('http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories={leaderCategories}'
+                           '&season={season}&sportId=1{leagueIdOptional}&statGroup={statGroup}&playerPool={playerPool}'
+                           '&limit={limit}&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName')
+
+# statGroup=pitching, hitting, fielding, ...
+# Available playerPool values: ['all','qualified','rookies'] (default is qualified)
+LEAGUE_PLAYER_POOL_TYPES = ('all', 'qualified', 'rookies')
+
+# http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10
+# http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName
+
+
 LEAGUE_STATS = {
     'hitting': (
         ('battingAverage', 'Average', 'AVG'),
-        ('hits', 'Hits', 'H'),
         ('homeRuns', 'Home Runs', 'HR'),
         ('runsBattedIn', 'Runs Batted In', 'RBI'),
+        ('hits', 'Hits', 'H'),
         ('runs', 'Runs', 'R'),
         ('onBasePlusSlugging', 'On-Base Plus Slugging', 'OPS'),
         ('onBasePercentage', 'On-Base Percentage', 'OBP'),
@@ -147,23 +163,6 @@ LEAGUE_STATS = {
     )
 }
 
-LEAGUE_LEADER_TYPES_URL = 'http://statsapi.mlb.com/api/v1/leagueLeaderTypes'
-LEAGUE_LEADER_TYPES_URL = ('http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories={leaderCategories}'
-                           '&season={season}&sportId=1{leagueIdOptional}&statGroup={statGroup}&playerPool={playerPool}'
-                           '&limit={limit}&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName')
-
-# statGroup=pitching, hitting, fielding, ...
-# Available playerPool values: ['all','qualified','rookies'] (default is qualified)
-LEAGUE_PLAYER_POOL_TYPES = ('all', 'qualified', 'rookies')
-
-# http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10
-# http://statsapi.mlb.com/api/v1/stats/leaders?leaderCategories=homeRuns&season=2019&sportId=1&leagueId=103&statGroup=hitting&playerPool=qualified&limit=10&fields=leagueLeaders,leaders,rank,value,team,name,league,name,person,fullName
-
-
-def _match(input_option, full_option):
-    num_chars = len(input_option)
-    return input_option[:num_chars] == full_option[:num_chars]
-
 
 def _get_roster(team_id, roster_type, season):
     json_data = request.request_json(ROSTER_URL.format(teamId=team_id, rosterType=roster_type, season=season),
@@ -181,9 +180,13 @@ def _get_roster(team_id, roster_type, season):
     return roster
 
 
-def _get_person_stats(person_ids, roster_type, season):
-    json_data = request.request_json(MULTI_PERSON_STATS_URL.format(personIds=person_ids, season=season),
-                                     'person-stats-{}-{}-{}'.format(str(person_ids), roster_type, season),
+def _get_person_stats(person_ids, category, roster_type, season):
+    if category == 'all':
+        groups = '[hitting,fielding,pitching]'
+    else:
+        groups = category
+    json_data = request.request_json(MULTI_PERSON_STATS_URL.format(personIds=person_ids, groups=groups, season=season),
+                                     'person-stats-{}-{}-{}-{}'.format(groups, roster_type, season, str(person_ids)),
                                      request.CACHE_SHORT)
     return json_data
 
@@ -195,6 +198,8 @@ def _parse_stats_target(stats_target):
     target = split_target[0]
     if len(split_target) > 1 and split_target[1]:
         category = split_target[1]
+        if category == 'batting':
+            category = 'hitting'
     if len(split_target) > 2 and split_target[2]:
         qualifier = split_target[2]
     return target, category, qualifier
@@ -223,10 +228,14 @@ def get_stats(target_input, date_str=None, args_filter=None):
 
     season = date_str.split('-')[0]
 
+    # strip out common mis-use of prepending team: to the team abbrev:
+    if target_input.startswith('team:'):
+        target_input = target_input[len('team:'):]
+
     target, category, qualifier = _parse_stats_target(target_input)
 
     if target == 'league':
-        limit = config.CONFIG.parser.get('stats_limit', 10)
+        limit = config.CONFIG.parser.get('stats_limit', DEFAULT_LEAGUE_STATS_LIMIT)
         handle_league_stats(category, qualifier, season, limit, args_filter)
     else:
         # fall-through: must be given a team abbrev:
@@ -248,7 +257,7 @@ def handle_league_stats(category, qualifier, season, limit, args_filter):
     """
     if util.substring_match(category, 'all'):
         categories = ['hitting', 'fielding', 'pitching']
-    elif util.substring_match(category, ('hitting', 'batting')):
+    elif util.substring_match(category, 'hitting'):
         categories = ['hitting', ]
     elif util.substring_match(category, 'fielding'):
         categories = ['fielding', ]
@@ -273,7 +282,7 @@ def handle_league_stats(category, qualifier, season, limit, args_filter):
 
     for catg in categories:
         stats = _get_league_stats(catg, qualifier, season, league_id, limit)
-        _display_league_stats(stats, catg, season)
+        _display_league_stats(stats, catg, season, limit)
 
 
 def _get_league_stats(category, qualifier, season, league_id, limit):
@@ -311,14 +320,17 @@ def _get_league_stats(category, qualifier, season, league_id, limit):
     return stats
 
 
-def _display_league_stats(stats, category, season):
+def _display_league_stats(stats, category, season, limit):
     outl = list()
     # color_on = '' # color_off = ''
     top_header = '{} - {}'.format(season, category.upper())
     outl.append(top_header)
     outl.append('-' * len(top_header))
     outl.append('')
-    stats_fmt = '{rank:<3} {name:<30} {value:>6} {team:>26} {league:>4}'
+    if int(limit) < 100:
+        stats_fmt = '{rank:>2} {name:<30} {value:>6} {team:>26} {league:>4}'
+    else:
+        stats_fmt = '{rank:>3} {name:<30} {value:>6} {team:>26} {league:>4}'
     for leader_category, title, heading in LEAGUE_STATS[category]:
         if stats[leader_category]:
             # header:
@@ -350,14 +362,14 @@ def handle_team_stats(team_abbrev, category, roster_type, season):
         roster_type = 'active'
     else:
         found = False
-        for rt in ROSTER_TYPES:
-            if util.substring_match(roster_type, rt):
+        for rtype in ROSTER_TYPES:
+            if util.substring_match(roster_type, rtype):
                 found = True
-                roster_type = rt
+                roster_type = rtype
                 break
         if not found:
             LOG.error('Invalid roster type: %s', roster_type)
-            return None, None, None
+            return
 
     roster_type = ROSTER_TYPES[roster_type]
 
@@ -370,7 +382,7 @@ def handle_team_stats(team_abbrev, category, roster_type, season):
     person_ids = ','.join(list(roster))
 
     # Data
-    person_stats_json = _get_person_stats(person_ids, roster_type, season)
+    person_stats_json = _get_person_stats(person_ids, category, roster_type, season)
     stats = _get_team_person_stats(person_stats_json, team_id, category)
     _display_team_stats(stats, category)
 
@@ -394,9 +406,7 @@ def _get_team_person_stats(person_stats_json, team_id, category):
 
             stats_type = person_stat['group']['displayName']
 
-            if stats_type == 'hitting' and (util.substring_match(category, 'all')
-                                            or util.substring_match(category, 'batting')
-                                            or util.substring_match(category, 'hitting')):
+            if stats_type == 'hitting' and (util.substring_match(category, 'all') or util.substring_match(category, 'hitting')):
                 for splits in person_stat['splits']:
                     if 'team' in splits and splits['team']['id'] == team_id:
                         split_stats = splits['stat']
@@ -440,7 +450,7 @@ def _display_team_stats(stats, category):
 
     outl = list()
 
-    if util.substring_match(category, 'all') or util.substring_match(category, 'batting') or util.substring_match(category, 'hitting'):
+    if util.substring_match(category, 'all') or util.substring_match(category, 'hitting'):
         outl.append('HITTING')
         hitting_stats_fmt = ' '.join(HITTING_STATS_FMTS)
         hitting_stats_hdr = hitting_stats_fmt.format(*[hdr for hdr in HITTING_STATS_HEADINGS])
@@ -528,7 +538,7 @@ def _display_team_stats(stats, category):
             if 'pitching' in stats[player_name] and stats[player_name]['position'] != 'P' and stats[player_name]['pitching']:
                 pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] for statval in PITCHING_STATS_JSON])
                 # pitching_stats = list()
-                # # pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval] 
+                # # pitching_stats = pitching_stats_fmt.format(*[stats[player_name]['pitching'][statval]
                 # for statval in PITCHING_STATS_JSON:
                 #     if statval in stats[player_name]['pitching']:
                 #         pitching_stats.append(stats[player_name]['pitching'][statval])
