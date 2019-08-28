@@ -26,7 +26,13 @@ LOG = logging.getLogger(__name__)
 # this map is used to transform the statsweb feed name to something shorter
 FEEDTYPE_MAP = {
     'away': 'a',
+    'away-resume': 'a-res',
+    'away2': 'a2',
+    'away3': 'a3',
     'home': 'h',
+    'home-resume': 'h-res',
+    'home2': 'h2',
+    'home3': 'h3',
     'french': 'fr',
     'national': 'nat',
     'in_market_away': 'ima',
@@ -77,6 +83,13 @@ class GameDataRetriever:
             game_rec['doubleHeader'] = str(game['doubleHeader'])
             game_rec['gameNumber'] = str(game['gameNumber'])
             game_rec['mlbdate'] = parser.parse(str(game['gameDate']))
+
+            # Issue #23 handle resumed games
+            if 'resumeDate' in game:
+                game_rec['resumeDate'] = parser.parse(str(game['resumeDate']))
+            if 'resumedFrom' in game:
+                game_rec['resumedFrom'] = parser.parse(str(game['resumedFrom']))
+
             if 'gamesInSeries' in game:
                 game_rec['gamesInSeries'] = str(game['gamesInSeries'])
                 game_rec['seriesGameNumber'] = str(game['seriesGameNumber'])
@@ -200,6 +213,17 @@ class GameDataRetriever:
                         for stream in media['items']:
                             if stream['mediaFeedType'] != 'COMPOSITE' and stream['mediaFeedType'] != 'ISO':
                                 feedtype = str(stream['mediaFeedType']).lower()  # home, away, national, french, ...
+                                # Fix Issue #23 - resumed games show up on original day media feeds, with multiple entries for home and away
+                                # Handle it by naming the feed away-resume, home-resume, etc
+                                if 'resumeDate' in game_rec or 'resumedFrom' in game_rec:
+                                    resume_feedtype = feedtype + '-resume'
+                                    if resume_feedtype not in game_rec['feed']:
+                                        feedtype = resume_feedtype
+                                else:
+                                    # Maybe there is other cases where there is multiple home/away feeds?
+                                    extrafeednum = 2
+                                    while feedtype in game_rec['feed']:
+                                        feedtype += '{}'.format(extrafeednum)
                                 game_rec['feed'][feedtype] = dict()
                                 if 'mediaId' in stream:
                                     game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
@@ -363,6 +387,7 @@ class GameDatePresenter:
             #                                           gis=game_rec['gamesInSeries'],
             #                                           gn=game_rec['gameNumber'])
             series_info = "DH-{gn}".format(gn=game_rec['gameNumber'])
+
         game_info_str = "{time}: {a1} ({a2}) at {h1} ({h2})"\
             .format(time=util.convert_time_to_local(game_rec['mlbdate']),
                     a1=game_rec['away']['display'], a2=game_rec['away']['abbrev'].upper(),
@@ -463,6 +488,13 @@ class GameDatePresenter:
                         .format(coloron=color_on, coloroff=color_off,
                                 ginfo=game_info_str, series=series_info, gstate=game_state,
                                 feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
+
+        if 'resumeDate' in game_rec:
+            outl.append('  --> Will resume on: {} at {}'.format(datetime.strftime(game_rec['resumeDate'], '%Y-%m-%d'),
+                                                                util.convert_time_to_local(game_rec['resumeDate'])))
+        if 'resumedFrom' in game_rec:
+            outl.append('  --> Resumed from: {} at {}'.format(datetime.strftime(game_rec['resumedFrom'], '%Y-%m-%d'),
+                                                              util.convert_time_to_local(game_rec['resumedFrom'])))
 
         if show_info:
             # found_info = False
