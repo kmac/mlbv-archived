@@ -33,6 +33,19 @@ TEAM_DICT = dict()  # indexed by season
 LEAGUE_FILTERS = ('al', 'american', 'nl', 'national')
 DIVISION_FILTERS = ('ale', 'alc', 'alw', 'nle', 'nlc', 'nlw')
 
+FILTERS = {
+    'favs': '',  # is filled out by config parser
+    'ale': 'bal,bos,nyy,tb,tor',
+    'alc': 'cle,cws,det,kc,min',
+    'alw': 'hou,laa,oak,sea,tex',
+    'nle': 'atl,mia,nym,phi,wsh',
+    'nlc': 'chc,cin,mil,pit,stl,',
+    'nlw': 'ari,col,lad,sd,sf',
+}
+FILTERS['al'] = '{},{},{}'.format(FILTERS['ale'], FILTERS['alc'], FILTERS['alw'])
+FILTERS['nl'] = '{},{},{}'.format(FILTERS['nle'], FILTERS['nlc'], FILTERS['nlw'])
+
+
 
 def get_team_dict(season):
     if not season:

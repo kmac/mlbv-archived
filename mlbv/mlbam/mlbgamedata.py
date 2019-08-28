@@ -10,6 +10,7 @@ from datetime import datetime
 from datetime import timedelta
 from dateutil import parser
 
+import mlbv.mlbam.mlbapidata as mlbapidata
 import mlbv.mlbam.common.config as config
 import mlbv.mlbam.common.displayutil as displayutil
 import mlbv.mlbam.common.gamedata as gamedata
@@ -20,18 +21,6 @@ from mlbv.mlbam.common.displayutil import ANSI
 
 
 LOG = logging.getLogger(__name__)
-
-FILTERS = {
-    'favs': '',  # is filled out by config parser
-    'ale': 'bal,bos,nyy,tb,tor',
-    'alc': 'cle,cws,det,kan,min',
-    'alw': 'hou,laa,oak,sea,tex',
-    'nle': 'atl,fla,nym,phi,wsh',
-    'nlc': 'chc,cin,mil,pit,stl,',
-    'nlw': 'ari,col,lad,sd,sf',
-}
-FILTERS['al'] = '{},{},{}'.format(FILTERS['ale'], FILTERS['alc'], FILTERS['alw'])
-FILTERS['nl'] = '{},{},{}'.format(FILTERS['nle'], FILTERS['nlc'], FILTERS['nlw'])
 
 
 # this map is used to transform the statsweb feed name to something shorter
@@ -332,7 +321,7 @@ class GameDatePresenter:
 
         games_displayed_count = 0
         for game_pk in game_records:
-            if gamedata.apply_filter(game_records[game_pk], filter, FILTERS) is not None:
+            if gamedata.apply_filter(game_records[game_pk], filter, mlbapidata.FILTERS) is not None:
                 games_displayed_count += 1
                 outl.extend(self._display_game_details(header, game_pk, game_records[game_pk],
                                                        show_linescore,
