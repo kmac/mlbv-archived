@@ -548,7 +548,7 @@ class GameDatePresenter:
         outl.append('')
         # fetch boxscore
         json_data = GameDataRetriever.get_boxscore(game_rec['game_pk'])
-        batfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ab:>3} {run:>3} {hit:>3} {hr:>3} {rbi:>3} {bb:>3} {so:>3} {lob:>3}   {avg:>5} {ops:>5}{coloroff}'
+        batfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ab:>3} {hit:>3} {bb:>3} {so:>3} {run:>3} {hr:>3} {rbi:>3} {lob:>3}   {avg:>5} {ops:>5}{coloroff}'
         pitchfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ip:>4} {hit:>3} {run:>3} {er:>3} {bb:>3} {so:>3} {hr:>3}   {era:>5} {whip:>5}{coloroff}'
         for teamtype in ('away', 'home'):
             outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off,
@@ -558,7 +558,7 @@ class GameDatePresenter:
             # batters
             outl.append(batfmt.format(coloron=color_on, coloroff=color_off,
                                       num='', name='BATTING', pos='',
-                                      ab='AB', run='R', hit='H', hr='HR', rbi='RBI', bb='BB', so='SO',
+                                      ab='AB', hit='H', bb='BB', so='SO', run='R', hr='HR', rbi='RBI',
                                       lob='LOB', avg='AVG', ops='OPS'))
             index = 0
             for batter in json_data['teams'][teamtype]['batters']:
