@@ -1,3 +1,9 @@
+2019.09.02 v0.0.16 Add --stats option to display league or team stats
+- Support suspended/resumed games (fixes Issue #23)
+- Now caching json requests, under the tmp mlbv directory
+    - should not be noticeable, most pages are only cached for a few minutes
+    - will be able to use this for supporting unit tests
+
 2019.08.10 v0.0.15 Add --info option to display pregame/postgame text articles.
 
 2019.08.06 v0.0.14 Refactor packaging
