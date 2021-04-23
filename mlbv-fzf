@@ -1,0 +1,182 @@
+#!/bin/bash
+# vim: set filetype=sh:
+# shellcheck disable=SC2236  # prefer [ ! -z ] for readability over [ -n ]
+set -o nounset;  # Do not allow use of undefined vars. Use ${VAR:-} to use an undefined VAR
+set -o pipefail; # Catch the error in case a piped command fails
+# set -o errexit;  # Exit on error. Append "|| true" if you expect an error. Same as 'set -e'
+# set -o errtrace; # Exit on error inside any functions or subshells.
+# set -o xtrace;   # Turn on traces, useful while debugging (short form: on: 'set -x' off: 'set +x')
+
+################################################################################
+# Helpers
+
+SCRIPTNAME=$(basename "$0")
+
+DEBUG=
+
+help() {
+cat<<EOF
+A simple game launcher interface for MLBV. This provides a TUI wrapper around MLBV.
+This script requires [fzf](https://github.com/junegunn/fzf) to be installed and on your path 
+
+On launch, you are presented with the mlbv list of games for the selected day. You can
+then select a game, and finally the home or away team, after which mlbv is launched to 
+view the game.
+
+There are three ways to select a game:
+- Use the arrow keys (or Ctrl-n/p/j/k mappings)
+- Start typing for fuzzy-match
+- Use your mouse. Double-click to select.
+
+Then hit enter (or double-click) to select the home or away team for the correct feed, 
+and then enter again to launch the game via mlbv.
+
+Escape will exit without launching mlbv.
+
+USAGE: 
+
+  $SCRIPTNAME <options> [mlbv arguments]
+
+ARGUMENTS:
+  [mlbv arguments]:
+     For the most part, you can provide arguments to be passed into mlbv. Some of these
+     are captured for displaying the initial game list, notably:
+       - The date-based arguments are used for the game selection 
+         (e.g. --date ... or --yesterday works as you'd expect)
+       - Spoiler control: -n|--no-scores
+       - The --recap option filters the game to show the recap
+
+OPTIONS:
+  -h|--help: print this help
+  --cmd : Only print the final mlbv command (do not invoke it)
+
+EXAMPLES:
+  $SCRIPTNAME
+  $SCRIPTNAME --no-scores : no spoilers
+  $SCRIPTNAME --recap     : show recap of selected game
+  $SCRIPTNAME -i t1       : start from top of 1st inning
+EOF
+exit 1
+}
+
+# Logging: these all log to stderr
+die() { >&2 colorecho red "FATAL: $*"; exit 1; }
+die_with_rc() { local rc=$1; shift; >&2 colorecho red "FATAL: $*, rc=$rc"; exit "$rc"; }
+check_rc_die() { local rc=$1; shift; [ "$rc" != "0" ] && die_with_rc "$rc" "$@"; return 0; }
+log_error() { >&2 colorecho red "ERROR: $*"; }
+log_warn() { >&2 colorecho orange "WARN: $*"; }
+log_info() { >&2 echo "$*"; }
+log_debug() { if [ -n "$DEBUG" ]; then >&2 echo "DEBUG: $*"; fi; }
+log_progress() { >&2 colorecho green "$*"; }
+
+colorecho() {  # usage: colorecho <colour> <text> or colorecho -n <colour> <text>
+  local echo_arg=
+  if [ "$1" = "-n" ]; then echo_arg="-n"; shift; fi
+  local colour="$1"; shift
+  case "${colour}" in
+    red) echo $echo_arg -e "$(tput setaf 1)$*$(tput sgr0)"; ;;
+    green) echo $echo_arg -e "$(tput setaf 2)$*$(tput sgr0)"; ;;
+    green-bold) echo $echo_arg -e "$(tput setaf 2; tput bold)$*$(tput sgr0)"; ;;
+    yellow) echo $echo_arg -e "$(tput setaf 3; tput bold)$*$(tput sgr0)"; ;;
+    orange) echo $echo_arg -e "$(tput setaf 3)$*$(tput sgr0)"; ;;
+    blue) echo $echo_arg -e "$(tput setaf 4)$*$(tput sgr0)"; ;;
+    purple) echo $echo_arg -e "$(tput setaf 5)$*$(tput sgr0)"; ;;
+    cyan) echo $echo_arg -e "$(tput setaf 6)$*$(tput sgr0)"; ;;
+    bold) echo $echo_arg -e "$(tput bold)$*$(tput sgr0)"; ;;
+    normal|*) echo $echo_arg -e "$*"; ;;
+  esac
+}
+
+
+################################################################################
+# Main
+
+main() {
+  local game_select_switch="-t"
+  local cmd_only=
+  declare -a preserved_args
+  declare -a game_list_args
+  while [ $# -gt 0 ] ; do
+    case "${1:-""}" in
+      -h|--help)
+        help
+        ;;
+      -D|--debug)
+        DEBUG=1
+        ;;
+      -n|--no-sc*)
+        game_list_args+=("$1")
+        ;;
+      -d|--date)
+        game_list_args+=("$1"); preserved_args+=("$1")
+        shift
+        game_list_args+=("$1"); preserved_args+=("$1")
+        ;;
+      --yes*|--tom*)
+        game_list_args+=("$1"); preserved_args+=("$1")
+        ;;
+      --recap*)
+        game_select_switch="-o"
+        preserved_args+=("$1")
+        ;;
+      --cmd)
+        cmd_only=1
+        ;;
+      *)
+        preserved_args+=("$1")
+        ;;
+    esac
+    shift
+  done
+
+  if ! hash fzf; then
+    die "Cannot find fzf"
+  fi
+
+  local selected_line away home team dh_game
+
+  # shellcheck disable=SC2086
+  selected_line=$(mlbv ${game_list_args[*]} | fzf --ansi --header-lines=2 --cycle --prompt="mlbv ${preserved_args[*]} | Select game: ")
+  if [ ! $? ] || [ -z "$selected_line" ]; then
+    log_info "No game selected"
+    exit 0
+  fi
+  log_info $'Selected:\n'"$selected_line"
+  
+  # grab away and home team abbrevs by keying on the ( and )
+  away=$(echo "$selected_line" | awk 'BEGIN{FS="("}{print $2}' | awk 'BEGIN{FS=")"}{print $1}')
+  home=$(echo "$selected_line" | awk 'BEGIN{FS="("}{print $3}' | awk 'BEGIN{FS=")"}{print $1}')
+
+  # grab away and home team abbrevs by keying on the ( and ), pure-bash approach:
+  # (this doesn't work due to Final(10) result in extra innings
+  #away=${selected_line%%)*}  # delete longest match of ')*' from back of string
+  #away=${away##*\(}          # delete longest match of '*(' from front of string
+  #home=${selected_line%)*}   # delete shortest match of ')*' from back of string
+  #home=${home##*\(}          # delete longest match of '*(' from front of string
+  
+  # Check for doubleheader game
+  dh_game=
+  if [ "${selected_line/DH-/}" != "$selected_line" ]; then
+    dh_game=${selected_line##*DH-}
+    dh_game=${dh_game:0:1}
+    dh_game="--game $dh_game "
+  fi
+  
+  team=$(printf "%s\n%s" "${away}" "${home}" | fzf --prompt="Select team for feed: ")
+  if [ ! $? ] || [ -z "$team" ]; then
+    log_info "No team selected"
+    exit 0
+  fi
+  
+  local cmd="mlbv $game_select_switch $team ${dh_game}${preserved_args[*]}"
+  echo "$cmd"
+  if [ -z "$cmd_only" ]; then
+    $cmd
+  fi
+}
+
+# Execute main if script is executed directly (not sourced):
+# This allows for shunit2 testing (https://github.com/kward/shunit2)
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+  main "$@"
+fi
