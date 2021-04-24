@@ -1,19 +1,6 @@
 mlbv - MLB stream viewer
 ========================
 
-## UPDATE: MLBv is fixed!
-
-It currently *heavily* borrows from [streamglob](https://github.com/sdelafond/streamglob), and you should probably
-use that. The problem is that some dependencies used by streamglob are incompatible with Windows. MLBv works with
-Windows, so this is the place to be until streamglob sorts out Windows compatibility.
-
-There is currently a ton of repeated, unused, and sloppy code which was taken from streamglob, so feel free to
-contribute.
-
-----
-
-
-
 `mlbv` is a command-line interface to the MLB.tv service. It's primary purpose is to allow you to view game
 streams on linux, including live streams, with a valid MLB tv subscription.  It also allows you to view game
 status, results and schedules, stream highlights (recap and condensed games), and filter results based on
@@ -29,10 +16,13 @@ Features:
 * show standings
 
 
-This project is inspired from the [MLBviewer](https://github.com/sdelafond/mlbviewer) project, although it
+This project is inspired from the [streamglob](https://github.com/tonycpsu/streamglob) project, although it
 differs in that it does not provide an interactive interface. It strictly command-line based, although it does
 offer quite a few options to view game-related data.  This project allows you to quickly find the game,
 status, or highlights of your favourite team.
+
+Note: if you have [fzf](https://github.com/junegunn/fzf) installed, try using the included wrapper script **`mlbv-fzf`** 
+which provides a more interactive interface for game selection.
 
 This package requires a valid MLB.tv subscription in order to view live or archived games. It is also subject
 to local blackout restrictions. However, if you don't have a subscription you can still view game recaps or
