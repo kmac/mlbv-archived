@@ -35,9 +35,13 @@ def select_feed_for_team(game_rec, team_code, feedtype=None):
                 LOG.info("Chose '%s' feed (override with --feed option)", feedtype)
         if feedtype not in game_rec['feed']:
             LOG.error("Feed is not available: %s", feedtype)
-            return None, None
-        return game_rec['feed'][feedtype]['mediaPlaybackId'], game_rec['feed'][feedtype]['mediaState']
-    return None, None
+            return None, None, None
+        if 'contentId' in game_rec['feed'][feedtype]:
+            content_id = game_rec['feed'][feedtype]['contentId']
+        else:
+            content_id = None
+        return game_rec['feed'][feedtype]['mediaPlaybackId'], game_rec['feed'][feedtype]['mediaState'], content_id
+    return None, None, None
 
 
 def find_highlight_url_for_team(game_rec, feedtype):
@@ -45,7 +49,7 @@ def find_highlight_url_for_team(game_rec, feedtype):
         raise Exception('highlight: feedtype must be condensed or recap')
     if feedtype in game_rec['feed'] and 'playback_url' in game_rec['feed'][feedtype]:
         return game_rec['feed'][feedtype]['playback_url']
-    LOG.error('No playback_url found for %s vs %s', game_rec['away']['abbrev'], game_rec['home']['abbrev'])
+    LOG.error('No playback_url found for %s vs %s, info: %s', game_rec['away']['abbrev'], game_rec['home']['abbrev'], str(game_rec['feed']))
     return None
 
 
@@ -75,36 +79,38 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
         playback_url = find_highlight_url_for_team(game_rec, feedtype)
         if playback_url is None:
             util.die("No playback url for feed '{}'".format(feedtype))
-        stream.play_highlight(playback_url,
-                              stream.get_fetch_filename(date_str, game_rec['home']['abbrev'],
-                                                        game_rec['away']['abbrev'], feedtype, fetch),
-                              is_multi_highlight)
-    else:
-        # handle full game (live or archive)
-        # this is the only feature requiring an authenticated session
-        import mlbv.mlbam.mlbsession as mlbsession
-        mlb_session = mlbsession.MLBSession()
+        return stream.play_highlight(playback_url,
+                                     stream.get_fetch_filename(date_str, game_rec['home']['abbrev'],
+                                                               game_rec['away']['abbrev'], feedtype, fetch),
+                                     is_multi_highlight)
 
-        media_playback_id, media_state = select_feed_for_team(game_rec, team_to_play, feedtype)
-        if media_playback_id is not None:
-            stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
-            if stream_url is not None:
-                offset = None
-                if config.SAVE_PLAYLIST_FILE:
-                    mlb_session.save_playlist_to_file(stream_url)
-                if inning_ident:
-                    offset = _calculate_inning_offset(inning_ident, media_state, media_playback_id, game_rec)
-                    if offset is None:
-                        return 0  # already logged
-                stream.streamlink(stream_url, mlb_session,
-                                  stream.get_fetch_filename(date_str, game_rec['home']['abbrev'],
-                                                            game_rec['away']['abbrev'], feedtype, fetch),
-                                  from_start, offset)
-            else:
-                LOG.error("No stream URL found")
-        else:
-            LOG.info("No game stream found for %s", team_to_play)
-    return 0
+    # handle full game (live or archive)
+    # this is the only feature requiring an authenticated session
+    import mlbv.mlbam.mlbsession as mlbsession
+    mlb_session = mlbsession.MLBSession()
+
+    media_playback_id, media_state, content_id = select_feed_for_team(game_rec, team_to_play, feedtype)
+    if media_playback_id is None:
+        LOG.error("No stream URL found")
+        return 0
+
+    stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
+    if stream_url is None:
+        LOG.info("No game stream found for %s", team_to_play)
+        return 0
+
+    # stream_url = stream_url.replace('akc', 'llc')
+    offset = None
+    if config.SAVE_PLAYLIST_FILE:
+        mlb_session.save_playlist_to_file(stream_url)
+    if inning_ident:
+        offset = _calculate_inning_offset(inning_ident, media_state, media_playback_id, game_rec)
+        if offset is None:
+            return 0  # already logged
+    return stream.streamlink(stream_url, mlb_session,
+                             stream.get_fetch_filename(date_str, game_rec['home']['abbrev'],
+                                                       game_rec['away']['abbrev'], feedtype, fetch),
+                             from_start, offset)
 
 
 def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, inning_half='top', overwrite_json=True):
@@ -120,7 +126,7 @@ def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, in
         if str(airing['mediaId']) != media_playback_id:
             continue
         if 'milestones' not in airing:
-            LOG.warn("_lookup_inning_timestamp_via_airings: no milestone data for airing: %s", str(airing))
+            LOG.warning("_lookup_inning_timestamp_via_airings: no milestone data for airing: %s", str(airing))
             continue
         for milestone in airing['milestones']:
             if milestone['milestoneType'] == "BROADCAST_START":
@@ -148,7 +154,7 @@ def _lookup_inning_timestamp_via_airings(game_rec, media_playback_id, inning, in
                             LOG.debug("Milestone data: %s", str(milestone))
                             return broadcast_start, inning_start_timestamp, inning_start_timestamp_str
 
-    LOG.warn("Could not locate '%s %s' inning", inning_half, inning)
+    LOG.warning("Could not locate '%s %s' inning", inning_half, inning)
     return broadcast_start, None, None
 
 

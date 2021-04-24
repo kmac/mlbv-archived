@@ -69,9 +69,11 @@ def play_highlight(playback_url, fetch_filename, is_multi_highlight=False):
             and not config.CONFIG.parser.getboolean('streamlink_highlights', True):
         cmd = [video_player, playback_url]
         LOG.info('Playing highlight: %s', str(cmd))
-        subprocess.run(cmd)
-    else:
-        streamlink_highlight(playback_url, fetch_filename, is_multi_highlight)
+        proc = subprocess.run(cmd, check=False)
+        if proc.returncode != 0:
+            LOG.error('Non-zero exit code from player: %s', proc.returncode)
+        return proc.returncode
+    return streamlink_highlight(playback_url, fetch_filename, is_multi_highlight)
 
 
 def streamlink_highlight(playback_url, fetch_filename, is_multi_highlight=False):
@@ -106,11 +108,14 @@ def streamlink_highlight(playback_url, fetch_filename, is_multi_highlight=False)
     streamlink_cmd.append(_get_resolution())
 
     LOG.info('Playing highlight via streamlink: %s', str(streamlink_cmd))
-    subprocess.run(streamlink_cmd)
+    proc = subprocess.run(streamlink_cmd, check=False)
+    if proc.returncode != 0:
+        LOG.error('Non-zero exit code from streamlink: %s', proc.returncode)
+    return proc.returncode
 
 
 def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, offset=None):
-    LOG.debug("Stream url: " + stream_url)
+    LOG.debug("Stream url: %s", stream_url)
     # media_auth_cookie_str = access_token
     # user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_iphone
     user_agent_hdr = 'User-Agent=' + config.CONFIG.ua_pc
@@ -166,9 +171,10 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
     streamlink_cmd.append(_get_resolution())
 
     LOG.debug('Playing: %s', str(streamlink_cmd))
-    subprocess.run(streamlink_cmd)
-
-    return streamlink_cmd
+    proc = subprocess.run(streamlink_cmd, check=False)
+    if proc.returncode != 0:
+        LOG.error('Non-zero exit code from streamlink: %s', proc.returncode)
+    return proc.returncode
 
 
 def play_audio(stream_url):
