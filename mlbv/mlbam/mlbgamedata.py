@@ -320,15 +320,15 @@ class GameDatePresenter:
                 header.append('{c_on}{dash}{c_off}'
                               .format(c_on=border.border_color, dash=border.thickdash*92, c_off=border.color_off))
             else:
-                header.append("{:48} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
+                header.append("{:50} {:^7} {pipe} {:^5} {pipe} {:^9} {pipe} {}"
                               .format(date_hdr, 'Series', 'Score', 'State', 'Feeds', pipe=border.pipe))
                 header.append("{c_on}{}{pipe}{}{pipe}{}{pipe}{}{c_off}"
-                              .format(border.thickdash * 57, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
+                              .format(border.thickdash * 59, border.thickdash * 7, border.thickdash * 11, border.thickdash * 16,
                                       pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
         else:
-            header.append("{:48} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
+            header.append("{:50} {:^7} {pipe} {:^9} {pipe} {}".format(date_hdr, 'Series', 'State', 'Feeds', pipe=border.pipe))
             header.append("{c_on}{}{pipe}{}{pipe}{}{c_off}"
-                          .format(border.thickdash * 57, border.thickdash * 11, border.thickdash * 16,
+                          .format(border.thickdash * 59, border.thickdash * 11, border.thickdash * 16,
                                   pipe=border.junction, c_on=border.border_color, c_off=border.color_off))
         return header
 
@@ -482,7 +482,7 @@ class GameDatePresenter:
                                                 ginfo='', lscore=linescore_dict['home']))
             else:
                 # single-line game score
-                outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} "
+                outl.append(("{coloron}{ginfo:<50} {series:^7}{coloroff} "
                              "{pipe} {coloron}{score:^5}{coloroff} {pipe} "
                              "{gscoloron}{gstate:<9}{gscoloroff} {pipe} {coloron}{feeds}{coloroff}")
                             .format(coloron=color_on, coloroff=color_off,
@@ -490,7 +490,7 @@ class GameDatePresenter:
                                     gscoloron=game_state_color_on, gstate=game_state, gscoloroff=game_state_color_off,
                                     feeds=self.__get_feeds_for_display(game_rec), pipe=border.pipe))
         else:  # no scores
-            outl.append(("{coloron}{ginfo:<48} {series:^7}{coloroff} {pipe} "
+            outl.append(("{coloron}{ginfo:<50} {series:^7}{coloroff} {pipe} "
                          "{coloron}{gstate:^9}{coloroff} {pipe} {coloron}{feeds}{coloroff}")
                         .format(coloron=color_on, coloroff=color_off,
                                 ginfo=game_info_str, series=series_info, gstate=game_state,
