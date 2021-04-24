@@ -136,7 +136,7 @@ main() {
   local selected_line away home team dh_game
 
   # shellcheck disable=SC2086
-  selected_line=$(mlbv ${game_list_args[*]} | fzf --ansi --header-lines=2 --cycle --prompt="mlbv ${preserved_args[*]} | Select game: ")
+  selected_line=$(mlbv ${game_list_args[*]} | fzf --ansi --header-lines=2 --cycle --info=default --prompt="mlbv ${preserved_args[*]} | Select game: ")
   if [ ! $? ] || [ -z "$selected_line" ]; then
     log_info "No game selected"
     exit 0

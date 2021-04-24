@@ -37,6 +37,7 @@ setup(
         'mlbv': [
             'README.md',
             'config.template'
+            'mlbv-fzf'
         ]
     },
     install_requires=[
