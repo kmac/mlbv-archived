@@ -76,7 +76,7 @@ def main(argv=None):
                         help="Generates a config file using a combination of defaults plus prompting for MLB.tv credentials.")
     parser.add_argument("--usage", action="store_true", help="Display full usage help.")
     parser.add_argument("-d", "--date", help="Display games/standings for date. Format: yyyy-mm-dd")
-    parser.add_argument("--days", type=int, default=1, help="Number of days to display")
+    parser.add_argument("--days", type=int, default=1, help="Number of days to display. Use negative number to go back from today.")
     parser.add_argument("--tomorrow", action="store_true", help="Use tomorrow's date")
     parser.add_argument("--yesterday", action="store_true", help="Use yesterday's date")
     parser.add_argument("-t", "--team",
@@ -221,6 +221,10 @@ def main(argv=None):
         args.date = datetime.strftime(datetime.today() - timedelta(days=1), "%Y-%m-%d")
     elif args.tomorrow:
         args.date = datetime.strftime(datetime.today() + timedelta(days=1), "%Y-%m-%d")
+    elif args.days < 0:
+        # To support Issue #49
+        args.days = abs(args.days)
+        args.date = datetime.strftime(datetime.today() - timedelta(days=args.days), "%Y-%m-%d")
     elif args.date is None:
         args.date = datetime.strftime(datetime.today(), "%Y-%m-%d")
 
