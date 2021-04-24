@@ -104,7 +104,7 @@ def main(argv=None):
     # TODO remove --from-start, in favour of --inning
     parser.add_argument("--from-start", action="store_true", help="Start live/archive stream from beginning")
     parser.add_argument("--favs", help=argparse.SUPPRESS)
-                        # help=("Favourite teams, a comma-separated list of favourite teams " "(normally specified in config file)"))
+    #                     help=("Favourite teams, a comma-separated list of favourite teams " "(normally specified in config file)"))
     parser.add_argument("-o", "--filter", nargs='?', const='favs', metavar='filtername|teams',
                         help=("Filter output. Either a filter name (see --list-filters) or a comma-separated "
                               "list of team codes, eg: 'tor.bos,wsh'. Default: favs"))
@@ -122,6 +122,7 @@ def main(argv=None):
     parser.add_argument("--username", help=argparse.SUPPRESS)  # help="MLB.tv username. Required for live/archived games.")
     parser.add_argument("--password", help=argparse.SUPPRESS)  # help="MLB.tv password. Required for live/archived games.")
     parser.add_argument("--fetch", "--record", action="store_true", help="Save stream to file instead of playing")
+    parser.add_argument("--url", action="store_true", help="Output mlb.com/tv URL instead of playing")
     parser.add_argument("--wait", action="store_true",
                         help=("Wait for game to start (live games only). Will block launching the player until game time. "
                               "Useful when combined with the --fetch option."))
@@ -171,7 +172,7 @@ def main(argv=None):
         config.CONFIG.parser['info_display_articles'] = 'false'
 
     if args.list_filters:
-        print('List of built filters: ' + ', '.join(sorted(mlbgamedata.FILTERS.keys())))
+        print('List of built filters: ' + ', '.join(sorted(mlbapidata.FILTERS.keys())))
         return 0
     if args.debug:
         config.CONFIG.parser['debug'] = 'true'
@@ -278,10 +279,16 @@ def main(argv=None):
                     LOG.info("No recap available for %s at %s", game_rec['away']['abbrev'].upper(), game_rec['home']['abbrev'].upper())
         return 0
 
-    # LOG.info('Sorry, MLB.tv stream support is broken. You should switch to https://github.com/tonycpsu/streamglob')
-    # return -1
-
     game_rec = mlbstream.get_game_rec(game_data, team_to_play, args.game)
+
+    if args.url:
+        media_playback_id, media_state, content_id = mlbstream.select_feed_for_team(game_rec, team_to_play)
+        tfs = game_rec['mlbdate'].strftime('%Y%m%d_%H%M')
+        full_url = f"https://www.mlb.com/tv/g{game_rec['game_pk']}/v{content_id}#game={game_rec['game_pk']},tfs={tfs}"
+        url = f"https://www.mlb.com/tv/g{game_rec['game_pk']}"
+        LOG.info('Game url: %s, full: %s', url, full_url)
+        print(url)
+        return 0
 
     if args.wait and not util.has_reached_time(game_rec['mlbdate']):
         LOG.info('Waiting for game to start. Local start time is %s', util.convert_time_to_local(game_rec['mlbdate']))
