@@ -8,10 +8,9 @@ import subprocess
 
 from datetime import datetime
 from datetime import timezone
-from dateutil import parser
 
 import mlbv.mlbam.common.config as config
-import mlbv.mlbam.common.util as util
+# import mlbv.mlbam.common.util as util
 
 
 LOG = logging.getLogger(__name__)
@@ -134,6 +133,13 @@ def streamlink(stream_url, mlb_session, fetch_filename=None, from_start=False, o
         streamlink_cmd.append("--hls-start-offset")
         streamlink_cmd.append(offset)
         LOG.debug("Using --hls-start-offset %s", offset)
+
+    cookie_dict = mlb_session.get_cookie_dict()
+    for key in cookie_dict:
+        cookie_str = '{}={}'.format(key, cookie_dict[key])
+        LOG.debug("Adding cookie: %s", cookie_str)
+        streamlink_cmd.append("--http-cookie")
+        streamlink_cmd.append(cookie_str)
 
     # Issue 22: support extra streamlink parameters, like --player-external-http
     streamlink_extra_args = config.CONFIG.parser['streamlink_extra_args']

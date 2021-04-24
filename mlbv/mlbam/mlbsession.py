@@ -325,7 +325,7 @@ class MLBSession(session.Session):
             "Authorization": self._state["access_token"],
             "User-agent": USER_AGENT,
             "Accept": "application/vnd.media-service+json; version=1",
-            "x-bamsdk-version": "3.0",
+            "x-bamsdk-version": "3.4",
             "x-bamsdk-platform": PLATFORM,
             "origin": "https://www.mlb.com"
         }
