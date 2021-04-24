@@ -227,6 +227,8 @@ class GameDataRetriever:
                                 game_rec['feed'][feedtype] = dict()
                                 if 'mediaId' in stream:
                                     game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaId'])
+                                    if 'contentId' in stream:
+                                        game_rec['feed'][feedtype]['contentId'] = str(stream['contentId'])
                                     game_rec['feed'][feedtype]['mediaState'] = str(stream['mediaState'])
                                     game_rec['feed'][feedtype]['eventId'] = str(stream['id'])
                                     game_rec['feed'][feedtype]['callLetters'] = str(stream['callLetters'])
@@ -246,10 +248,15 @@ class GameDataRetriever:
                             if len(media['items']) > 0:
                                 game_rec['feed'][feedtype] = dict()
                                 stream = media['items'][0]
-                                game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
                                 for playback_item in stream['playbacks']:
                                     if playback_item['name'] == config.CONFIG.parser['playback_scenario']:
                                         game_rec['feed'][feedtype]['playback_url'] = playback_item['url']
+                                if 'mediaPlaybackId' in game_rec['feed'][feedtype]:
+                                    game_rec['feed'][feedtype]['mediaPlaybackId'] = str(stream['mediaPlaybackId'])
+                                else:
+                                    # For Issue #46
+                                    LOG.debug('No mediaPlaybackId for %s: %s at %s, game#: %s', game_rec['game_pk'],
+                                              game_rec['away']['abbrev'], game_rec['home']['abbrev'], game_rec['gameNumber'])
                         # elif media['title'] == 'Audio':
                         #     for stream in media['items']:
                         #         feedtype = 'audio-' + str(stream['mediaFeedType']).lower()  # home, away, national, french, ...
