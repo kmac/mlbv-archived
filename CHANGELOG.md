@@ -1,3 +1,15 @@
+2021.04.24 v0.0.17 Fix various issues, add --url and mlbv-fzf
+- Add 'mlbv-fzf' wrapper script
+    - provides a simple game selection text-based user interface
+    - accepts relevant mlbv options for day/inning/record selection
+    - only works for the default, one-line game list (not for --linescore/--boxscore, etc)
+    - requires 'fzf' installed
+- Issue 42: mlbv now returns exit code from streamlink
+    - use this to check for failures
+- Issue 46: fix odd case of missing mediaPlaybackId
+- Issue 49: support negative value for --days (for "days ago")
+- Issue 50: add --url option to just get the mlb.com link for the selected game
+
 2019.09.02 v0.0.16 Add --stats option to display league or team stats
 - Support suspended/resumed games (fixes Issue #23)
 - Now caching json requests, under the tmp mlbv directory
