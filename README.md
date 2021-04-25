@@ -21,8 +21,8 @@ differs in that it does not provide an interactive interface. It strictly comman
 offer quite a few options to view game-related data.  This project allows you to quickly find the game,
 status, or highlights of your favourite team.
 
-Note: if you have [fzf](https://github.com/junegunn/fzf) installed, try using the included wrapper script **`mlbv-fzf`** 
-which provides a more interactive interface for game selection.
+Note: if you have [fzf](https://github.com/junegunn/fzf) installed, try using the included wrapper script **`mlbv-fzf`**
+([see wiki](https://github.com/kmac/mlbv/wiki/mlbv-fzf)) which provides a more interactive interface for game selection.
 
 This package requires a valid MLB.tv subscription in order to view live or archived games. It is also subject
 to local blackout restrictions. However, if you don't have a subscription you can still view game recaps or
