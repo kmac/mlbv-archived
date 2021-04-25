@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "mlbv"
+version = "0.0.18"
+description = "Command-line interface to MLB game information, game schedule and scores"
+authors = ["kmac <135567+kmac@users.noreply.github.com>"]
+license = "GPL-3.0-only"
+readme = "README.md"
+homepage = "https://github.com/kmac/mlbv"
+repository = "https://github.com/kmac/mlbv"
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'Environment :: Console',
+    'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    'Intended Audience :: End Users/Desktop',
+]
+keywords = ["cli", "streaming", "baseball", "mlb", "live-game"]
+include = ["CHANGELOG.md", "README.md", "config.template", "mlbv-fzf"]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+requests = "^2.25.1"
+streamlink = "^2.1.1"
+lxml = "^4.6.3"
+python-dateutil = "^2.8.1"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+mlbv = 'mlbv.mlbam.mlbv:main'
+
+[tool.poetry.urls]
+"Bug Reports" = "https://github.com/kmac/mlbv/issues"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
