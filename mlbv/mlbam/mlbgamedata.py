@@ -53,7 +53,7 @@ class GameDataRetriever:
 
         # https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=2018-03-26&endDate=2018-03-26&hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg
         # hydrate = 'hydrate=schedule.teams,schedule.linescore,schedule.game.content.media.epg'
-        hydrate = 'hydrate=broadcasts(all),game(content(all),editorial(preview,recap)),linescore,team,probablePitcher(note)'
+        hydrate = 'hydrate=broadcasts(all),game(content(media(epg)),editorial(preview,recap)),linescore,team,probablePitcher(note)'
         # hydrate = 'hydrate=linescore,team,game(content(summary,media(epg),editorial(preview,recap),highlights(highlights(items))))'
 
         # "&hydrate=linescore,team,game(content(summary,media(epg),editorial(preview,recap),highlights(highlights(items))))"
