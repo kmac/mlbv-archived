@@ -107,7 +107,7 @@ def main(argv=None):
     #                     help=("Favourite teams, a comma-separated list of favourite teams " "(normally specified in config file)"))
     parser.add_argument("-o", "--filter", nargs='?', const='favs', metavar='filtername|teams',
                         help=("Filter output. Either a filter name (see --list-filters) or a comma-separated "
-                              "list of team codes, eg: 'tor.bos,wsh'. Default: favs"))
+                              "list of team codes, eg: 'tor,bos,wsh'. Default: favs"))
     parser.add_argument("--list-filters", action='store_true', help="List the built-in filters")
     parser.add_argument("-g", "--game", default='1', choices=('1', '2'),
                         help="Select game number of double-header")
