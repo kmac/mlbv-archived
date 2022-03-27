@@ -112,7 +112,7 @@ def _get_team_str(teamrec, rank_tag):
         pct=teamrec['leagueRecord']['pct'],
         gb=teamrec['gamesBack'],
         wgb=teamrec['wildCardGamesBack'],
-        streak=teamrec['streak']['streakCode'],
+        streak=teamrec['streak']['streakCode'] if 'streak' in teamrec else '-',
         color_off=color_off)
 
 
