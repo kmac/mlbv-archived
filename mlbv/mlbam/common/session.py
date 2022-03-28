@@ -1,7 +1,8 @@
 """
 This is shamelessly taken from mlbstreamer https://github.com/tonycpsu/mlbstreamer
 because I didn't want to reinvent the login/auth/cookie management
-(code is modified somewhat arbitrarily. Changed to reduce some imports, and some just to simplify for my own understanding.)
+(code is modified somewhat arbitrarily. Changed to reduce some imports,
+and some just to simplify for my own understanding.)
 Thanks tonycpsu!
 
 """
@@ -10,9 +11,9 @@ import datetime
 import json
 import logging
 import os
-import requests
 import time
 import http.cookiejar
+import requests
 
 import dateutil.parser
 
@@ -27,14 +28,15 @@ COOKIE_FILE = os.path.join(config.CONFIG.dir, 'cookies')
 
 
 class SessionException(Exception):
+    """For identifying session issues."""
     pass
 
 
-class Session(object):
+class Session(abc.ABC):
+    """Base class of mlbam session"""
 
-    def __init__(self, user_agent, token_url_template, platform):
+    def __init__(self, user_agent, platform):
         self.user_agent = user_agent
-        self.token_url_template = token_url_template
         self.platform = platform
 
         self.session = requests.Session()
@@ -49,22 +51,12 @@ class Session(object):
             self._state = {
                 'api_key': None,
                 'client_api_key': None,
-                'token': None,
                 'access_token': None,
-                'access_token_expiry': None
+                'access_token_expiry': None,
+                'session_token': None,
+                'session_token_time': None
             }
-        self.login()
-
-    def __getattr__(self, attr):
-        if attr in ["delete", "get", "head", "options", "post", "put", "patch"]:
-            return getattr(self.session, attr)
-        raise AttributeError(attr)
-
-    def destroy(self):
-        if os.path.exists(COOKIE_FILE):
-            os.remove(COOKIE_FILE)
-        if os.path.exists(SESSION_FILE):
-            os.remove(SESSION_FILE)
+            # self.login()
 
     def load(self):
         with open(SESSION_FILE) as infile:
@@ -79,10 +71,6 @@ class Session(object):
     def login(self):
         return
 
-    @abc.abstractmethod
-    def is_logged_in(self):
-        return False
-
     def get_cookie_dict(self):
         return requests.utils.dict_from_cookiejar(self.session.cookies)
 
@@ -90,44 +78,30 @@ class Session(object):
         return self.get_cookie_dict().get(name)
 
     @property
-    def ipid(self):
-        return self.get_cookie('ipid')
-
-    @property
-    def fingerprint(self):
-        return self.get_cookie('fprt')
-
-    @property
     def api_key(self):
         if self._state['api_key'] is None:
-            self.update_api_keys()
+            self._refresh_access_token()
         return self._state['api_key']
 
     @property
     def client_api_key(self):
         if self._state['client_api_key'] is None:
-            self.update_api_keys()
+            self._refresh_access_token()
         return self._state['client_api_key']
 
-    @abc.abstractmethod
-    def update_api_keys(self):
-        return
-
     @property
-    def token(self):
-        LOG.debug("getting token")
-        if self._state['token'] is None:
-            headers = {"x-api-key": self.api_key}
-            response = self.session.get(self.token_url_template.format(ipid=self.ipid,
-                                                                       fingerprint=self.fingerprint,
-                                                                       platform=self.platform),
-                                        headers=headers)
-            self._state['token'] = response.text
-        return self._state['token']
+    def session_token(self):
+        if not self._state.get('session_token'):
+            self.login()
+            if not self._state.get('session_token'):
+                raise Exception("No session token (login failed)")
+        return self._state['session_token']
 
-    @token.setter
-    def token(self, value):
-        self._state['token'] = value
+    @session_token.setter
+    def session_token(self, val):
+        LOG.debug("setting session token: %s", val)
+        if val:
+            self._state['session_token'] = val
 
     @property
     def access_token_expiry(self):
@@ -142,21 +116,24 @@ class Session(object):
 
     @property
     def access_token(self):
-        LOG.debug("getting access token")
-        if not self._state['access_token'] or not self.access_token_expiry or \
-                self.access_token_expiry < datetime.datetime.now(tz=datetime.timezone.utc):
+        if (not self._state['access_token']
+                or not self.access_token_expiry
+                or self.access_token_expiry < datetime.datetime.now(
+                    tz=datetime.timezone.utc)):
+            LOG.debug("Refreshing access_token")
             try:
-                self._state['access_token'], self.access_token_expiry = self.get_access_token()
+                self._refresh_access_token()
             except requests.exceptions.HTTPError:
                 # Clear token and then try to get a new access_token
-                self.token = None
-                self._state['access_token'], self.access_token_expiry = self.get_access_token()
+                self._refresh_access_token(clear_token=True)
             self.save()
-            LOG.debug("access_token: %s", self._state['access_token'])
+            LOG.debug("Refreshed access_token: %s", self._state['access_token'])
+        else:
+            LOG.debug("Reusing access_token")
         return self._state['access_token']
 
     @abc.abstractmethod
-    def get_access_token(self):
+    def _refresh_access_token(self, clear_token=False):
         return None
 
     @abc.abstractmethod
