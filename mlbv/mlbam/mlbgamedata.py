@@ -273,7 +273,7 @@ class GameDataRetriever:
 
     def process_game_data(self, game_date, num_days=1):
         game_days_list = list()
-        for i in range(0, num_days):
+        for _ in range(0, num_days):
             game_records = self._get_games_by_date(game_date)
             if game_records is not None:
                 game_days_list.append((game_date, game_records))
@@ -335,7 +335,10 @@ class GameDatePresenter:
     def display_game_data(self, game_date, game_records, filter, show_info):
         show_scores = config.CONFIG.parser.getboolean('scores')
         # might as well show linescore if show_info is given
-        show_linescore = show_scores and (config.CONFIG.parser.getboolean('linescore') or config.CONFIG.parser.getboolean('boxscore') or show_info)
+        show_linescore = show_scores \
+            and (config.CONFIG.parser.getboolean('linescore')
+                 or config.CONFIG.parser.getboolean('boxscore')
+                 or show_info)
         show_boxscore = show_scores and config.CONFIG.parser.getboolean('boxscore')
         border = displayutil.Border(use_unicode=config.UNICODE)
         if game_records is None:
@@ -576,8 +579,10 @@ class GameDatePresenter:
         outl.append('')
         # fetch boxscore
         json_data = GameDataRetriever.get_boxscore(game_rec['game_pk'])
-        batfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ab:>3} {hit:>3} {bb:>3} {so:>3} {run:>3} {hr:>3} {rbi:>3} {lob:>3}   {avg:>5} {ops:>5}{coloroff}'
-        pitchfmt = '{coloron}{num:<2} {name:<30} {pos:>3}  {ip:>4} {hit:>3} {run:>3} {er:>3} {bb:>3} {so:>3} {hr:>3}   {era:>5} {whip:>5}{coloroff}'
+        batfmt = ('{coloron}{num:<2} {name:<30} {pos:>3}  {ab:>3} {hit:>3} {bb:>3} '
+                  '{so:>3} {run:>3} {hr:>3} {rbi:>3} {lob:>3}   {avg:>5} {ops:>5}{coloroff}')
+        pitchfmt = ('{coloron}{num:<2} {name:<30} {pos:>3}  {ip:>4} {hit:>3} {run:>3} '
+                    '{er:>3} {bb:>3} {so:>3} {hr:>3}   {era:>5} {whip:>5}{coloroff}')
         for teamtype in ('away', 'home'):
             outl.append('{coloron}{name}{coloroff}'.format(coloron=color_on, coloroff=color_off,
                                                            name=json_data['teams'][teamtype]['team']['name']))

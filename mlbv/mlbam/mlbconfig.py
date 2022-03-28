@@ -1,8 +1,6 @@
-import configparser
-import inspect
+"""MLB config definitions"""
+
 import logging
-import os
-import sys
 
 import mlbv.mlbam.common.config as config
 

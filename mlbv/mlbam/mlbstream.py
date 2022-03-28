@@ -94,6 +94,7 @@ def play_stream(game_rec, team_to_play, feedtype, date_str, fetch, from_start, i
         LOG.error("No stream URL found")
         return 0
 
+    # Authentication is triggered within here if necessary:
     stream_url = mlb_session.lookup_stream_url(game_rec['game_pk'], media_playback_id)
     if stream_url is None:
         LOG.info("No game stream found for %s", team_to_play)

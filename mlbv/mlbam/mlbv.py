@@ -66,7 +66,7 @@ def display_usage():
     return 0
 
 
-def main(argv=None):
+def main():
     """Entry point for mlbv"""
 
     # using argparse (2.7+) https://docs.python.org/2/library/argparse.html
@@ -286,7 +286,7 @@ def main(argv=None):
     game_rec = mlbstream.get_game_rec(game_data, team_to_play, args.game)
 
     if args.url:
-        media_playback_id, media_state, content_id = mlbstream.select_feed_for_team(game_rec, team_to_play)
+        _, _, content_id = mlbstream.select_feed_for_team(game_rec, team_to_play)
         tfs = game_rec['mlbdate'].strftime('%Y%m%d_%H%M')
         full_url = f"https://www.mlb.com/tv/g{game_rec['game_pk']}/v{content_id}#game={game_rec['game_pk']},tfs={tfs}"
         url = f"https://www.mlb.com/tv/g{game_rec['game_pk']}"
@@ -318,7 +318,5 @@ def main(argv=None):
     return mlbstream.play_stream(game_rec, team_to_play, feedtype, args.date, args.fetch, args.from_start, args.inning)
 
 
-if __name__ == "__main__" or __name__ == "main":
+if __name__ in ("__main__", "main"):
     sys.exit(main())
-
-# vim: set filetype=python
