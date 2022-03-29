@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mlbv"
-version = "0.0.18"
+version = "0.0.19"
 description = "Command-line interface to MLB game information, game schedule and scores"
 authors = ["kmac <135567+kmac@users.noreply.github.com>"]
 license = "GPL-3.0-only"

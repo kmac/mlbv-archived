@@ -1,3 +1,6 @@
+2022.03.28 v0.0.19 Merge 'recent' pull requests, rework bits of login
+- Issue 53: retry login on certain failure scenarios
+
 2021.04.24 v0.0.18 Fix packaging issue in v0.0.17, switch to poetry
 
 2021.04.24 v0.0.17 Fix various issues, add --url and mlbv-fzf
