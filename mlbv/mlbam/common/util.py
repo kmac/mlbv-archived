@@ -23,26 +23,28 @@ LOG = None
 
 
 class Usage(Exception):
-    def __init__(self, msg='', include_doc=False):
+    def __init__(self, msg="", include_doc=False):
         if msg is None:
-            msg = ''
+            msg = ""
         self.msg = msg
         if include_doc:
-            self.msg += '\n' + __doc__ % (sys.argv[0], )
+            self.msg += "\n" + __doc__ % (sys.argv[0],)
 
 
 def init_logging(log_file=None, append=False, console_loglevel=logging.INFO):
     """Set up logging to file and console."""
     if log_file is not None:
         if append:
-            filemode_val = 'a'
+            filemode_val = "a"
         else:
-            filemode_val = 'w'
-        logging.basicConfig(level=logging.DEBUG,
-                            format="%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s",
-                            # datefmt='%m-%d %H:%M',
-                            filename=log_file,
-                            filemode=filemode_val)
+            filemode_val = "w"
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(asctime)s %(levelname)s %(threadName)s %(name)s %(message)s",
+            # datefmt='%m-%d %H:%M',
+            filename=log_file,
+            filemode=filemode_val,
+        )
     # define a Handler which writes INFO messages or higher to the sys.stderr
     console = logging.StreamHandler()
     console.setLevel(console_loglevel)
@@ -50,7 +52,7 @@ def init_logging(log_file=None, append=False, console_loglevel=logging.INFO):
     formatter = logging.Formatter("%(message)s")
     console.setFormatter(formatter)
     # add the handler to the root logger
-    logging.getLogger('').addHandler(console)
+    logging.getLogger("").addHandler(console)
     global LOG
     LOG = logging.getLogger(__name__)
 
@@ -66,10 +68,10 @@ def die(msg, exit_code=1):
 
 def get_tempdir():
     """Create a directory for ourselves in the system tempdir."""
-    tempdir = config.CONFIG.parser.get('tempdir', None)
+    tempdir = config.CONFIG.parser.get("tempdir", None)
     if tempdir:
-        if '<timestamp>' in tempdir:
-            tempdir = tempdir.replace('<timestamp>', time.strftime('%Y-%m-%d-%H%M'))
+        if "<timestamp>" in tempdir:
+            tempdir = tempdir.replace("<timestamp>", time.strftime("%Y-%m-%d-%H%M"))
     else:
         script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         tempdir = os.path.join(tempfile.gettempdir(), script_name)
@@ -82,9 +84,14 @@ def convert_time_to_local(d):
     from_zone = tz.tzutc()
     to_zone = tz.tzlocal()
     utc = d.replace(tzinfo=from_zone)
-    if config.CONFIG.parser['timeformat'] == '12H':
-        return utc.astimezone(to_zone).strftime('%I:%M %p').replace('PM', 'pm').replace('AM', 'am')
-    return utc.astimezone(to_zone).strftime('%H:%M')
+    if config.CONFIG.parser["timeformat"] == "12H":
+        return (
+            utc.astimezone(to_zone)
+            .strftime("%I:%M %p")
+            .replace("PM", "pm")
+            .replace("AM", "am")
+        )
+    return utc.astimezone(to_zone).strftime("%H:%M")
 
 
 def has_reached_time(datetime_val_utc):
@@ -94,7 +101,7 @@ def has_reached_time(datetime_val_utc):
 
 def get_csv_list(csv_string):
     """Returns a normalized list from a csv string."""
-    return [l.strip() for l in csv_string.split(',')]
+    return [l.strip() for l in csv_string.split(",")]
 
 
 def substring_match(input_option, full_option):
@@ -128,15 +135,15 @@ def expand_substring_match(input_option, full_option):
 
 def log_http(url, request_type=None, headers=None, method_name=None):
     """Helper function to log http requests."""
-    msg = ''
+    msg = ""
     if method_name is not None:
-        msg += '{}: '.format(method_name)
+        msg += "{}: ".format(method_name)
     if request_type is not None:
         msg += "HTTP '{}' request: {}".format(request_type.upper(), url)
     else:
         msg += "HTTP request: {}".format(url)
     if headers is not None:
-        msg += ', headers:{}'.format(headers)
+        msg += ", headers:{}".format(headers)
     LOG.debug(msg)
 
 
@@ -144,15 +151,16 @@ class HTMLStripper(HTMLParser):
     """Modified from https://stackoverflow.com/a/11063816
     https://docs.python.org/3.7/library/html.parser.html?highlight=htmlparser
     """
+
     def __init__(self):
         super().__init__()
         self.reset()
         self.fed = []
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'a':
+        if tag == "a":
             for attr in attrs:
-                self.fed.append(str(attr[1] + ' '))
+                self.fed.append(str(attr[1] + " "))
 
     def handle_data(self, d):
         self.fed.append(d)
@@ -161,10 +169,12 @@ class HTMLStripper(HTMLParser):
         if wrap:
             terminal_size = shutil.get_terminal_size((80, 40))
             wrap_columns = terminal_size.columns
-            if wrap_columns > int(config.CONFIG.parser['info_display_max_columns']):
-                wrap_columns = int(config.CONFIG.parser['info_display_max_columns'])
-            return '\n'.join([textwrap.fill(x, wrap_columns) for x in ''.join(self.fed).split('\n')])
-        return ''.join(self.fed)
+            if wrap_columns > int(config.CONFIG.parser["info_display_max_columns"]):
+                wrap_columns = int(config.CONFIG.parser["info_display_max_columns"])
+            return "\n".join(
+                [textwrap.fill(x, wrap_columns) for x in "".join(self.fed).split("\n")]
+            )
+        return "".join(self.fed)
 
 
 def strip_html_tags(htmltext, wrap=True):
@@ -179,28 +189,28 @@ def strip_html_tags(htmltext, wrap=True):
 #     def __init__(self):
 #         super(HTMLTextExtractor, self).__init__()
 #         self.result = [ ]
-# 
+#
 #     def handle_data(self, d):
 #         self.result.append(d)
-# 
+#
 #     def get_text(self):
 #         return ''.join(self.result)
-# 
+#
 # def html_to_text(html):
 #     """Converts HTML to plain text (stripping tags and converting entities).
 #     >>> html_to_text('<a href="#">Demo<!--...--> <em>(&not; \u0394&#x03b7;&#956;&#x03CE;)</em></a>')
 #     'Demo (\xac \u0394\u03b7\u03bc\u03ce)'
-# 
+#
 #     "Plain text" doesn't mean result can safely be used as-is in HTML.
 #     >>> html_to_text('&lt;script&gt;alert("Hello");&lt;/script&gt;')
 #     '<script>alert("Hello");</script>'
-# 
+#
 #     Always use html.escape to sanitize text before using in an HTML context!
-# 
+#
 #     HTMLParser will do its best to make sense of invalid HTML.
 #     >>> html_to_text('x < y &lt z <!--b')
 #     'x < y < z '
-# 
+#
 #     Unrecognized named entities are included as-is. '&apos;' is recognized,
 #     despite being XML only.
 #     >>> html_to_text('&nosuchentity; &apos; ')

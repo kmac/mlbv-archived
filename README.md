@@ -607,3 +607,5 @@ In these examples the game is saved to a file (.ts or .mp4) in the current direc
 
     mlbv --standings --date 2015-10-01  # display division standings for Oct 1, 2015
 
+
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)

@@ -38,7 +38,9 @@ BAM_SESSION_URL = "https://us.edge.bamgrid.com/session"
 BAM_TOKEN_URL = "https://us.edge.bamgrid.com/token"
 BAM_ENTITLEMENT_URL = "https://media-entitlement.mlb.com/api/v3/jwt"
 GAME_CONTENT_URL_TEMPLATE = "http://statsapi.mlb.com/api/v1/game/{game_id}/content"
-STREAM_URL_TEMPLATE = "https://edge.svcs.mlb.com/media/{media_id}/scenarios/browser~csai"
+STREAM_URL_TEMPLATE = (
+    "https://edge.svcs.mlb.com/media/{media_id}/scenarios/browser~csai"
+)
 AIRINGS_URL_TEMPLATE = (
     "https://search-api-mlbtv.mlb.com/svc/search/v2/graphql/persisted/query/"
     "core/Airings?variables={{%22partnerProgramIds%22%3A[%22{game_id}%22]}}"
@@ -46,15 +48,14 @@ AIRINGS_URL_TEMPLATE = (
 
 
 def gen_random_string(n):
-    return ''.join(
-        random.choice(
-            string.ascii_uppercase + string.digits
-        ) for _ in range(n)
+    return "".join(
+        random.choice(string.ascii_uppercase + string.digits) for _ in range(n)
     )
 
 
 class SGProviderLoginException(BaseException):
     """Flags that a login is required."""
+
     pass
 
 
@@ -75,12 +76,12 @@ class MLBSession(session.Session):
         """Posts to the AUTHN_URL and saves the session token"""
 
         authn_params = {
-            "username": config.CONFIG.parser['username'],
-            "password": config.CONFIG.parser['password'],
+            "username": config.CONFIG.parser["username"],
+            "password": config.CONFIG.parser["password"],
             "options": {
                 "multiOptionalFactorEnroll": False,
-                "warnBeforePasswordExpired": True
-            }
+                "warnBeforePasswordExpired": True,
+            },
         }
         LOG.debug("login: %s", authn_params["username"])
         authn_response = self.session.post(AUTHN_URL, json=authn_params).json()
@@ -107,11 +108,11 @@ class MLBSession(session.Session):
         scripts = data.xpath(".//script")
         for script in scripts:
             if script.text and "apiKey" in script.text:
-                self._state["api_key"] \
-                    = self.API_KEY_RE.search(script.text).groups()[0]
+                self._state["api_key"] = self.API_KEY_RE.search(script.text).groups()[0]
             if script.text and "clientApiKey" in script.text:
-                self._state["client_api_key"] \
-                    = CLIENT_API_KEY_RE.search(script.text).groups()[0]
+                self._state["client_api_key"] = CLIENT_API_KEY_RE.search(
+                    script.text
+                ).groups()[0]
 
         LOG.debug("Updating Okta api keys")
         content = self.session.get(MLB_OKTA_URL).text
@@ -131,16 +132,15 @@ class MLBSession(session.Session):
                 "nonce": nonce_param,
                 "prompt": "none",
                 "sessionToken": self.session_token,  # may trigger login
-                "scope": "openid email"
+                "scope": "openid email",
             }
-            authz_response = self.session.get(OKTA_AUTHORIZE_URL,
-                                              params=authz_params)
+            authz_response = self.session.get(OKTA_AUTHORIZE_URL, params=authz_params)
             authz_content = authz_response.text
             if config.VERBOSE:
                 LOG.debug("get_okta_token reponse: %s", authz_content)
             for line in authz_content.split("\n"):
                 if "data.access_token" in line:
-                    return line.split("'")[1].encode('utf-8').decode('unicode_escape')
+                    return line.split("'")[1].encode("utf-8").decode("unicode_escape")
                 if "data.error = 'login_required'" in line:
                     raise SGProviderLoginException
             LOG.debug("get_okta_token failed: %s", authz_content)
@@ -165,21 +165,20 @@ class MLBSession(session.Session):
             "applicationRuntime": "firefox",
             "attributes": {},
             "deviceFamily": "browser",
-            "deviceProfile": "macosx"
+            "deviceProfile": "macosx",
         }
 
-        devices_response = self.session.post(BAM_DEVICES_URL,
-                                             headers=devices_headers,
-                                             json=devices_params).json()
+        devices_response = self.session.post(
+            BAM_DEVICES_URL, headers=devices_headers, json=devices_params
+        ).json()
 
         # Issue #53: no assertion key here:
-        if 'assertion' in devices_response:
+        if "assertion" in devices_response:
             devices_assertion = devices_response["assertion"]
         else:
             devices_assertion = None
             LOG.error("No assertion key in devices response")
-            LOG.debug("No assertion key in devices response: %s",
-                      devices_response.text)
+            LOG.debug("No assertion key in devices response: %s", devices_response.text)
 
         # Device token
         token_params = {
@@ -188,11 +187,11 @@ class MLBSession(session.Session):
             "longitude": "0",
             "platform": "browser",
             "subject_token": devices_assertion,
-            "subject_token_type": "urn:bamtech:params:oauth:token-type:device"
+            "subject_token_type": "urn:bamtech:params:oauth:token-type:device",
         }
-        token_response = self.session.post(BAM_TOKEN_URL,
-                                           headers=devices_headers,
-                                           data=token_params).json()
+        token_response = self.session.post(
+            BAM_TOKEN_URL, headers=devices_headers, data=token_params
+        ).json()
 
         device_access_token = token_response["access_token"]
 
@@ -207,29 +206,25 @@ class MLBSession(session.Session):
             "x-bamsdk-version": BAM_SDK_VERSION,
             "x-bamsdk-platform": PLATFORM,
             "Content-type": "application/json",
-            "TE": "Trailers"
+            "TE": "Trailers",
         }
-        session_response = self.session.get(BAM_SESSION_URL,
-                                            headers=session_headers).json()
+        session_response = self.session.get(
+            BAM_SESSION_URL, headers=session_headers
+        ).json()
         device_id = session_response["device"]["id"]
 
         # Entitlement token
-        entitlement_params = {
-            "os": PLATFORM,
-            "did": device_id,
-            "appname": "mlbtv_web"
-        }
+        entitlement_params = {"os": PLATFORM, "did": device_id, "appname": "mlbtv_web"}
 
         entitlement_headers = {
             "Authorization": "Bearer %s" % (self._state["OKTA_ACCESS_TOKEN"]),
             "Origin": "https://www.mlb.com",
             # TODO: is api_key correct?  always None?
-            "x-api-key": self._state["api_key"]
-
+            "x-api-key": self._state["api_key"],
         }
-        entitlement_response = self.session.get(BAM_ENTITLEMENT_URL,
-                                                headers=entitlement_headers,
-                                                params=entitlement_params)
+        entitlement_response = self.session.get(
+            BAM_ENTITLEMENT_URL, headers=entitlement_headers, params=entitlement_params
+        )
 
         entitlement_token = entitlement_response.content
 
@@ -240,13 +235,13 @@ class MLBSession(session.Session):
             "Accept": "application/vnd.media-service+json; version=1",
             "x-bamsdk-version": BAM_SDK_VERSION,
             "x-bamsdk-platform": PLATFORM,
-            "origin": "https://www.mlb.com"
+            "origin": "https://www.mlb.com",
         }
         data = {
             "grant_type": "urn:ietf:params:oauth:grant-type:token-exchange",
             "platform": "browser",
             "subject_token": entitlement_token,
-            "subject_token_type": "urn:bamtech:params:oauth:token-type:account"
+            "subject_token_type": "urn:bamtech:params:oauth:token-type:account",
         }
         response = self.session.post(BAM_TOKEN_URL, data=data, headers=headers)
         # from requests_toolbelt.utils import dump
@@ -257,16 +252,17 @@ class MLBSession(session.Session):
             LOG.debug("token_response: %s", token_response)
 
         # Finally: update the token and expiry in our _state:
-        self._state["access_token_expiry"] = \
-            str(datetime.datetime.now(tz=pytz.UTC)
-                + datetime.timedelta(seconds=token_response["expires_in"]))
+        self._state["access_token_expiry"] = str(
+            datetime.datetime.now(tz=pytz.UTC)
+            + datetime.timedelta(seconds=token_response["expires_in"])
+        )
         self._state["access_token"] = token_response["access_token"]
         self.save()
 
     # Override
     def lookup_stream_url(self, game_pk, media_id):
-        """ game_pk: game_pk
-            media_id: mediaPlaybackId
+        """game_pk: game_pk
+        media_id: mediaPlaybackId
         """
         stream_url = None
         headers = {
@@ -275,15 +271,17 @@ class MLBSession(session.Session):
             "Accept": "application/vnd.media-service+json; version=1",
             "x-bamsdk-version": BAM_SDK_VERSION,
             "x-bamsdk-platform": PLATFORM,
-            "origin": "https://www.mlb.com"
+            "origin": "https://www.mlb.com",
         }
         response = self.session.get(
-            STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers)
+            STREAM_URL_TEMPLATE.format(media_id=media_id), headers=headers
+        )
         if response is not None and config.SAVE_JSON_FILE:
-            output_filename = 'stream'
-            json_file = os.path.join(util.get_tempdir(),
-                                     '{}.json'.format(output_filename))
-            with open(json_file, 'w') as out:  # write date to json_file
+            output_filename = "stream"
+            json_file = os.path.join(
+                util.get_tempdir(), "{}.json".format(output_filename)
+            )
+            with open(json_file, "w") as out:  # write date to json_file
                 out.write(response.text)
 
         stream = response.json()
@@ -291,5 +289,5 @@ class MLBSession(session.Session):
         if "errors" in stream and stream["errors"]:
             LOG.error("Could not load stream\n%s", stream)
             return None
-        stream_url = stream['stream']['complete']
+        stream_url = stream["stream"]["complete"]
         return stream_url
