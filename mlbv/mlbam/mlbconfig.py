@@ -10,7 +10,6 @@ LOG = logging.getLogger(__name__)
 DEFAULTS = {  # is applied to initial config before reading from file - these are the defaults:
     "mlbv": {
         "username": "",
-        "password": "",
         "favs": "",
         "fav_colour": "blue",
         "scores": "true",

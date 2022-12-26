@@ -7,9 +7,9 @@
 # used. The default value is shown commented out.
 # To change a value, copy the line, uncomment it, and provide your own value.
 
-# Credentials. Fill out your username and password here. Or provide them via command-line options.
+# Credentials are stored securely by the python module keyring.
+# This uses the keyring service name "MLB.tv" and the username you provide.
 # username=<Put your MLB username here>
-# password=<Put your MLB password here>
 
 # Favourite teams, This is a comma-separated list of favourite team codes.
 # Favourite teams are identified by colour in the game listings, and can be
