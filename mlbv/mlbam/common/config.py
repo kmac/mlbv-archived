@@ -109,11 +109,10 @@ class Config:
         return parser[script_name]
 
     @staticmethod
-    def generate_config(username=None, password=None, servicename="MLB.tv"):
+    def generate_config(username=None, servicename="MLB.tv"):
         """Creates config file from template + user prompts."""
         script_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
         # use the script name minus any extension for the config directory
-        config_dir = None
         config_dir = os.path.join(Config.config_dir_roots[1], script_name)
         if not os.path.exists(config_dir):
             print("Creating config directory: {}".format(config_dir))
@@ -141,8 +140,6 @@ class Config:
 
         if username is None:
             username = input("Enter {} username: ".format(servicename))
-        if password is None:
-            password = input("Enter {} password: ".format(servicename))
 
         with open(template_config_path, "r") as infile, open(
             config_file, "w"
@@ -150,8 +147,6 @@ class Config:
             for line in infile:
                 if line.startswith("# username="):
                     outfile.write("username={}\n".format(username))
-                elif line.startswith("# password="):
-                    outfile.write("password={}\n".format(password))
                 else:
                     outfile.write(line)
         print("Finished creating config file: {}".format(config_file))
