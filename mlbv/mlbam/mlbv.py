@@ -9,6 +9,7 @@ https://github.com/tonycpsu/mlbstreamer - a similar project
 """
 
 import argparse
+import getpass
 import inspect
 import logging
 import os
@@ -18,6 +19,7 @@ import time
 
 from datetime import datetime
 from datetime import timedelta
+import keyring
 
 import mlbv.mlbam.common.config as config
 import mlbv.mlbam.common.gamedata as gamedata
@@ -236,9 +238,6 @@ def main():
         "--username", help=argparse.SUPPRESS
     )  # help="MLB.tv username. Required for live/archived games.")
     parser.add_argument(
-        "--password", help=argparse.SUPPRESS
-    )  # help="MLB.tv password. Required for live/archived games.")
-    parser.add_argument(
         "--fetch",
         "--record",
         action="store_true",
@@ -312,7 +311,15 @@ def main():
     feedtype = None
 
     if args.init:
-        return config.Config.generate_config(args.username, args.password, "MLB.tv")
+        # this causes the prompt for username to appear before we store the password
+        returned: bool = config.Config.generate_config(servicename="MLB.tv")
+        config.CONFIG = config.Config(mlbconfig.DEFAULTS, args)
+        if not config.CONFIG.parser["username"]:
+            print("No MLB.tv username specified, exiting.")
+            sys.exit(2)
+        print("Prompting for MLB.tv password for username '{}'".format(config.CONFIG.parser["username"]))
+        keyring.set_password("MLB.tv", config.CONFIG.parser["username"], getpass.getpass("MLB.tv password: "))
+        return returned
 
     # get our config
     config.CONFIG = config.Config(mlbconfig.DEFAULTS, args)
@@ -343,8 +350,6 @@ def main():
         config.CONFIG.parser["cache"] = args.cache
     if args.username:
         config.CONFIG.parser["username"] = args.username
-    if args.password:
-        config.CONFIG.parser["password"] = args.password
     if args.inning_offset is not None:
         config.CONFIG.parser["stream_start_offset_secs"] = str(args.inning_offset)
     if args.team:

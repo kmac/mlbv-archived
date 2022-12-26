@@ -9,6 +9,7 @@ import random
 import re
 import string
 
+import keyring
 import lxml
 import lxml.etree
 import pytz
@@ -45,6 +46,7 @@ AIRINGS_URL_TEMPLATE = (
     "https://search-api-mlbtv.mlb.com/svc/search/v2/graphql/persisted/query/"
     "core/Airings?variables={{%22partnerProgramIds%22%3A[%22{game_id}%22]}}"
 )
+SERVICE_NAME = "MLB.tv"
 
 
 def gen_random_string(n):
@@ -74,10 +76,18 @@ class MLBSession(session.Session):
     # Override
     def login(self):
         """Posts to the AUTHN_URL and saves the session token"""
+        password = keyring.get_password(SERVICE_NAME, config.CONFIG.parser["username"])
+        if password is None:
+            raise EnvironmentError(
+                f"""No password for MLB.tv username {config.CONFIG.parser["username"]} found in keyring.
+                
+                Set up your username and password with mlbv --init!
+                
+                """)
 
         authn_params = {
             "username": config.CONFIG.parser["username"],
-            "password": config.CONFIG.parser["password"],
+            "password": password,
             "options": {
                 "multiOptionalFactorEnroll": False,
                 "warnBeforePasswordExpired": True,
@@ -264,7 +274,6 @@ class MLBSession(session.Session):
         """game_pk: game_pk
         media_id: mediaPlaybackId
         """
-        stream_url = None
         headers = {
             "Authorization": self.access_token,
             "User-agent": USER_AGENT,
