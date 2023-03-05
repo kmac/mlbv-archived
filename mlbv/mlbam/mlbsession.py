@@ -8,6 +8,8 @@ import os
 import random
 import re
 import string
+import base64
+import hashlib
 
 import lxml
 import lxml.etree
@@ -33,6 +35,7 @@ OKTA_CLIENT_ID_RE = re.compile("""production:{clientId:"([^"]+)",""")
 MLB_OKTA_URL = "https://www.mlbstatic.com/mlb.com/vendor/mlb-okta/mlb-okta.js"
 AUTHN_URL = "https://ids.mlb.com/api/v1/authn"
 OKTA_AUTHORIZE_URL = "https://ids.mlb.com/oauth2/aus1m088yK07noBfh356/v1/authorize"
+OKTA_TOKEN_URL = "https://ids.mlb.com/oauth2/aus1m088yK07noBfh356/v1/token"
 BAM_DEVICES_URL = "https://us.edge.bamgrid.com/devices"
 BAM_SESSION_URL = "https://us.edge.bamgrid.com/session"
 BAM_TOKEN_URL = "https://us.edge.bamgrid.com/token"
@@ -119,32 +122,79 @@ class MLBSession(session.Session):
         self._state["okta_client_id"] = OKTA_CLIENT_ID_RE.search(content).groups()[0]
         LOG.debug("okta_client_id: %s", self._state["okta_client_id"])
 
-        # OKTA Token
-        def get_okta_token():
+        # OKTA Code
+        def get_okta_code():
             state_param = gen_random_string(64)
             nonce_param = gen_random_string(64)
+
+            self.code_verifier = gen_random_string(58)
+            self.code_challenge = base64.urlsafe_b64encode(hashlib.sha256(self.code_verifier.encode('ascii')).digest()).decode('ascii')[:-1]
+
             authz_params = {
                 "client_id": self._state["okta_client_id"],
                 "redirect_uri": "https://www.mlb.com/login",
-                "response_type": "id_token token",
+                "response_type": "code",
                 "response_mode": "okta_post_message",
                 "state": state_param,
                 "nonce": nonce_param,
                 "prompt": "none",
                 "sessionToken": self.session_token,  # may trigger login
                 "scope": "openid email",
+                "code_challenge": self.code_challenge,
+                "code_challenge_method": "S256",
             }
+        
             authz_response = self.session.get(OKTA_AUTHORIZE_URL, params=authz_params)
             authz_content = authz_response.text
+
             if config.VERBOSE:
-                LOG.debug("get_okta_token reponse: %s", authz_content)
+                LOG.debug("get_okta_code reponse: %s", authz_content)
             for line in authz_content.split("\n"):
-                if "data.access_token" in line:
+                if "data.code" in line:
                     return line.split("'")[1].encode("utf-8").decode("unicode_escape")
                 if "data.error = 'login_required'" in line:
                     raise SGProviderLoginException
-            LOG.debug("get_okta_token failed: %s", authz_content)
+            LOG.debug("get_okta_code failed: %s", authz_content)
             raise Exception("could not authenticate: {authz_content}")
+
+        # OKTA Token
+        def get_okta_token():
+            token_data = {
+                "client_id": self._state["okta_client_id"],
+                "redirect_uri": "https://www.mlb.com/login",
+                "grant_type": "authorization_code",
+                "code_verifier": self.code_verifier,
+                "code": self.okta_access_code,
+            }
+
+            token_headers = {
+                "Accept": "application/json",
+                "Content-type": "application/x-www-form-urlencoded",
+            }
+
+            token_response = self.session.post(
+                OKTA_TOKEN_URL, headers=token_headers, data=token_data
+            ).json()
+
+            if config.VERBOSE:
+                LOG.debug("get_okta_token reponse: %s", token_response)
+
+            if "access_token" in token_response:
+                return token_response["access_token"]
+            else:
+                LOG.error("No access_token in token response")
+                LOG.debug("No access_token in token response: %s", token_response.text)
+
+                raise Exception("could not authenticate: {token_response}")
+
+        try:
+            self.okta_access_code = get_okta_code()
+        except SGProviderLoginException:
+            # not logged in -- get session token and try again
+            self.login()
+            self.okta_access_code = get_okta_code()
+
+        assert self.okta_access_code is not None
 
         try:
             self._state["OKTA_ACCESS_TOKEN"] = get_okta_token()
